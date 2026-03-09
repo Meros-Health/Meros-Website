@@ -29,3 +29,9 @@ Thumbs.db
 # Cache
 .cache
 *.tsbuildinfo
+
+# Claude
+.claude/
+
+# Fonts
+fonts/
