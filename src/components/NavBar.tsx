@@ -3,6 +3,7 @@ import { useState } from 'react';
 
 const navLinks = [
   { href: '#menu', label: 'MENU' },
+  { href: '/bowl-builder', label: 'BUILD' },
   { href: '#about', label: 'ABOUT' },
   { href: '#find-us', label: 'FIND US' },
 ];
