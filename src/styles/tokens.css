@@ -19,8 +19,8 @@
   --color-hover:        var(--forest-mid);
 
   /* ─── Typography ─── */
-  --font-serif:     'Playfair Display', serif;    /* primary — hero title, section headings */
-  --font-display:   'EB Garamond', serif;          /* secondary — editorial, card names, pull quotes */
+  --font-serif:     'Aetheria', serif;             /* primary — hero title, section headings */
+  --font-display:   'Montage Serif', serif;         /* secondary — editorial, card names, pull quotes */
   --font-accent:    'Italiana', serif;              /* decorative accent, kept for nav feel */
   --font-body:      'Jost', sans-serif;            /* tertiary — all UI, captions, body copy */
 
