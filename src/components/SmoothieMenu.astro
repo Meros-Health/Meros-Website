@@ -1,0 +1,227 @@
+---
+const smoothies = [
+  { name: 'Cacao Revival', image: '/Smoothies-Menu/Smoothie1b.jpg', descriptor: 'Rich cacao with nut butter and banana.' },
+  { name: 'Berry Ritual', image: '/Smoothies-Menu/Smoothie3b.jpg', descriptor: 'Mixed berries with a touch of vanilla.' },
+  { name: 'Green Clarity', image: '/Smoothies-Menu/Smoothie4b.jpg', descriptor: 'Kale, spinach, apple, and lime.' },
+  { name: 'Tropical Reset', image: '/Smoothies-Menu/Smoothie5b.jpg', descriptor: 'Pineapple, coconut, and passion fruit.' },
+  { name: 'Dark Bloom', image: '/Smoothies-Menu/Smoothie6b.jpg', descriptor: 'Beet, berry, and dark cherry.' },
+  { name: 'Golden Hour', image: '/Smoothies-Menu/Smoothie2b.jpg', descriptor: 'Turmeric, mango, and ginger glow.' },
+];
+---
+
+<section class="menu" id="menu">
+  <div class="menu__blob" data-parallax-blob aria-hidden="true"></div>
+  <header class="menu__header">
+    <h2 class="menu__title" data-reveal="clip">Made to Heal</h2>
+    <p class="menu__subtitle" data-reveal="up" data-reveal-delay="0.15">Homemade smoothies created with fresh, authentic ingredients.</p>
+  </header>
+  <div class="menu__pin">
+    <div class="menu__track">
+      {smoothies.map((s) => (
+        <article class="menu__card">
+          <div class="menu__card-image">
+            <img src={s.image} alt={s.name} width="600" height="800" />
+          </div>
+          <div class="menu__card-content">
+            <h3 class="menu__card-name">{s.name}</h3>
+            <p class="menu__card-descriptor">{s.descriptor}</p>
+          </div>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<script>
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  function buildScrollTrigger(track: HTMLElement, cards: NodeListOf<Element>, edgePad: number) {
+    const navHeight = (document.querySelector('.nav') as HTMLElement)?.offsetHeight ?? 56;
+    ScrollTrigger.create({
+      trigger: '.menu',
+      start: `top top+=${navHeight}`,
+      end: () => {
+        const w = track.scrollWidth;
+        return `+=${Math.max(w, 1500)}`;
+      },
+      pin: '.menu',
+      scrub: 1,
+      invalidateOnRefresh: true,
+      onUpdate: (self) => {
+        const progress = self.progress;
+        const currentWidth = track.scrollWidth;
+        const maxX = Math.max(0, currentWidth - window.innerWidth + edgePad);
+        gsap.set(track, { x: -progress * maxX });
+        cards.forEach((card) => {
+          const rect = card.getBoundingClientRect();
+          const center = rect.left + rect.width / 2;
+          const viewportCenter = window.innerWidth / 2;
+          const distance = Math.abs(center - viewportCenter);
+          const scale = Math.max(0.95, 1 - (distance / window.innerWidth) * 0.05);
+          gsap.set(card, { scale });
+        });
+      },
+    });
+  }
+
+  function initSmoothieMenuScroll() {
+    const track = document.querySelector('.menu__track') as HTMLElement | null;
+    const cards = document.querySelectorAll('.menu__card');
+    if (!track || !cards.length) return;
+
+    ScrollTrigger.matchMedia({
+      '(min-width: 769px)': function () {
+        buildScrollTrigger(track, cards, 48);
+      },
+
+      '(max-width: 768px)': function () {
+        buildScrollTrigger(track, cards, 24);
+      },
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSmoothieMenuScroll);
+  } else {
+    initSmoothieMenuScroll();
+  }
+</script>
+
+<style>
+  .menu {
+    position: relative;
+    z-index: 4;
+    background: var(--color-bg-dark);
+    padding-top: var(--space-16);
+    padding-bottom: var(--space-16);
+    margin-top: -20px;
+    min-height: 100svh;
+    box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.45), 0 -1px 0 rgba(0, 0, 0, 0.12);
+  }
+
+  .menu__blob {
+    position: absolute;
+    inset: -20% 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+      radial-gradient(ellipse 55% 40% at 15% 40%, rgba(201, 106, 74, 0.08) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 35% at 80% 65%, rgba(123, 79, 191, 0.06) 0%, transparent 70%);
+    will-change: transform;
+  }
+
+  .menu__header {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    margin-bottom: var(--space-8);
+    padding-left: var(--space-6);
+    padding-right: var(--space-6);
+  }
+
+  .menu__title {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-style: italic;
+    font-size: var(--text-3xl);
+    color: var(--color-text-light);
+  }
+
+  .menu__subtitle {
+    font-family: var(--font-body);
+    font-weight: var(--weight-thin);
+    font-size: var(--text-base);
+    letter-spacing: 0.2em;
+    color: rgba(250, 250, 247, 0.5);
+  }
+
+  .menu__pin {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .menu__track {
+    display: flex;
+    gap: var(--space-8);
+    padding-top: var(--space-6);
+    padding-left: var(--space-6);
+    padding-right: var(--space-6);
+    will-change: transform;
+  }
+
+  .menu__card {
+    flex-shrink: 0;
+    width: 340px;
+    max-width: 90vw;
+    will-change: transform;
+    background: var(--color-bg);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(28, 46, 30, 0.06);
+  }
+
+  .menu__card-image {
+    aspect-ratio: 2 / 3;
+    overflow: hidden;
+  }
+
+  .menu__card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .menu__card-content {
+    padding: var(--space-6);
+  }
+
+  .menu__card-name {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: var(--text-xl);
+    color: var(--color-text);
+    margin-bottom: var(--space-2);
+    padding-bottom: var(--space-2);
+    border-bottom: var(--border-accent);
+  }
+
+  .menu__card-descriptor {
+    font-family: var(--font-body);
+    font-weight: var(--weight-light);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  @media (max-width: 768px) {
+    .menu {
+      padding-top: var(--space-16);
+      padding-bottom: var(--space-10);
+    }
+
+    .menu__pin {
+      overflow: hidden;
+    }
+
+    .menu__track {
+      flex-wrap: nowrap;
+      gap: var(--space-4);
+      padding: var(--space-4) var(--space-6);
+      padding-bottom: var(--space-8);
+      will-change: transform;
+    }
+
+    .menu__card {
+      width: 260px;
+      max-width: none;
+    }
+
+    .menu__title {
+      font-size: clamp(2.5rem, 12vw, 5rem);
+    }
+  }
+</style>

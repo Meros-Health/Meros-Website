@@ -1,0 +1,270 @@
+---
+---
+
+<section class="location" id="find-us">
+  <div class="location__bg" aria-hidden="true"></div>
+  <div class="location__inner container">
+
+    <header class="location__header" data-reveal="stagger">
+      <span class="location__eyebrow">Visit Us</span>
+      <h2 class="location__title">Find&nbsp;Us</h2>
+    </header>
+
+    <div class="location__card" data-reveal="up">
+      <div class="location__map-wrap">
+        <iframe
+          class="location__iframe"
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2602.650261361084!2d-123.1207!3d49.2827!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x5486718c3d2f2b2b%3A0x2a4a7a7a7a7a7a7a!2sYaletown%2C%20Vancouver%2C%20BC!5e0!3m2!1sen!2sca!4v=1"
+          width="100%"
+          height="100%"
+          allowfullscreen
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          title="Meros location in Yaletown, Vancouver"
+        />
+      </div>
+
+      <div class="location__info">
+        <div class="location__line" aria-hidden="true"></div>
+
+        <address class="location__address">
+          Yaletown<br />
+          Vancouver, BC
+        </address>
+
+        <dl class="location__hours">
+          <dt>Monday – Friday</dt>
+          <dd>7:00 – 18:00</dd>
+          <dt>Saturday – Sunday</dt>
+          <dd>8:00 – 16:00</dd>
+        </dl>
+
+        <nav class="location__social" aria-label="Social media links">
+          <a
+            class="location__social-link"
+            href="https://www.instagram.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Instagram"
+          >
+            <svg class="location__social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+              <circle cx="12" cy="12" r="4"/>
+              <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/>
+            </svg>
+            <span>Instagram</span>
+          </a>
+          <a
+            class="location__social-link"
+            href="https://www.tiktok.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="TikTok"
+          >
+            <svg class="location__social-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.2 8.2 0 004.79 1.53V6.76a4.85 4.85 0 01-1.02-.07z"/>
+            </svg>
+            <span>TikTok</span>
+          </a>
+          <a
+            class="location__social-link"
+            href="mailto:hello@meros.ca"
+            aria-label="Email"
+          >
+            <svg class="location__social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="4" width="20" height="16" rx="2"/>
+              <polyline points="2,4 12,13 22,4"/>
+            </svg>
+            <span>hello@meros.ca</span>
+          </a>
+        </nav>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<style>
+  .location {
+    position: relative;
+    z-index: 6;
+    padding: var(--space-32) var(--space-6);
+    margin-top: -20px;
+    border-top: 24px solid var(--cream);
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+  }
+
+  .location__bg {
+    position: absolute;
+    inset: 0;
+    background-image: url('/Yogurt/Background3.jpg');
+    background-size: cover;
+    background-position: center;
+    z-index: 0;
+  }
+
+  .location__bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(28, 46, 30, 0.45);
+  }
+
+  .location__inner {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12);
+  }
+
+  /* ── Header ── */
+  .location__header {
+    text-align: center;
+  }
+
+  .location__eyebrow {
+    display: block;
+    font-family: var(--font-body);
+    font-weight: var(--weight-light);
+    font-size: var(--text-sm);
+    letter-spacing: var(--tracking-widest);
+    text-transform: uppercase;
+    color: rgba(250, 250, 247, 0.7);
+    margin-bottom: var(--space-4);
+  }
+
+  .location__title {
+    font-family: var(--font-serif);
+    font-weight: var(--weight-light);
+    font-size: var(--text-2xl);
+    letter-spacing: var(--tracking-tight);
+    color: var(--white);
+    line-height: var(--leading-tight);
+    margin: 0;
+  }
+
+  /* ── Card ── */
+  .location__card {
+    background: var(--cream);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-8);
+    padding: var(--space-8);
+    box-shadow: 0 8px 48px rgba(0, 0, 0, 0.28);
+  }
+
+  @media (max-width: 768px) {
+    .location__card {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ── Map ── */
+  .location__map-wrap {
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    background: var(--warm-grey);
+  }
+
+  @media (max-width: 768px) {
+    .location__map-wrap {
+      aspect-ratio: 16 / 9;
+    }
+  }
+
+  .location__iframe {
+    display: block;
+    border: 0;
+    width: 100%;
+    height: 100%;
+    filter: grayscale(1) contrast(1.1) brightness(0.95);
+  }
+
+  /* ── Info panel ── */
+  .location__info {
+    padding: var(--space-4) var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    justify-content: center;
+  }
+
+  .location__line {
+    width: 60px;
+    height: 1px;
+    background: var(--terracotta);
+  }
+
+  .location__address {
+    font-family: var(--font-body);
+    font-weight: var(--weight-light);
+    font-size: var(--text-base);
+    font-style: normal;
+    color: var(--color-text);
+    line-height: var(--leading-loose);
+  }
+
+  .location__hours {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .location__hours dt {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: var(--text-base);
+    color: var(--color-text);
+  }
+
+  .location__hours dd {
+    font-family: var(--font-body);
+    font-weight: var(--weight-light);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin-left: 0;
+    margin-bottom: var(--space-2);
+  }
+
+  /* ── Social links ── */
+  .location__social {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding-top: var(--space-2);
+    border-top: var(--border-subtle);
+  }
+
+  .location__social-link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    font-family: var(--font-body);
+    font-weight: var(--weight-light);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    text-decoration: none;
+    letter-spacing: var(--tracking-tight);
+    transition: color var(--transition-fast);
+  }
+
+  .location__social-link:hover {
+    color: var(--terracotta);
+  }
+
+  .location__social-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    transition: color var(--transition-fast);
+  }
+</style>

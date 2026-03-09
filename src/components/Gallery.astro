@@ -1,0 +1,140 @@
+---
+const row1 = ['/Yogurt/Background7.jpg', '/Smoothies-Menu/Smoothie4a.jpg', '/Yogurt/Hands2.jpg', '/Yogurt/Bowl3a.jpg', '/Smoothies-Menu/Smoothie2b.jpg'];
+const row2 = ['/Yogurt/Hands1.jpg', '/Yogurt/Bowl6a.jpg', '/Smoothies-Menu/Smoothie6b.jpg', '/Yogurt/Background6.jpg', '/Smoothies-Menu/Smoothie5b.jpg'];
+---
+
+<section class="gallery" id="gallery">
+  <div class="gallery__watermark" aria-hidden="true">MEROS</div>
+  <div class="gallery__row gallery__row--1" data-gallery-row="1">
+    {row1.map((src) => (
+      <div class="gallery__item">
+        <img src={src} alt="" width="400" height="300" />
+      </div>
+    ))}
+  </div>
+  <div class="gallery__row gallery__row--2" data-gallery-row="2">
+    {row2.map((src) => (
+      <div class="gallery__item">
+        <img src={src} alt="" width="400" height="300" />
+      </div>
+    ))}
+  </div>
+</section>
+
+<script>
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  function initGallery() {
+    const section = document.querySelector('.gallery');
+    const row1 = document.querySelector('[data-gallery-row="1"]');
+    const row2 = document.querySelector('[data-gallery-row="2"]');
+    if (!section || !row1 || !row2) return;
+
+    gsap.set(row1, { rotation: -6, xPercent: -5 });
+    gsap.set(row2, { rotation: -6, xPercent: -5 });
+
+    const offset = Math.max(60, window.innerWidth * 0.12);
+
+    const shared: ScrollTrigger.Vars = {
+      trigger: section,
+      start: 'top 80%',
+      end: 'bottom 20%',
+      scrub: 1,
+      invalidateOnRefresh: true,
+    };
+
+    gsap.to(row1, { x: -offset, ease: 'none', scrollTrigger: shared });
+    gsap.to(row2, { x: offset, ease: 'none', scrollTrigger: { ...shared } });
+
+    const items = section.querySelectorAll('.gallery__item');
+    items.forEach((item) => {
+      item.addEventListener('mouseenter', () => {
+        gsap.to(item, { scale: 1.04, duration: 0.4, ease: 'power2.out' });
+      });
+      item.addEventListener('mouseleave', () => {
+        gsap.to(item, { scale: 1, duration: 0.4, ease: 'power2.out' });
+      });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initGallery);
+  } else {
+    initGallery();
+  }
+</script>
+
+<style>
+  .gallery {
+    position: relative;
+    z-index: 5;
+    background: var(--color-bg-dark);
+    padding: var(--space-32) 0;
+    overflow: hidden;
+    margin-top: -20px;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.32);
+  }
+
+  .gallery__watermark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: var(--font-serif);
+    font-weight: var(--weight-light);
+    font-size: clamp(5rem, 18vw, 12rem);
+    letter-spacing: 0.3em;
+    color: var(--color-text-light);
+    opacity: 0.08;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: var(--z-base);
+  }
+
+  .gallery__row {
+    display: flex;
+    gap: var(--space-6);
+    margin-bottom: var(--space-8);
+    width: max-content;
+    min-width: 110%;
+    will-change: transform;
+    z-index: var(--z-above);
+  }
+
+  .gallery__row--1 {
+    justify-content: flex-start;
+  }
+
+  .gallery__row--2 {
+    justify-content: flex-end;
+  }
+
+  .gallery__item {
+    flex-shrink: 0;
+    width: clamp(160px, 25vw, 320px);
+    height: clamp(120px, 19vw, 240px);
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    will-change: transform;
+  }
+
+  .gallery__item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  @media (max-width: 768px) {
+    .gallery {
+      padding: var(--space-24) 0;
+    }
+
+    .gallery__item {
+      width: clamp(200px, 60vw, 300px);
+      height: clamp(150px, 45vw, 240px);
+    }
+  }
+</style>

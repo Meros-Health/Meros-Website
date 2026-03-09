@@ -1,0 +1,74 @@
+---
+---
+
+<div class="marquee" aria-hidden="true">
+  <div class="marquee__track">
+    <span class="marquee__text" aria-hidden="true">SMOOTHIES · YOGHURT BOWLS · SUPERFOODS · YALETOWN · PURE INGREDIENTS · CRAFTED DAILY ·</span>
+    <span class="marquee__text" aria-hidden="true">SMOOTHIES · YOGHURT BOWLS · SUPERFOODS · YALETOWN · PURE INGREDIENTS · CRAFTED DAILY ·</span>
+    <span class="marquee__text" aria-hidden="true">SMOOTHIES · YOGHURT BOWLS · SUPERFOODS · YALETOWN · PURE INGREDIENTS · CRAFTED DAILY ·</span>
+    <span class="marquee__text" aria-hidden="true">SMOOTHIES · YOGHURT BOWLS · SUPERFOODS · YALETOWN · PURE INGREDIENTS · CRAFTED DAILY ·</span>
+    <span class="marquee__text" aria-hidden="true">SMOOTHIES · YOGHURT BOWLS · SUPERFOODS · YALETOWN · PURE INGREDIENTS · CRAFTED DAILY ·</span>
+  </div>
+</div>
+
+<script>
+  import gsap from 'gsap';
+
+  function initMarquee() {
+    const track = document.querySelector('.marquee__track');
+    if (!track) return;
+    const first = track.querySelector('.marquee__text');
+    if (!first) return;
+    const width = (first as HTMLElement).offsetWidth;
+    function run() {
+      gsap.to(track, {
+        x: -width,
+        duration: 20,
+        ease: 'none',
+        onComplete: () => {
+          gsap.set(track, { x: 0 });
+          run();
+        },
+      });
+    }
+    run();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMarquee);
+  } else {
+    initMarquee();
+  }
+</script>
+
+<style>
+  .marquee {
+    position: relative;
+    z-index: 5;
+    width: 100%;
+    background: var(--color-bg-dark);
+    border-bottom: 1px solid var(--terracotta);
+    overflow: hidden;
+    padding: var(--space-4) 0;
+    margin-top: -20px;
+    box-shadow: 0 -10px 36px rgba(0, 0, 0, 0.32);
+  }
+
+  .marquee__track {
+    display: flex;
+    width: max-content;
+    will-change: transform;
+  }
+
+  .marquee__text {
+    font-family: var(--font-body);
+    font-weight: var(--weight-thin);
+    font-size: var(--text-sm);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--color-text-light);
+    opacity: 0.7;
+    white-space: nowrap;
+    padding-right: var(--space-12);
+  }
+</style>

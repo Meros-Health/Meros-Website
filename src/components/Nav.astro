@@ -1,0 +1,116 @@
+---
+import NavBar from './NavBar';
+---
+
+<NavBar client:load />
+
+<style>
+  :global(.nav) {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: var(--z-nav);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4) var(--space-6);
+    transition: background-color var(--transition-base),
+      backdrop-filter var(--transition-base),
+      border-color var(--transition-base);
+  }
+
+  :global(.nav__logo) {
+    font-family: var(--font-serif);
+    font-weight: var(--weight-light);
+    font-size: 1.375rem;
+    letter-spacing: 0.3em;
+    color: var(--color-text);
+  }
+
+  :global(.nav__links) {
+    display: flex;
+    gap: var(--space-8);
+  }
+
+  :global(.nav__link) {
+    font-family: var(--font-body);
+    font-weight: var(--weight-regular);
+    font-size: var(--text-xs);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--color-text);
+  }
+
+  :global(.nav__link:hover) {
+    color: var(--color-hover);
+  }
+
+  /* ── Hamburger button — hidden on desktop ──────────────────────────────────── */
+  :global(.nav__hamburger) {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px 2px;
+    color: inherit;
+  }
+
+  :global(.nav__bar) {
+    display: block;
+    width: 22px;
+    height: 1.5px;
+    background: currentColor;
+    transform-origin: center;
+  }
+
+  /* ── Mobile slide-down menu — hidden on desktop ────────────────────────────── */
+  :global(.nav__mobile-menu) {
+    display: none;
+  }
+
+  /* ── Mobile breakpoint ─────────────────────────────────────────────────────── */
+  @media (max-width: 768px) {
+    :global(.nav__links) {
+      display: none;
+    }
+
+    :global(.nav__hamburger) {
+      display: flex;
+    }
+
+    :global(.nav__mobile-menu) {
+      display: flex;
+      position: fixed;
+      top: 53px; /* nav bar height */
+      left: 0;
+      right: 0;
+      z-index: calc(var(--z-nav) - 1);
+      background: rgba(250, 250, 247, 0.97);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      flex-direction: column;
+      align-items: center;
+      padding: var(--space-8) var(--space-6);
+      gap: var(--space-6);
+      border-bottom: 1px solid rgba(28, 46, 30, 0.1);
+      overflow: hidden;
+    }
+
+    :global(.nav__mobile-link) {
+      font-family: var(--font-body);
+      font-weight: var(--weight-regular);
+      font-size: var(--text-base);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--color-text);
+    }
+
+    :global(.nav__mobile-link:hover) {
+      color: var(--color-hover);
+    }
+  }
+</style>

@@ -1,0 +1,31 @@
+/* typography.css — Layer 2: Global typographic system. */
+/* Uses variables from tokens.css exclusively. No layout, no color beyond text. */
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--color-text);
+}
+
+h1, .h1 {
+  font-family: var(--font-display);
+  font-weight: var(--weight-light);
+  line-height: var(--leading-tight);
+}
+
+h2, .h2 {
+  font-family: var(--font-display);
+  font-weight: var(--weight-light);
+  line-height: var(--leading-snug);
+}
+
+h3, .h3 {
+  font-family: var(--font-display);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-snug);
+}
+
+p {
+  line-height: var(--leading-normal);
+}

@@ -1,0 +1,166 @@
+---
+import HeroWordmark from './HeroWordmark';
+---
+
+<section class="hero" id="hero">
+  <div class="hero__bg" aria-hidden="true">
+    <img src="/Yogurt/HERO.jpg" alt="" width="1920" height="1080" />
+  </div>
+  <div class="hero__overlay" aria-hidden="true" />
+  <div class="hero__content">
+    <HeroWordmark client:load />
+  </div>
+  <div class="hero__scroll">
+    <span class="hero__scroll-line" aria-hidden="true" />
+    <span class="hero__scroll-label">scroll</span>
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    height: 100vh;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .hero__bg {
+    position: absolute;
+    /* extend 8% beyond top/bottom so GSAP parallax travel never reveals a gap */
+    inset: -8% 0;
+    will-change: transform;
+  }
+
+  .hero__bg img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .hero__overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      rgba(28, 46, 30, 0.35) 0%,
+      rgba(28, 46, 30, 0.62) 100%
+    );
+    pointer-events: none;
+  }
+
+  .hero__content {
+    position: relative;
+    z-index: var(--z-above);
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 var(--space-6);
+  }
+
+  .hero__scroll {
+    position: absolute;
+    bottom: var(--space-8);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: var(--z-above);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    opacity: 0.5;
+  }
+
+  .hero__scroll-line {
+    display: block;
+    width: 1px;
+    height: 40px;
+    background: var(--color-text-light);
+    animation: pulse-down 2s var(--ease-elegant) infinite;
+  }
+
+  .hero__scroll-label {
+    font-family: var(--font-body);
+    font-weight: var(--weight-thin);
+    font-size: 0.625rem;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--color-text-light);
+  }
+
+  /* ── Wordmark lockup ── */
+  :global(.hero-wordmark) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+  }
+
+  /* Line 1: MEROS — Playfair Display 400 */
+  :global(.hero-wordmark__line1) {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: clamp(3.5rem, 12vw, 15rem);
+    letter-spacing: 0.22em;
+    text-indent: 0.22em;
+    text-transform: uppercase;
+    color: var(--color-text-light);
+    display: block;
+    line-height: 1;
+  }
+
+  /* Line 2: EB Garamond italic — classical, editorial */
+  :global(.hero-wordmark__line2) {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+    font-size: clamp(1.25rem, 2.8vw, 2.75rem);
+    letter-spacing: 0.12em;
+    color: var(--color-text-light);
+    opacity: 0.88;
+    display: block;
+    margin-top: var(--space-2);
+  }
+
+  /* Line 3: Jost 300 — clean, precise, modern */
+  :global(.hero-wordmark__line3) {
+    font-family: var(--font-body);
+    font-weight: var(--weight-light);
+    font-size: clamp(0.55rem, 0.85vw, 0.75rem);
+    letter-spacing: 0.55em;
+    text-indent: 0.55em;
+    text-transform: uppercase;
+    color: var(--color-text-light);
+    opacity: 0.8;
+    display: block;
+    margin-top: var(--space-6);
+  }
+
+  @media (max-width: 600px) {
+    :global(.hero-wordmark__line1) {
+      letter-spacing: 0.08em;
+      text-indent: 0.08em;
+    }
+
+    :global(.hero-wordmark__line2) {
+      font-size: clamp(0.9rem, 4.5vw, 1.5rem);
+      letter-spacing: 0.08em;
+    }
+
+    :global(.hero-wordmark__line3) {
+      font-size: clamp(0.45rem, 2vw, 0.6rem);
+      letter-spacing: 0.32em;
+      text-indent: 0.32em;
+    }
+  }
+</style>

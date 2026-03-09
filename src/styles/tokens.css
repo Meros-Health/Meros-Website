@@ -1,0 +1,91 @@
+/* tokens.css — Layer 0. No selectors except :root. Nothing else lives here. */
+:root {
+  /* ─── Colors (raw) ─── */
+  --white:          #FAFAF7;
+  --cream:          #F2EDE6;
+  --forest:         #1C2E1E;
+  --forest-mid:     #2D4A30;
+  --terracotta:     #C96A4A;
+  --warm-grey:      #9A9590;
+
+  /* ─── Colors (semantic aliases) ─── */
+  --color-bg:           var(--white);
+  --color-bg-alt:       var(--cream);
+  --color-bg-dark:      var(--forest);
+  --color-text:         var(--forest);
+  --color-text-muted:   var(--warm-grey);
+  --color-text-light:   var(--white);
+  --color-accent:       var(--terracotta);
+  --color-hover:        var(--forest-mid);
+
+  /* ─── Typography ─── */
+  --font-serif:     'Playfair Display', serif;    /* primary — hero title, section headings */
+  --font-display:   'EB Garamond', serif;          /* secondary — editorial, card names, pull quotes */
+  --font-accent:    'Italiana', serif;              /* decorative accent, kept for nav feel */
+  --font-body:      'Jost', sans-serif;            /* tertiary — all UI, captions, body copy */
+
+  /* ─── Font Sizes ─── */
+  --text-xs:        0.6875rem;   /* 11px */
+  --text-sm:        0.8125rem;   /* 13px */
+  --text-base:      1rem;        /* 16px */
+  --text-lg:        1.75rem;     /* 28px */
+  --text-xl:        2.375rem;    /* 38px */
+  --text-2xl:       3.25rem;     /* 52px */
+  --text-3xl:       4.5rem;      /* 72px */
+  --text-4xl:       6rem;       /* 96px */
+  --text-hero:      10rem;       /* 160px */
+  --text-watermark: 17.5rem;     /* 280px */
+
+  /* ─── Font Weights ─── */
+  --weight-thin:    200;
+  --weight-light:   300;
+  --weight-regular: 400;
+  --weight-medium:  500;
+  --weight-semi:    600;
+
+  /* ─── Letter Spacing ─── */
+  --tracking-tight:   0.05em;
+  --tracking-normal:  0.1em;
+  --tracking-wide:    0.15em;
+  --tracking-wider:   0.25em;
+  --tracking-widest:  0.4em;
+  --tracking-ultra:   0.5em;
+
+  /* ─── Line Heights ─── */
+  --leading-tight:   1.1;
+  --leading-snug:    1.3;
+  --leading-normal:  1.6;
+  --leading-loose:   1.8;
+
+  /* ─── Spacing Scale ─── */
+  --space-1:    0.25rem;
+  --space-2:    0.5rem;
+  --space-4:    1rem;
+  --space-6:    1.5rem;
+  --space-8:    2rem;
+  --space-12:   3rem;
+  --space-16:   4rem;
+  --space-24:   6rem;
+  --space-32:   8rem;
+  --space-48:   12rem;
+
+  /* ─── Transitions ─── */
+  --ease-elegant:     cubic-bezier(0.25, 0.1, 0.25, 1);
+  --ease-out:         cubic-bezier(0.0, 0.0, 0.2, 1);
+  --transition-fast:  0.2s var(--ease-elegant);
+  --transition-base:  0.4s var(--ease-elegant);
+  --transition-slow:  0.9s var(--ease-elegant);
+
+  /* ─── Z-Index Scale ─── */
+  --z-base:     0;
+  --z-above:    10;
+  --z-overlay:  100;
+  --z-nav:      500;
+  --z-grain:    9999;
+
+  /* ─── Borders ─── */
+  --radius-sm:      2px;
+  --radius-md:      4px;
+  --border-accent:  1px solid var(--terracotta);
+  --border-subtle:  1px solid rgba(28, 46, 30, 0.12);
+}

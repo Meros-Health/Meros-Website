@@ -1,0 +1,100 @@
+---
+---
+
+<section class="about" id="about">
+  <div class="about__blob" data-parallax-blob aria-hidden="true"></div>
+  <div class="about__grid">
+    <div class="about__image-wrap" data-reveal="left">
+      <img src="/Yogurt/Hands4.jpg" alt="Woman holding smoothie." width="800" height="1000" class="about__image" />
+    </div>
+    <div class="about__content">
+      <div class="about__quote-wrap" data-reveal="clip">
+        <blockquote class="about__quote">Our Story</blockquote>
+      </div>
+      <p class="about__body" data-reveal="up" data-reveal-delay="0.2">
+        Meros was born from a simple belief — that what you consume should be as intentional as how you live. 
+        Located in the heart of Yaletown, we craft every smoothie and yoghurt bowl from real ingredients, chosen with purpose. 
+        No shortcuts. No compromise. Just food that's good for you, made beautifully.
+      </p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .about {
+    position: relative;
+    z-index: 4;
+    background: var(--color-bg);
+    padding: var(--space-24) var(--space-6);
+    margin-top: -20px;
+    box-shadow: 0 -10px 36px rgba(0, 0, 0, 0.13);
+  }
+
+  .about__blob {
+    position: absolute;
+    inset: -20% 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+      radial-gradient(ellipse 50% 45% at 85% 35%, rgba(201, 106, 74, 0.06) 0%, transparent 70%),
+      radial-gradient(ellipse 35% 30% at 20% 70%, rgba(28, 46, 30, 0.04) 0%, transparent 70%);
+    will-change: transform;
+  }
+
+  .about__grid {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-16);
+    align-items: center;
+  }
+
+  @media (max-width: 768px) {
+    .about__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .about__image-wrap {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .about__image {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
+  }
+
+  .about__content {
+    padding: var(--space-8) 0;
+  }
+
+  .about__quote-wrap {
+    margin-bottom: var(--space-8);
+    padding-top: var(--space-6);
+    border-top: var(--border-accent);
+  }
+
+  .about__quote {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-style: italic;
+    font-size: var(--text-2xl);
+    color: var(--color-text);
+    line-height: var(--leading-snug);
+  }
+
+  .about__body {
+    font-family: var(--font-body);
+    font-weight: var(--weight-light);
+    font-size: var(--text-base);
+    line-height: 1.8;
+    color: var(--color-text);
+    opacity: 0.8;
+  }
+</style>

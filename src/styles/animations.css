@@ -1,0 +1,21 @@
+/* animations.css — Layer 4: CSS-only animation definitions. */
+/* @keyframes, base transition utilities. No component-specific selectors. */
+
+@keyframes pulse-down {
+  0%, 100% {
+    opacity: 0.5;
+    transform: translateY(0) scaleY(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(4px) scaleY(1.1);
+  }
+}
+
+.transition-base {
+  transition: opacity var(--transition-base), transform var(--transition-base);
+}
+
+.transition-fast {
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+}

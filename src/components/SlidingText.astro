@@ -1,0 +1,411 @@
+---
+---
+
+<section class="smoothie-reveal" id="smoothie-reveal">
+  <div class="sr__sticky">
+
+    <!-- Layer 0: Background photo gallery — scrolls right→left on scroll -->
+    <div class="sr__bg-gallery" aria-hidden="true">
+      <div class="sr__bg-row sr__bg-row--top">
+        <img src="/Yogurt/Bowl5a.jpg" alt="" draggable="false" />
+        <img src="/Smoothies-Menu/Smoothie4b.jpg" alt="" draggable="false" />
+        <img src="/Yogurt/Bowl3a.jpg" alt="" draggable="false" />
+        <img src="/Yogurt/Bowl5a.jpg" alt="" draggable="false" />
+        <img src="/Smoothies-Menu/Smoothie4b.jpg" alt="" draggable="false" />
+        <img src="/Yogurt/Bowl3a.jpg" alt="" draggable="false" />
+        <img src="/Yogurt/Bowl5a.jpg" alt="" draggable="false" />
+        <img src="/Smoothies-Menu/Smoothie4b.jpg" alt="" draggable="false" />
+        <img src="/Yogurt/Bowl3a.jpg" alt="" draggable="false" />
+      </div>
+      <div class="sr__bg-row sr__bg-row--bottom">
+        <img src="/Smoothies-Menu/Smoothie3a.jpg" alt="" draggable="false" />
+        <img src="/Yogurt/Bowl6a.jpg" alt="" draggable="false" />
+        <img src="/Smoothies-Menu/Smoothie2b.jpg" alt="" draggable="false" />
+        <img src="/Smoothies-Menu/Smoothie3a.jpg" alt="" draggable="false" />
+        <img src="/Yogurt/Bowl6a.jpg" alt="" draggable="false" />
+        <img src="/Smoothies-Menu/Smoothie2b.jpg" alt="" draggable="false" />
+        <img src="/Smoothies-Menu/Smoothie3a.jpg" alt="" draggable="false" />
+        <img src="/Yogurt/Bowl6a.jpg" alt="" draggable="false" />
+        <img src="/Smoothies-Menu/Smoothie2b.jpg" alt="" draggable="false" />
+      </div>
+      <div class="sr__bg-overlay"></div>
+    </div>
+
+    <!-- Layer 2: Text — sits behind the smoothie -->
+    <div class="sr__text-wrap">
+      <p class="sr__text">Food that moves with you.</p>
+    </div>
+
+    <!-- Layer 1: Activity rings — behind text and smoothie -->
+    <div class="sr__ring-wrap" aria-hidden="true">
+      <svg
+        class="sr__ring-svg"
+        viewBox="0 0 280 280"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <!-- Inner ring — cyan, r=62 -->
+        <g class="sr__ring--cyan">
+          <circle class="sr__ring-fill"  cx="140" cy="140" r="62" />
+          <circle class="sr__ring-track" cx="140" cy="140" r="62" />
+        </g>
+
+        <!-- Middle ring — green, r=90 -->
+        <g class="sr__ring--green">
+          <circle class="sr__ring-fill"  cx="140" cy="140" r="90" />
+          <circle class="sr__ring-track" cx="140" cy="140" r="90" />
+        </g>
+
+        <!-- Outer ring — red, r=118 -->
+        <g class="sr__ring--red">
+          <circle class="sr__ring-fill"  cx="140" cy="140" r="118" />
+          <circle class="sr__ring-track" cx="140" cy="140" r="118" />
+        </g>
+      </svg>
+    </div>
+
+    <!-- Layer 4: Arrow — slides left→right to reveal text -->
+    <div class="sr__arrow-wrap" aria-hidden="true">
+      <svg
+        class="sr__arrow-svg"
+        viewBox="0 0 140 240"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <defs>
+          <filter id="arrow-glow" x="-60%" y="-30%" width="220%" height="160%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <path
+          d="M 14 16 L 86 120 L 14 224"
+          stroke="white"
+          stroke-width="22"
+          stroke-linecap="butt"
+          stroke-linejoin="miter"
+          filter="url(#arrow-glow)"
+        />
+        <path
+          d="M 52 16 L 124 120 L 52 224"
+          stroke="white"
+          stroke-width="22"
+          stroke-linecap="butt"
+          stroke-linejoin="miter"
+          filter="url(#arrow-glow)"
+        />
+      </svg>
+    </div>
+
+  </div>
+</section>
+
+<script>
+  (function () {
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // TUNING KNOBS
+    // Adjust these values to align the chevron reveal on each breakpoint.
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    // ── Arrow travel range (vw units) ─────────────────────────────────────────
+    // The arrow centre moves from `startVw` to `startVw + rangeVw` as the user
+    // scrolls through the section.  Keep |startVw| large enough that the arrow
+    // begins fully off-screen left (rule: |startVw| > 50 + half-arrow-width-in-vw).
+    const DESKTOP_START_VW = -30;   // vw at scroll progress = 0
+    const DESKTOP_RANGE_VW =  60;   // total vw distance travelled
+
+    const MOBILE_START_VW  = -65;   // ↑ increase magnitude to start further left
+    const MOBILE_RANGE_VW  = 130;   // ↑ increase to keep arrow off-screen at end
+
+    // ── Reveal fraction ───────────────────────────────────────────────────────
+    // Controls WHERE along the arrow's width the text curtain lifts.
+    // The SVG viewBox is 140 wide; the two chevron tips sit at x = 86 and x = 124.
+    //
+    //   0.00  → curtain lifts at the arrow's left edge  (text appears very early)
+    //   0.61  → curtain lifts at the first chevron tip  (x = 86 / 140)
+    //   0.75  → curtain lifts at the visual midpoint of both chevrons
+    //   0.89  → curtain lifts at the leading chevron tip (x = 124 / 140)
+    //   1.00  → curtain lifts at the arrow's right edge (text appears very late)
+    //
+    // Increase → text appears later / follows the leading tip more closely.
+    // Decrease → text appears earlier / leads the arrow.
+    const DESKTOP_REVEAL_FRAC = 0.50;  // tune if text leads/lags on desktop
+    const MOBILE_REVEAL_FRAC  = 0.42;  // tune if text leads/lags on mobile ← start here
+
+    // ── Arrow height padding (px above + below the text block) ────────────────
+    // The JS measures the rendered text height and adds this many px so the
+    // chevron is always visibly taller than the text.  Increase if the chevron
+    // looks clipped; decrease if it feels too tall.
+    const ARROW_PAD_PX = 48;
+
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    const section = document.querySelector<HTMLElement>('.smoothie-reveal');
+    if (!section) return;
+
+    const arrowWrap = section.querySelector<HTMLElement>('.sr__arrow-wrap');
+    const textWrap  = section.querySelector<HTMLElement>('.sr__text-wrap');
+    if (!arrowWrap || !textWrap) return;
+
+    const aw: HTMLElement = arrowWrap;
+    const tw: HTMLElement = textWrap;
+    const s:  HTMLElement = section;
+
+    const bgRowTop    = section.querySelector<HTMLElement>('.sr__bg-row--top');
+    const bgRowBottom = section.querySelector<HTMLElement>('.sr__bg-row--bottom');
+
+    // ── Ring setup ─────────────────────────────────────────────────────────────
+    const ringData = [
+      { r: 118, start: 0,    fill: section.querySelector<SVGCircleElement>('.sr__ring--red .sr__ring-fill') },
+      { r: 90,  start: 0.08, fill: section.querySelector<SVGCircleElement>('.sr__ring--green .sr__ring-fill') },
+      { r: 62,  start: 0.18, fill: section.querySelector<SVGCircleElement>('.sr__ring--cyan .sr__ring-fill') },
+    ].map(ring => ({ ...ring, circ: 2 * Math.PI * ring.r }));
+
+    const INIT_P = 0.01;
+    ringData.forEach(({ fill, circ }) => {
+      if (fill) {
+        fill.style.strokeDasharray  = String(circ);
+        fill.style.strokeDashoffset = String(circ * (1 - INIT_P));
+      }
+    });
+
+    function updateRings(p: number) {
+      ringData.forEach(({ fill, start, circ }) => {
+        const ringP = Math.max(INIT_P, Math.max(0, Math.min(1, (p - start) / (1 - start))));
+        if (fill) fill.style.strokeDashoffset = String(circ * (1 - ringP));
+      });
+    }
+
+    // ── Arrow height — always taller than the text block ──────────────────────
+    function setArrowHeight() {
+      const textEl   = s.querySelector<HTMLElement>('.sr__text');
+      const arrowSvg = aw.querySelector<HTMLElement>('.sr__arrow-svg');
+      if (!textEl || !arrowSvg) return;
+      const textH = textEl.getBoundingClientRect().height;
+      const minH  = window.innerHeight * 0.15;
+      arrowSvg.style.height = `${Math.max(textH + ARROW_PAD_PX, minH)}px`;
+    }
+
+    // ── Scroll progress ────────────────────────────────────────────────────────
+    function getProgress(): number {
+      const rect       = s.getBoundingClientRect();
+      const scrollable = s.offsetHeight - window.innerHeight;
+      if (scrollable <= 0) return 0;
+      return Math.max(0, Math.min(1, -rect.top / scrollable));
+    }
+
+    // ── Unified scroll-driven update (all screen sizes) ────────────────────────
+    function update() {
+      const p        = getProgress();
+      const isMobile = window.innerWidth <= 768;
+
+      const startVw    = isMobile ? MOBILE_START_VW    : DESKTOP_START_VW;
+      const rangeVw    = isMobile ? MOBILE_RANGE_VW    : DESKTOP_RANGE_VW;
+      const revealFrac = isMobile ? MOBILE_REVEAL_FRAC : DESKTOP_REVEAL_FRAC;
+
+      const arrowX = startVw + rangeVw * p;
+      aw.style.transform = `translate(calc(-50% + ${arrowX}vw), -50%)`;
+      aw.style.opacity   = String(Math.min(1, 0.15 + p * 17));
+
+      // revealX = point in viewport coords where the curtain lifts.
+      // revealFrac maps 0→left-edge of arrow, 1→right-edge of arrow.
+      const arrowRect = aw.getBoundingClientRect();
+      const revealX   = arrowRect.left + arrowRect.width * revealFrac;
+      const clipRight = Math.max(0, window.innerWidth - revealX);
+      tw.style.clipPath = `inset(0 ${clipRight}px 0 0)`;
+
+      if (bgRowTop)    bgRowTop.style.transform    = `translateX(${-5 - p * 35}vw)`;
+      if (bgRowBottom) bgRowBottom.style.transform = `translateX(${-p * 22}vw)`;
+
+      updateRings(p);
+    }
+
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', () => { setArrowHeight(); update(); }, { passive: true });
+
+    if (document.fonts?.ready) {
+      document.fonts.ready.then(() => { setArrowHeight(); update(); });
+    } else {
+      setArrowHeight();
+      update();
+    }
+  })();
+</script>
+
+<style>
+  /* ── Section container ─────────────────────────────────────────────────────── */
+  .smoothie-reveal {
+    position: relative;
+    z-index: 3;
+    height: 300vh;
+    margin-top: -20px;
+    box-shadow: 0 -12px 42px rgba(0, 0, 0, 0.1);
+  }
+
+  /* ── Sticky viewport ───────────────────────────────────────────────────────── */
+  .sr__sticky {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    width: 100%;
+    overflow: hidden;
+    background: #0d0d0d;
+  }
+
+  /* ── Layer 0: Background gallery ───────────────────────────────────────────── */
+  .sr__bg-gallery {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: #000000;
+    border-top: 3px solid #000000;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .sr__bg-row {
+    display: flex;
+    flex: 1;
+    gap: 6px;
+    will-change: transform;
+  }
+
+  .sr__bg-row img {
+    flex-shrink: 0;
+    height: 100%;
+    width: auto;
+    object-fit: cover;
+    user-select: none;
+    -webkit-user-drag: none;
+    display: block;
+  }
+
+  .sr__bg-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+  }
+
+  /* ── Layer 2: Text ─────────────────────────────────────────────────────────── */
+  .sr__text-wrap {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    clip-path: inset(0 100% 0 0);
+    will-change: clip-path;
+  }
+
+  .sr__text {
+    font-family: var(--font-body);
+    font-weight: var(--weight-medium);
+    font-size: clamp(1rem, 2.4vw, 2.4rem);
+    line-height: 1;
+    letter-spacing: 0.45em;
+    text-indent: 0.45em;
+    text-transform: uppercase;
+    text-align: center;
+    color: #ffffff;
+    white-space: nowrap;
+    margin: 0;
+  }
+
+  /* ── Layer 1: Activity rings ───────────────────────────────────────────────── */
+  .sr__ring-wrap {
+    position: absolute;
+    z-index: 1;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 340px;
+    height: 340px;
+    pointer-events: none;
+  }
+
+  /* Rotate so rings draw clockwise from 12 o'clock */
+  .sr__ring-svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+    overflow: visible;
+  }
+
+  /* ── Ring color tokens — one per ring ─────────────────────────────────────── */
+  .sr__ring--red   { --ring-color: #9b14c8; }
+  .sr__ring--green { --ring-color: #b940ff; }
+  .sr__ring--cyan  { --ring-color: #de85ff; }
+
+  /* ── Fill arcs — solid flat color, thick ──────────────────────────────────── */
+  .sr__ring-fill {
+    fill: none;
+    stroke: var(--ring-color);
+    stroke-width: 24;
+    stroke-linecap: round;
+    will-change: stroke-dashoffset;
+  }
+
+  /* ── Track circles — same width, low opacity, painted over fill tails ─────── */
+  .sr__ring-track {
+    fill: none;
+    stroke: var(--ring-color);
+    stroke-width: 24;
+    stroke-linecap: butt;
+    opacity: 0.15;
+  }
+
+
+  /* ── Layer 4: Arrow ────────────────────────────────────────────────────────── */
+  .sr__arrow-wrap {
+    position: absolute;
+    z-index: 3;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    will-change: transform, opacity;
+    pointer-events: none;
+    opacity: 0.25;
+  }
+
+  .sr__arrow-svg {
+    display: block;
+    height: 22vh;
+    width: auto;
+    overflow: visible;
+  }
+
+  /* ── Mobile overrides ──────────────────────────────────────────────────────── */
+  @media (max-width: 768px) {
+    /* Use small viewport height so the sticky panel never gets clipped by
+       mobile browser chrome */
+    .sr__sticky {
+      height: 100svh;
+    }
+
+    /* Let text wrap and add side-padding so it doesn't kiss the edges */
+    .sr__text-wrap {
+      padding: 0 var(--space-8);
+    }
+
+    .sr__text {
+      font-size: clamp(1.4rem, 7vw, 2.5rem);
+      line-height: 1.25;
+      white-space: normal;
+      letter-spacing: 0.15em;
+      text-indent: 0;
+      text-shadow: 0 2px 16px rgba(0, 0, 0, 0.7);
+    }
+
+    /* Rings slightly smaller so they don't overflow narrow viewports */
+    .sr__ring-wrap {
+      width: min(260px, 72vw);
+      height: min(260px, 72vw);
+    }
+  }
+</style>

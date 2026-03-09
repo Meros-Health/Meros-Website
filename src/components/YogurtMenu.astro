@@ -1,0 +1,188 @@
+---
+import YogurtBowlName from './YogurtBowlName';
+
+const bowls = [
+  { name: 'The Canvas',   image: '/Yogurt/Bowl1.jpg',  descriptor: 'A blank slate to create your own masterpiece.' },
+  { name: 'Avocado Ritual',   image: '/Yogurt/Bowl2a.jpg',  descriptor: 'Açaí base, banana, hemp seeds, cacao nibs.' },
+  { name: 'Golden Bloom',  image: '/Yogurt/Bowl3a.jpg',  descriptor: 'Mango, turmeric coconut, bee pollen.' },
+  { name: 'Forest Floor',  image: '/Yogurt/Bowl4a.jpg',  descriptor: 'Blueberry, almond butter, dark cacao.' },
+  { name: 'Morning Calm',  image: '/Yogurt/Bowl5a.jpg',  descriptor: 'Strawberry, chia seeds, vanilla cream.' },
+  { name: 'The Harvest',   image: '/Yogurt/Bowl6a.jpg',  descriptor: 'Mixed berries, maple granola, coconut flakes.' },
+];
+---
+
+<section class="yogurt" id="yogurt-menu">
+  <header class="yogurt__header">
+    <p class="yogurt__eyebrow" data-reveal="fade">— Yoghurt Bowls —</p>
+    <h2 class="yogurt__title" data-reveal="clip">Crafted to Nourish</h2>
+    <p class="yogurt__subtitle" data-reveal="up" data-reveal-delay="0.15">Six bowls. Each one packed with your nutrients.</p>
+  </header>
+
+  <div class="yogurt__grid">
+    {bowls.map((bowl, i) => (
+      <article class="yogurt__card" data-yogurt-card>
+        <div class="yogurt__card-image" data-yogurt-image>
+          <img src={bowl.image} alt={bowl.name} width="600" height="600" loading="lazy" />
+        </div>
+        <div class="yogurt__card-content">
+          <YogurtBowlName client:visible name={bowl.name} delay={i * 0.06} />
+          <p class="yogurt__card-descriptor">{bowl.descriptor}</p>
+        </div>
+      </article>
+    ))}
+  </div>
+</section>
+
+<script>
+  import gsap from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  function initYogurtReveal() {
+    const images = document.querySelectorAll('[data-yogurt-image]');
+    if (!images.length) return;
+
+    images.forEach((img, i) => {
+      gsap.set(img, { opacity: 0 });
+      ScrollTrigger.create({
+        trigger: img,
+        start: 'top 88%',
+        once: true,
+        onEnter: () => {
+          gsap.to(img, {
+            opacity: 1,
+            duration: 1.2,
+            delay: (i % 3) * 0.12,
+            ease: 'power2.out',
+          });
+        },
+      });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initYogurtReveal);
+  } else {
+    initYogurtReveal();
+  }
+</script>
+
+<style>
+  .yogurt {
+    position: relative;
+    z-index: 5;
+    background: var(--color-bg);
+    padding: var(--space-24) var(--space-6);
+    margin-top: -20px;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.1);
+  }
+
+  .yogurt__header {
+    text-align: center;
+    max-width: 640px;
+    margin: 0 auto var(--space-16);
+  }
+
+  .yogurt__eyebrow {
+    font-family: var(--font-body);
+    font-weight: var(--weight-thin);
+    font-size: var(--text-sm);
+    letter-spacing: var(--tracking-widest);
+    text-transform: uppercase;
+    color: var(--color-accent);
+    margin-bottom: var(--space-4);
+  }
+
+  .yogurt__title {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-style: italic;
+    font-size: var(--text-4xl);
+    color: var(--color-text);
+    margin-bottom: var(--space-4);
+    line-height: var(--leading-tight);
+  }
+
+  .yogurt__subtitle {
+    font-family: var(--font-body);
+    font-weight: var(--weight-thin);
+    font-size: var(--text-base);
+    letter-spacing: 0.18em;
+    color: var(--color-text-muted);
+  }
+
+  .yogurt__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-8);
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  @media (max-width: 900px) {
+    .yogurt__grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 560px) {
+    .yogurt__grid {
+      grid-template-columns: 1fr;
+    }
+
+    .yogurt__title {
+      font-size: var(--text-2xl);
+    }
+  }
+
+  .yogurt__card {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .yogurt__card-image {
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-4);
+  }
+
+  .yogurt__card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.6s var(--ease-elegant);
+  }
+
+  .yogurt__card:hover .yogurt__card-image img {
+    transform: scale(1.03);
+  }
+
+  .yogurt__card-content {
+    padding: 0 var(--space-1);
+  }
+
+  /* Scoped styles applied to the framer-motion <h3> via :global() */
+  :global(.yogurt__card-name) {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+    font-size: var(--text-lg);
+    color: var(--color-text);
+    margin-bottom: var(--space-2);
+    padding-bottom: var(--space-2);
+    border-bottom: var(--border-accent);
+    line-height: var(--leading-snug);
+  }
+
+  .yogurt__card-descriptor {
+    font-family: var(--font-body);
+    font-weight: var(--weight-light);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    line-height: var(--leading-normal);
+    margin-top: var(--space-2);
+  }
+</style>
