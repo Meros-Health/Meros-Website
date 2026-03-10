@@ -32,6 +32,10 @@ Thumbs.db
 
 # Claude
 .claude/
+CLAUDE.md
 
 # Fonts 
 /public/fonts/
+
+# Documents
+documents/
