@@ -1,11 +1,9 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Nav from '../components/Nav.astro';
 import BowlBuilder from '../components/BowlBuilder/BowlBuilder';
 ---
 
 <Layout title="Bowl Builder — MEROS">
-  <Nav />
   <main class="bowl-builder-page">
     <BowlBuilder client:load />
   </main>
@@ -14,7 +12,7 @@ import BowlBuilder from '../components/BowlBuilder/BowlBuilder';
 <style>
   .bowl-builder-page {
     min-height: 100vh;
-    padding-top: 6rem;
+    padding-top: 2rem;
     background-color: var(--color-bg);
   }
 </style>

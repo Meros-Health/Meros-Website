@@ -52,7 +52,7 @@ export default function HeroWordmark() {
         animate={{ opacity: 1 }}
         transition={{ duration: 1.4, ease, delay: 0.85 }}
       >
-        Smoothie and Yoghurt Bar
+        Smoothie and Yogurt Bar
       </motion.div>
 
       {/* Line 3: Tagline — Jost 200 */}
