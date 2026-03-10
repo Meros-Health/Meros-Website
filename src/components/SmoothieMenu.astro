@@ -38,25 +38,18 @@ const smoothies = [
 
   gsap.registerPlugin(ScrollTrigger);
 
-  function buildScrollTrigger(track: HTMLElement, cards: NodeListOf<Element>, edgePad: number, scrubValue: number) {
+  function buildScrollTrigger(track: HTMLElement, cards: NodeListOf<Element>, edgePad: number, scrubValue: number, scrollMultiplier: number) {
     const navHeight = (document.querySelector('.nav') as HTMLElement)?.offsetHeight ?? 56;
-    
-    // Calculate scroll distance proportionally to content width vs viewport
-    const getScrollDistance = () => {
-      const contentWidth = track.scrollWidth;
-      const viewportWidth = window.innerWidth;
-      // How many "screens" worth of content we have
-      const screensOfContent = contentWidth / viewportWidth;
-      // Scale scroll distance proportionally - more content = more scroll needed
-      return Math.max(viewportWidth * screensOfContent * 0.8, viewportWidth);
-    };
-
     ScrollTrigger.create({
       trigger: '.menu',
       start: `top top+=${navHeight}`,
-      end: () => `+=${getScrollDistance()}`,
+      end: () => {
+        const w = track.scrollWidth;
+        // Use scroll multiplier to control how much vertical scroll is needed
+        return `+=${Math.max(w * scrollMultiplier, 1500)}`;
+      },
       pin: '.menu',
-      scrub: scrubValue,
+      scrub: scrubValue, // Higher value = smoother/slower scrolling
       invalidateOnRefresh: true,
       onUpdate: (self) => {
         const progress = self.progress;
@@ -68,7 +61,7 @@ const smoothies = [
           const center = rect.left + rect.width / 2;
           const viewportCenter = window.innerWidth / 2;
           const distance = Math.abs(center - viewportCenter);
-          const scale = Math.max(0.96, 1 - (distance / window.innerWidth) * 0.04);
+          const scale = Math.max(0.95, 1 - (distance / window.innerWidth) * 0.05);
           gsap.set(card, { scale });
         });
       },
@@ -81,19 +74,19 @@ const smoothies = [
     if (!track || !cards.length) return;
 
     ScrollTrigger.matchMedia({
-      // Desktop: smooth scrub
+      // Desktop: normal scrub, standard scroll distance
       '(min-width: 1025px)': function () {
-        buildScrollTrigger(track, cards, 48, 1.2);
+        buildScrollTrigger(track, cards, 48, 1, 1);
       },
       
-      // Tablet: slightly slower scrub for more control
+      // Tablet: slightly slower scrub
       '(min-width: 769px) and (max-width: 1024px)': function () {
-        buildScrollTrigger(track, cards, 32, 1.5);
+        buildScrollTrigger(track, cards, 32, 1.5, 1.2);
       },
 
-      // Mobile: slower scrub for fine control on touch
+      // Mobile: much slower scrub and longer scroll distance for more control
       '(max-width: 768px)': function () {
-        buildScrollTrigger(track, cards, 24, 2);
+        buildScrollTrigger(track, cards, 24, 2.5, 1.8);
       },
     });
   }
@@ -110,15 +103,11 @@ const smoothies = [
     position: relative;
     z-index: 4;
     background: var(--color-bg-dark);
+    padding-top: var(--space-16);
+    padding-bottom: var(--space-16);
     margin-top: -20px;
-    /* Full viewport height */
-    height: 100svh;
     min-height: 100svh;
-    max-height: 100svh;
-    display: flex;
-    flex-direction: column;
     box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.45), 0 -1px 0 rgba(0, 0, 0, 0.12);
-    overflow: hidden;
   }
 
   .menu__blob {
@@ -136,8 +125,9 @@ const smoothies = [
     position: relative;
     z-index: 1;
     text-align: center;
-    padding: var(--space-12) var(--space-6) var(--space-6);
-    flex-shrink: 0;
+    margin-bottom: var(--space-8);
+    padding-left: var(--space-6);
+    padding-right: var(--space-6);
   }
 
   .menu__title {
@@ -159,41 +149,31 @@ const smoothies = [
   .menu__pin {
     position: relative;
     z-index: 1;
-    flex: 1;
-    display: flex;
-    align-items: center;
+    width: 100%;
     overflow: hidden;
-    padding-bottom: var(--space-8);
   }
 
   .menu__track {
     display: flex;
-    gap: 24px; /* Consistent gap across all screen sizes */
+    gap: var(--space-8);
+    padding-top: var(--space-6);
     padding-left: var(--space-6);
     padding-right: var(--space-6);
     will-change: transform;
-    align-items: stretch;
   }
 
   .menu__card {
     flex-shrink: 0;
-    /* Card width scales with viewport, maintaining proportion */
-    width: clamp(220px, 22vw, 320px);
-    /* Card height fills available space minus padding */
-    height: calc(100svh - 220px);
-    max-height: 600px;
+    width: clamp(240px, 30vw, 340px);
     will-change: transform;
     background: var(--color-bg);
     border-radius: var(--radius-md);
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(28, 46, 30, 0.06);
-    display: flex;
-    flex-direction: column;
   }
 
   .menu__card-image {
-    flex: 1;
-    min-height: 0;
+    aspect-ratio: 2 / 3;
     overflow: hidden;
   }
 
@@ -204,91 +184,73 @@ const smoothies = [
   }
 
   .menu__card-content {
-    padding: var(--space-4);
-    flex-shrink: 0;
+    padding: var(--space-6);
   }
 
   .menu__card-name {
     font-family: var(--font-display);
     font-weight: 500;
-    font-size: clamp(1rem, 2vw, 1.5rem);
+    font-size: var(--text-xl);
     color: var(--color-text);
-    margin-bottom: var(--space-1);
-    padding-bottom: var(--space-1);
+    margin-bottom: var(--space-2);
+    padding-bottom: var(--space-2);
     border-bottom: var(--border-accent);
   }
 
   .menu__card-descriptor {
     font-family: var(--font-body);
     font-weight: var(--weight-light);
-    font-size: clamp(0.7rem, 1.2vw, 0.875rem);
+    font-size: var(--text-sm);
     color: var(--color-text-muted);
   }
 
-  /* Tablet */
-  @media (max-width: 1024px) {
-    .menu__card {
-      width: clamp(200px, 28vw, 280px);
-      height: calc(100svh - 200px);
-      max-height: 520px;
-    }
-
-    .menu__header {
-      padding: var(--space-8) var(--space-6) var(--space-4);
-    }
-  }
-
-  /* Mobile */
   @media (max-width: 768px) {
-    .menu__header {
-      padding: var(--space-8) var(--space-4) var(--space-4);
-    }
-
-    .menu__track {
-      gap: 24px; /* Same gap as desktop */
-      padding-left: var(--space-4);
-      padding-right: var(--space-4);
-    }
-
-    .menu__card {
-      width: clamp(180px, 45vw, 260px);
-      height: calc(100svh - 180px);
-      max-height: 480px;
-    }
-
-    .menu__card-content {
-      padding: var(--space-3);
-    }
-
-    .menu__title {
-      font-size: clamp(2rem, 10vw, 4rem);
-    }
-
-    .menu__subtitle {
-      font-size: var(--text-sm);
+    .menu {
+      padding-top: var(--space-16);
+      padding-bottom: var(--space-10);
     }
 
     .menu__pin {
-      padding-bottom: var(--space-6);
+      overflow: hidden;
+    }
+
+    .menu__track {
+      flex-wrap: nowrap;
+      gap: var(--space-4);
+      padding: var(--space-4) var(--space-4);
+      padding-bottom: var(--space-8);
+      will-change: transform;
+    }
+
+    .menu__card {
+      width: clamp(200px, 65vw, 280px);
+    }
+
+    .menu__card-content {
+      padding: var(--space-4);
+    }
+
+    .menu__card-name {
+      font-size: var(--text-lg);
+    }
+
+    .menu__card-descriptor {
+      font-size: var(--text-xs);
+    }
+
+    .menu__title {
+      font-size: clamp(2.5rem, 12vw, 5rem);
     }
   }
   
-  /* Small mobile */
   @media (max-width: 480px) {
     .menu__card {
-      width: clamp(160px, 55vw, 220px);
-      height: calc(100svh - 160px);
-      max-height: 420px;
+      width: clamp(180px, 70vw, 240px);
     }
     
     .menu__track {
-      gap: 24px; /* Same gap */
-      padding-left: var(--space-3);
-      padding-right: var(--space-3);
-    }
-
-    .menu__header {
-      padding: var(--space-6) var(--space-3) var(--space-3);
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-3);
     }
   }
 </style>

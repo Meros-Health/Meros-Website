@@ -27,8 +27,6 @@ export default function NavBar() {
 
   return (
     <>
-      {/* Safe area cover for iOS - prevents content showing above nav */}
-      <div className="nav-safe-area" />
       <motion.header
         className="nav"
         style={{
