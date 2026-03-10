@@ -10,6 +10,32 @@ interface OrbitalSelectProps {
   stepLabel: string;
 }
 
+// Responsive orbit radius and card size calculations
+function getResponsiveValues() {
+  if (typeof window === 'undefined') {
+    return { radius: 160, cardWidth: 90, cardHeight: 110, fontSize: 0.7 };
+  }
+  
+  const width = window.innerWidth;
+  
+  if (width <= 480) {
+    // Mobile small - tighter orbit, larger relative cards
+    return { radius: 110, cardWidth: 72, cardHeight: 90, fontSize: 0.6 };
+  } else if (width <= 640) {
+    // Mobile - tighter orbit, larger cards
+    return { radius: 130, cardWidth: 80, cardHeight: 100, fontSize: 0.65 };
+  } else if (width <= 768) {
+    // Tablet small
+    return { radius: 150, cardWidth: 88, cardHeight: 108, fontSize: 0.7 };
+  } else if (width <= 1024) {
+    // Tablet
+    return { radius: 170, cardWidth: 95, cardHeight: 115, fontSize: 0.72 };
+  } else {
+    // Desktop
+    return { radius: 180, cardWidth: 100, cardHeight: 120, fontSize: 0.75 };
+  }
+}
+
 export default function OrbitalSelect({
   ingredients,
   selectedIngredients,
@@ -20,9 +46,21 @@ export default function OrbitalSelect({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [rotationAngle, setRotationAngle] = useState<number>(0);
   const [autoRotate, setAutoRotate] = useState<boolean>(true);
+  const [responsiveValues, setResponsiveValues] = useState(getResponsiveValues);
   const containerRef = useRef<HTMLDivElement>(null);
   const orbitRef = useRef<HTMLDivElement>(null);
   const nodeRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  
+  // Update responsive values on resize
+  useEffect(() => {
+    const handleResize = () => {
+      setResponsiveValues(getResponsiveValues());
+    };
+    
+    handleResize(); // Initial call
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === containerRef.current || e.target === orbitRef.current) {
@@ -76,7 +114,7 @@ export default function OrbitalSelect({
 
   const calculateNodePosition = (index: number, total: number) => {
     const angle = ((index / total) * 360 + rotationAngle) % 360;
-    const radius = 140; // Scaled down for container fit
+    const radius = responsiveValues.radius; // Responsive radius
     const radian = (angle * Math.PI) / 180;
 
     const x = radius * Math.cos(radian);
@@ -135,6 +173,10 @@ export default function OrbitalSelect({
               {/* Node card */}
               <motion.div
                 className={`orbital-node__card ${isSelected ? 'orbital-node__card--selected' : ''} ${isExpanded ? 'orbital-node__card--expanded' : ''}`}
+                style={{
+                  width: responsiveValues.cardWidth,
+                  height: responsiveValues.cardHeight,
+                }}
                 animate={{
                   scale: isExpanded ? 1.15 : 1,
                 }}
@@ -145,7 +187,10 @@ export default function OrbitalSelect({
                   style={{ backgroundImage: `url(${ingredient.image})` }}
                 />
                 <div className="orbital-node__overlay" />
-                <span className="orbital-node__name">{ingredient.name}</span>
+                <span 
+                  className="orbital-node__name"
+                  style={{ fontSize: `${responsiveValues.fontSize}rem` }}
+                >{ingredient.name}</span>
                 {isSelected && (
                   <motion.div
                     className="orbital-node__check"
@@ -221,7 +266,7 @@ export default function OrbitalSelect({
         .orbital-container {
           position: relative;
           width: 100%;
-          height: 420px;
+          height: clamp(380px, 50vw, 500px);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -240,8 +285,8 @@ export default function OrbitalSelect({
         /* Center node */
         .orbital-center {
           position: absolute;
-          width: 80px;
-          height: 80px;
+          width: clamp(60px, 10vw, 80px);
+          height: clamp(60px, 10vw, 80px);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -255,20 +300,20 @@ export default function OrbitalSelect({
         }
 
         .orbital-center__ring--outer {
-          width: 90px;
-          height: 90px;
+          width: clamp(70px, 12vw, 90px);
+          height: clamp(70px, 12vw, 90px);
           animation: pulse-ring 2.5s ease-in-out infinite;
         }
 
         .orbital-center__ring--inner {
-          width: 100px;
-          height: 100px;
+          width: clamp(80px, 14vw, 100px);
+          height: clamp(80px, 14vw, 100px);
           animation: pulse-ring 2.5s ease-in-out infinite 0.5s;
         }
 
         .orbital-center__core {
-          width: 70px;
-          height: 70px;
+          width: clamp(55px, 9vw, 70px);
+          height: clamp(55px, 9vw, 70px);
           border-radius: 50%;
           background: var(--forest);
           border: 1px solid rgba(255, 255, 255, 0.1);
@@ -281,7 +326,7 @@ export default function OrbitalSelect({
 
         .orbital-center__number {
           font-family: var(--font-display);
-          font-size: 1.75rem;
+          font-size: clamp(1.25rem, 3vw, 1.75rem);
           font-weight: 300;
           color: var(--white);
           line-height: 1;
@@ -289,20 +334,21 @@ export default function OrbitalSelect({
 
         .orbital-center__label {
           font-family: var(--font-body);
-          font-size: 0.5rem;
+          font-size: clamp(0.4rem, 1vw, 0.5rem);
           color: rgba(250, 250, 247, 0.6);
           text-transform: uppercase;
           letter-spacing: 0.15em;
           margin-top: 2px;
         }
 
-        /* Orbit ring */
+        /* Orbit ring - responsive to match radius */
         .orbital-ring {
           position: absolute;
-          width: 280px;
-          height: 280px;
+          width: ${responsiveValues.radius * 2}px;
+          height: ${responsiveValues.radius * 2}px;
           border-radius: 50%;
           border: 1px dashed rgba(28, 46, 30, 0.12);
+          transition: width 0.3s ease, height 0.3s ease;
         }
 
         /* Nodes */
@@ -315,12 +361,10 @@ export default function OrbitalSelect({
 
         .orbital-node__card {
           position: relative;
-          width: 64px;
-          height: 80px;
           border-radius: 12px;
           overflow: hidden;
           border: 2px solid transparent;
-          transition: border-color 0.3s ease, box-shadow 0.3s ease;
+          transition: border-color 0.3s ease, box-shadow 0.3s ease, width 0.3s ease, height 0.3s ease;
         }
 
         .orbital-node__card--selected {
@@ -352,25 +396,27 @@ export default function OrbitalSelect({
 
         .orbital-node__name {
           position: absolute;
-          bottom: 6px;
-          left: 4px;
-          right: 4px;
+          bottom: 8px;
+          left: 6px;
+          right: 6px;
           font-family: var(--font-body);
-          font-size: 0.6rem;
           font-weight: 500;
           color: var(--white);
           text-transform: uppercase;
-          letter-spacing: 0.08em;
+          letter-spacing: 0.06em;
           text-align: center;
           line-height: 1.2;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+          hyphens: auto;
         }
 
         .orbital-node__check {
           position: absolute;
-          top: 4px;
-          right: 4px;
-          width: 20px;
-          height: 20px;
+          top: 6px;
+          right: 6px;
+          width: clamp(18px, 3vw, 24px);
+          height: clamp(18px, 3vw, 24px);
           border-radius: 50%;
           background: var(--terracotta);
           display: flex;
@@ -382,16 +428,16 @@ export default function OrbitalSelect({
         /* Expanded card */
         .orbital-card {
           position: absolute;
-          top: 90px;
+          top: calc(100% + 10px);
           left: 50%;
           transform: translateX(-50%);
-          width: 200px;
+          width: clamp(180px, 30vw, 220px);
           background: rgba(28, 46, 30, 0.95);
           backdrop-filter: blur(16px);
           -webkit-backdrop-filter: blur(16px);
           border: 1px solid rgba(255, 255, 255, 0.15);
           border-radius: 12px;
-          padding: 16px;
+          padding: clamp(12px, 2vw, 16px);
           box-shadow: 0 16px 48px rgba(28, 46, 30, 0.4);
         }
 
@@ -414,7 +460,7 @@ export default function OrbitalSelect({
 
         .orbital-card__title {
           font-family: var(--font-display);
-          font-size: 1rem;
+          font-size: clamp(0.875rem, 2vw, 1rem);
           font-weight: 400;
           color: var(--white);
           margin: 0;
@@ -422,7 +468,7 @@ export default function OrbitalSelect({
 
         .orbital-card__calories {
           font-family: var(--font-body);
-          font-size: 0.7rem;
+          font-size: clamp(0.6rem, 1.5vw, 0.7rem);
           color: rgba(250, 250, 247, 0.6);
           letter-spacing: 0.05em;
         }
@@ -434,7 +480,7 @@ export default function OrbitalSelect({
           border: 1px solid rgba(201, 106, 74, 0.3);
           border-radius: 4px;
           font-family: var(--font-body);
-          font-size: 0.6rem;
+          font-size: clamp(0.5rem, 1.2vw, 0.6rem);
           color: var(--terracotta);
           text-transform: uppercase;
           letter-spacing: 0.08em;
@@ -458,7 +504,7 @@ export default function OrbitalSelect({
         .orbital-card__macro-value {
           display: block;
           font-family: var(--font-body);
-          font-size: 0.9rem;
+          font-size: clamp(0.75rem, 2vw, 0.9rem);
           font-weight: 500;
           color: var(--white);
         }
@@ -466,7 +512,7 @@ export default function OrbitalSelect({
         .orbital-card__macro-label {
           display: block;
           font-family: var(--font-body);
-          font-size: 0.55rem;
+          font-size: clamp(0.45rem, 1vw, 0.55rem);
           color: rgba(250, 250, 247, 0.5);
           text-transform: uppercase;
           letter-spacing: 0.1em;
@@ -480,7 +526,7 @@ export default function OrbitalSelect({
           border: none;
           border-radius: 6px;
           font-family: var(--font-body);
-          font-size: 0.7rem;
+          font-size: clamp(0.6rem, 1.5vw, 0.7rem);
           font-weight: 500;
           color: var(--white);
           text-transform: uppercase;
@@ -510,31 +556,6 @@ export default function OrbitalSelect({
           50% {
             opacity: 0.15;
             transform: scale(1.1);
-          }
-        }
-
-        @media (max-width: 640px) {
-          .orbital-container {
-            height: 360px;
-          }
-
-          .orbital-ring {
-            width: 220px;
-            height: 220px;
-          }
-
-          .orbital-node__card {
-            width: 52px;
-            height: 66px;
-          }
-
-          .orbital-node__name {
-            font-size: 0.5rem;
-          }
-
-          .orbital-card {
-            width: 180px;
-            padding: 12px;
           }
         }
       `}</style>

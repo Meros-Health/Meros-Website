@@ -38,17 +38,18 @@ const smoothies = [
 
   gsap.registerPlugin(ScrollTrigger);
 
-  function buildScrollTrigger(track: HTMLElement, cards: NodeListOf<Element>, edgePad: number) {
+  function buildScrollTrigger(track: HTMLElement, cards: NodeListOf<Element>, edgePad: number, scrubValue: number, scrollMultiplier: number) {
     const navHeight = (document.querySelector('.nav') as HTMLElement)?.offsetHeight ?? 56;
     ScrollTrigger.create({
       trigger: '.menu',
       start: `top top+=${navHeight}`,
       end: () => {
         const w = track.scrollWidth;
-        return `+=${Math.max(w, 1500)}`;
+        // Use scroll multiplier to control how much vertical scroll is needed
+        return `+=${Math.max(w * scrollMultiplier, 1500)}`;
       },
       pin: '.menu',
-      scrub: 1,
+      scrub: scrubValue, // Higher value = smoother/slower scrolling
       invalidateOnRefresh: true,
       onUpdate: (self) => {
         const progress = self.progress;
@@ -73,12 +74,19 @@ const smoothies = [
     if (!track || !cards.length) return;
 
     ScrollTrigger.matchMedia({
-      '(min-width: 769px)': function () {
-        buildScrollTrigger(track, cards, 48);
+      // Desktop: normal scrub, standard scroll distance
+      '(min-width: 1025px)': function () {
+        buildScrollTrigger(track, cards, 48, 1, 1);
+      },
+      
+      // Tablet: slightly slower scrub
+      '(min-width: 769px) and (max-width: 1024px)': function () {
+        buildScrollTrigger(track, cards, 32, 1.5, 1.2);
       },
 
+      // Mobile: much slower scrub and longer scroll distance for more control
       '(max-width: 768px)': function () {
-        buildScrollTrigger(track, cards, 24);
+        buildScrollTrigger(track, cards, 24, 2.5, 1.8);
       },
     });
   }
@@ -156,8 +164,7 @@ const smoothies = [
 
   .menu__card {
     flex-shrink: 0;
-    width: 340px;
-    max-width: 90vw;
+    width: clamp(240px, 30vw, 340px);
     will-change: transform;
     background: var(--color-bg);
     border-radius: var(--radius-md);
@@ -210,18 +217,40 @@ const smoothies = [
     .menu__track {
       flex-wrap: nowrap;
       gap: var(--space-4);
-      padding: var(--space-4) var(--space-6);
+      padding: var(--space-4) var(--space-4);
       padding-bottom: var(--space-8);
       will-change: transform;
     }
 
     .menu__card {
-      width: 260px;
-      max-width: none;
+      width: clamp(200px, 65vw, 280px);
+    }
+
+    .menu__card-content {
+      padding: var(--space-4);
+    }
+
+    .menu__card-name {
+      font-size: var(--text-lg);
+    }
+
+    .menu__card-descriptor {
+      font-size: var(--text-xs);
     }
 
     .menu__title {
       font-size: clamp(2.5rem, 12vw, 5rem);
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .menu__card {
+      width: clamp(180px, 70vw, 240px);
+    }
+    
+    .menu__track {
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-3);
     }
   }
 </style>

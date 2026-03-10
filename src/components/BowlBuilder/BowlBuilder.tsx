@@ -46,10 +46,16 @@ export default function BowlBuilder() {
     setTimeout(() => setShowSaveConfirmation(false), 2500);
   };
 
+  const handleHomeClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    // Full page refresh to ensure clean state
+    window.location.href = '/';
+  };
+
   return (
     <div className="bowl-builder">
-      {/* Back to Home button - fixed bottom left */}
-      <a href="/" className="bowl-builder__back">
+      {/* Back to Home button - fixed top left */}
+      <a href="/" onClick={handleHomeClick} className="bowl-builder__back">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <path
             d="M10 12L6 8L10 4"
@@ -184,9 +190,9 @@ export default function BowlBuilder() {
         }
 
         .bowl-builder__back {
-          position: fixed;
-          bottom: 1.5rem;
-          left: 1.5rem;
+          position: absolute;
+          top: 0;
+          left: 0;
           display: flex;
           align-items: center;
           gap: 0.5rem;
@@ -332,11 +338,10 @@ export default function BowlBuilder() {
             padding-bottom: 100px;
           }
 
-          .bowl-builder__back {
-            bottom: auto;
-            top: 5rem;
-            left: 1rem;
-          }
+.bowl-builder__back {
+          top: 0;
+          left: 0;
+        }
 
           .bowl-builder__toast {
             bottom: 80px;
@@ -356,12 +361,12 @@ export default function BowlBuilder() {
             margin-bottom: 1.5rem;
           }
 
-          .bowl-builder__back {
-            top: 4.5rem;
-            left: 0.75rem;
-            padding: 0.5rem 0.75rem;
-            font-size: 0.625rem;
-          }
+.bowl-builder__back {
+          top: 0;
+          left: 0;
+          padding: 0.5rem 0.75rem;
+          font-size: 0.625rem;
+        }
 
           .bowl-builder__selected {
             margin-top: 1.5rem;
