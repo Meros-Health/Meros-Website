@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import DonutChart from './DonutChart';
 import { dailyGoals } from './ingredients';
@@ -12,6 +12,7 @@ interface MacroPanelProps {
   };
   onSave: () => void;
   hasSelection: boolean;
+  compact?: boolean;
 }
 
 function AnimatedNumber({ value, suffix = '' }: { value: number; suffix?: string }) {
@@ -40,9 +41,331 @@ function AnimatedNumber({ value, suffix = '' }: { value: number; suffix?: string
   return <span>{displayValue}{suffix}</span>;
 }
 
-export default function MacroPanel({ totals, onSave, hasSelection }: MacroPanelProps) {
+export default function MacroPanel({ totals, onSave, hasSelection, compact = false }: MacroPanelProps) {
   const calorieProgress = Math.min((totals.calories / dailyGoals.calories) * 100, 100);
+  const [expanded, setExpanded] = useState(false);
 
+  // Compact mobile version
+  if (compact) {
+    return (
+      <div className="macro-panel-compact">
+        {/* Collapsed view */}
+        <div className="macro-panel-compact__bar">
+          <button
+            className="macro-panel-compact__toggle"
+            onClick={() => setExpanded(!expanded)}
+            aria-expanded={expanded}
+            aria-label={expanded ? 'Collapse nutrition panel' : 'Expand nutrition panel'}
+          >
+            <div className="macro-panel-compact__summary">
+              <div className="macro-panel-compact__calories">
+                <AnimatedNumber value={totals.calories} />
+                <span className="macro-panel-compact__unit">cal</span>
+              </div>
+              <div className="macro-panel-compact__macros">
+                <span className="macro-panel-compact__macro macro-panel-compact__macro--protein">
+                  P: <AnimatedNumber value={totals.protein} suffix="g" />
+                </span>
+                <span className="macro-panel-compact__macro macro-panel-compact__macro--carbs">
+                  C: <AnimatedNumber value={totals.carbs} suffix="g" />
+                </span>
+                <span className="macro-panel-compact__macro macro-panel-compact__macro--fat">
+                  F: <AnimatedNumber value={totals.fat} suffix="g" />
+                </span>
+              </div>
+            </div>
+            <motion.svg
+              width="20"
+              height="20"
+              viewBox="0 0 20 20"
+              fill="none"
+              animate={{ rotate: expanded ? 180 : 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <path
+                d="M5 8L10 13L15 8"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </motion.svg>
+          </button>
+
+          <motion.button
+            whileTap={{ scale: 0.96 }}
+            onClick={onSave}
+            disabled={!hasSelection}
+            className="macro-panel-compact__save"
+            style={{
+              opacity: hasSelection ? 1 : 0.5,
+              cursor: hasSelection ? 'pointer' : 'not-allowed',
+            }}
+          >
+            Save
+          </motion.button>
+        </div>
+
+        {/* Expanded view */}
+        <AnimatePresence>
+          {expanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+              className="macro-panel-compact__expanded"
+            >
+              <div className="macro-panel-compact__details">
+                {/* Mini donut */}
+                <div className="macro-panel-compact__chart">
+                  <MiniDonut
+                    protein={totals.protein}
+                    carbs={totals.carbs}
+                    fat={totals.fat}
+                  />
+                </div>
+
+                {/* Macro breakdown */}
+                <div className="macro-panel-compact__breakdown">
+                  <div className="macro-panel-compact__row">
+                    <span className="macro-panel-compact__label">
+                      <span className="macro-panel-compact__dot macro-panel-compact__dot--protein" />
+                      Protein
+                    </span>
+                    <span className="macro-panel-compact__value">
+                      <AnimatedNumber value={totals.protein} suffix="g" />
+                      <span className="macro-panel-compact__goal"> / {dailyGoals.protein}g</span>
+                    </span>
+                  </div>
+                  <div className="macro-panel-compact__row">
+                    <span className="macro-panel-compact__label">
+                      <span className="macro-panel-compact__dot macro-panel-compact__dot--carbs" />
+                      Carbs
+                    </span>
+                    <span className="macro-panel-compact__value">
+                      <AnimatedNumber value={totals.carbs} suffix="g" />
+                      <span className="macro-panel-compact__goal"> / {dailyGoals.carbs}g</span>
+                    </span>
+                  </div>
+                  <div className="macro-panel-compact__row">
+                    <span className="macro-panel-compact__label">
+                      <span className="macro-panel-compact__dot macro-panel-compact__dot--fat" />
+                      Fat
+                    </span>
+                    <span className="macro-panel-compact__value">
+                      <AnimatedNumber value={totals.fat} suffix="g" />
+                      <span className="macro-panel-compact__goal"> / {dailyGoals.fat}g</span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                <div className="macro-panel-compact__progress">
+                  <div className="macro-panel-compact__progress-header">
+                    <span>Daily Goal</span>
+                    <span>{Math.round(calorieProgress)}%</span>
+                  </div>
+                  <div className="macro-panel-compact__progress-bar">
+                    <motion.div
+                      className="macro-panel-compact__progress-fill"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${calorieProgress}%` }}
+                      transition={{ duration: 0.4 }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <style>{`
+          .macro-panel-compact {
+            background: rgba(250, 250, 247, 0.98);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+          }
+
+          .macro-panel-compact__bar {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+          }
+
+          .macro-panel-compact__toggle {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            color: var(--forest);
+          }
+
+          .macro-panel-compact__summary {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+          }
+
+          .macro-panel-compact__calories {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 300;
+            color: var(--forest);
+            line-height: 1;
+          }
+
+          .macro-panel-compact__unit {
+            font-family: var(--font-body);
+            font-size: 0.625rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--warm-grey);
+            margin-left: 0.25rem;
+          }
+
+          .macro-panel-compact__macros {
+            display: flex;
+            gap: 0.75rem;
+          }
+
+          .macro-panel-compact__macro {
+            font-family: var(--font-body);
+            font-size: 0.6875rem;
+            letter-spacing: 0.05em;
+          }
+
+          .macro-panel-compact__macro--protein {
+            color: var(--forest);
+          }
+
+          .macro-panel-compact__macro--carbs {
+            color: var(--terracotta);
+          }
+
+          .macro-panel-compact__macro--fat {
+            color: var(--warm-grey);
+          }
+
+          .macro-panel-compact__save {
+            padding: 0.625rem 1.25rem;
+            font-family: var(--font-body);
+            font-size: 0.6875rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--white);
+            background-color: var(--terracotta);
+            border: none;
+            border-radius: 4px;
+            white-space: nowrap;
+          }
+
+          .macro-panel-compact__expanded {
+            overflow: hidden;
+            border-top: 1px solid rgba(28, 46, 30, 0.08);
+          }
+
+          .macro-panel-compact__details {
+            padding: 1rem;
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 1rem;
+            align-items: start;
+          }
+
+          .macro-panel-compact__chart {
+            grid-row: span 2;
+          }
+
+          .macro-panel-compact__breakdown {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+          }
+
+          .macro-panel-compact__row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          }
+
+          .macro-panel-compact__label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: var(--font-body);
+            font-size: 0.75rem;
+            color: var(--warm-grey);
+          }
+
+          .macro-panel-compact__dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+          }
+
+          .macro-panel-compact__dot--protein {
+            background-color: var(--forest);
+          }
+
+          .macro-panel-compact__dot--carbs {
+            background-color: var(--terracotta);
+          }
+
+          .macro-panel-compact__dot--fat {
+            background-color: var(--warm-grey);
+          }
+
+          .macro-panel-compact__value {
+            font-family: var(--font-display);
+            font-size: 0.875rem;
+            color: var(--forest);
+          }
+
+          .macro-panel-compact__goal {
+            font-family: var(--font-body);
+            font-size: 0.625rem;
+            color: var(--warm-grey);
+          }
+
+          .macro-panel-compact__progress {
+            grid-column: span 2;
+          }
+
+          .macro-panel-compact__progress-header {
+            display: flex;
+            justify-content: space-between;
+            font-family: var(--font-body);
+            font-size: 0.625rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--warm-grey);
+            margin-bottom: 0.375rem;
+          }
+
+          .macro-panel-compact__progress-bar {
+            height: 4px;
+            background: rgba(28, 46, 30, 0.08);
+            border-radius: 2px;
+            overflow: hidden;
+          }
+
+          .macro-panel-compact__progress-fill {
+            height: 100%;
+            background: var(--terracotta);
+            border-radius: 2px;
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  // Full desktop version
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
@@ -258,5 +581,78 @@ function StatRow({ label, value, subtext }: { label: string; value: React.ReactN
         </span>
       </div>
     </div>
+  );
+}
+
+function MiniDonut({ protein, carbs, fat }: { protein: number; carbs: number; fat: number }) {
+  const total = protein + carbs + fat;
+  const radius = 32;
+  const strokeWidth = 8;
+  const circumference = 2 * Math.PI * radius;
+
+  const proteinLength = total > 0 ? (protein / total) * circumference : 0;
+  const carbsLength = total > 0 ? (carbs / total) * circumference : 0;
+  const fatLength = total > 0 ? (fat / total) * circumference : 0;
+
+  const proteinOffset = 0;
+  const carbsOffset = proteinLength;
+  const fatOffset = proteinLength + carbsLength;
+
+  return (
+    <svg width="80" height="80" viewBox="0 0 80 80" style={{ transform: 'rotate(-90deg)' }}>
+      <circle
+        cx="40"
+        cy="40"
+        r={radius}
+        fill="none"
+        stroke="rgba(28, 46, 30, 0.08)"
+        strokeWidth={strokeWidth}
+      />
+      <motion.circle
+        cx="40"
+        cy="40"
+        r={radius}
+        fill="none"
+        stroke="var(--forest)"
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        initial={{ strokeDasharray: `0 ${circumference}` }}
+        animate={{
+          strokeDasharray: `${proteinLength} ${circumference - proteinLength}`,
+          strokeDashoffset: -proteinOffset,
+        }}
+        transition={{ duration: 0.4 }}
+      />
+      <motion.circle
+        cx="40"
+        cy="40"
+        r={radius}
+        fill="none"
+        stroke="var(--terracotta)"
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        initial={{ strokeDasharray: `0 ${circumference}` }}
+        animate={{
+          strokeDasharray: `${carbsLength} ${circumference - carbsLength}`,
+          strokeDashoffset: -carbsOffset,
+        }}
+        transition={{ duration: 0.4 }}
+      />
+      <motion.circle
+        cx="40"
+        cy="40"
+        r={radius}
+        fill="none"
+        stroke="var(--warm-grey)"
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        initial={{ strokeDasharray: `0 ${circumference}` }}
+        animate={{
+          strokeDasharray: `${fatLength} ${circumference - fatLength}`,
+          strokeDashoffset: -fatOffset,
+        }}
+        transition={{ duration: 0.4 }}
+      />
+    </svg>
   );
 }

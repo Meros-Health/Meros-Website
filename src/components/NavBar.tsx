@@ -44,7 +44,7 @@ export default function NavBar() {
           ),
         }}
       >
-        <motion.a href="#hero" className="nav__logo" style={{ color: textColor }} aria-label="MEROS home">
+        <motion.a href="/" className="nav__logo" style={{ color: textColor }} aria-label="MEROS home">
           MEROS
         </motion.a>
 
