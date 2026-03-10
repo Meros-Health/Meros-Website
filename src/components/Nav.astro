@@ -5,6 +5,17 @@ import NavBar from './NavBar';
 <NavBar client:load />
 
 <style>
+  /* Safe area cover for iOS - prevents content showing above nav */
+  :global(.nav-safe-area) {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: env(safe-area-inset-top, 0px);
+    background: var(--color-bg);
+    z-index: calc(var(--z-nav) + 1);
+  }
+
   :global(.nav) {
     position: fixed;
     top: 0;
@@ -15,9 +26,12 @@ import NavBar from './NavBar';
     align-items: center;
     justify-content: space-between;
     padding: var(--space-4) var(--space-6);
+    padding-top: calc(var(--space-4) + env(safe-area-inset-top, 0px));
     transition: background-color var(--transition-base),
       backdrop-filter var(--transition-base),
       border-color var(--transition-base);
+    /* Ensure nav background extends above when scrolled */
+    background: var(--color-bg);
   }
 
   :global(.nav__logo) {
