@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CategoryTabs from './CategoryTabs';
-import IngredientCard from './IngredientCard';
+import OrbitalSelect from './OrbitalSelect';
 import MacroPanel from './MacroPanel';
 import { categories, type Ingredient } from './ingredients';
 
@@ -107,17 +107,15 @@ export default function BowlBuilder() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="bowl-builder__grid"
+              className="bowl-builder__orbital"
             >
-              {activeIngredients.map((ingredient, index) => (
-                <IngredientCard
-                  key={ingredient.id}
-                  ingredient={ingredient}
-                  isSelected={selectedIngredients.has(ingredient.id)}
-                  onToggle={() => toggleIngredient(ingredient)}
-                  index={index}
-                />
-              ))}
+              <OrbitalSelect
+                ingredients={activeIngredients}
+                selectedIngredients={selectedIngredients}
+                onToggleIngredient={toggleIngredient}
+                stepNumber={categories.findIndex((c) => c.id === activeCategory) + 1}
+                stepLabel={categories.find((c) => c.id === activeCategory)?.name || ''}
+              />
             </motion.div>
           </AnimatePresence>
 
@@ -246,10 +244,10 @@ export default function BowlBuilder() {
           min-width: 0;
         }
 
-        .bowl-builder__grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-          gap: 1rem;
+        .bowl-builder__orbital {
+          position: relative;
+          width: 100%;
+          min-height: 420px;
         }
 
         .bowl-builder__panel {
@@ -290,8 +288,8 @@ export default function BowlBuilder() {
         }
 
         @media (max-width: 640px) {
-          .bowl-builder__grid {
-            grid-template-columns: repeat(2, 1fr);
+          .bowl-builder__orbital {
+            min-height: 360px;
           }
         }
       `}</style>
