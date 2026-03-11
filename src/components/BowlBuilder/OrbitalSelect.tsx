@@ -10,26 +10,41 @@ interface OrbitalSelectProps {
   stepLabel: string;
 }
 
+// ─── TUNING KNOBS ───────────────────────────────────────────────────
+// Adjust these to control node card sizes and orbit spacing.
+// Orbit radius is derived FROM card size so spacing scales automatically.
+
+const CARD_MIN = 80;          // Minimum card width (px) — raise for bigger mobile cards
+const CARD_MAX = 120;         // Maximum card width (px) — raise for bigger desktop cards
+const CARD_SCALE = 0.2;      // How aggressively cards grow with container (0.1 = slow, 0.25 = fast)
+const CARD_ASPECT = 1.3;     // Card height = width * this ratio
+const ORBIT_PAD_FACTOR = 0.8; // Padding around orbit = card size * this. Controls node-to-edge spacing.
+                              // Higher = more padding = smaller orbit = nodes closer together.
+                              // Lower = less padding = larger orbit = nodes further apart.
+const RADIUS_MIN = 120;       // Minimum orbit radius floor (px)
+const FONT_MIN = 0.6;         // Minimum label font size (rem)
+const FONT_MAX = 0.8;         // Maximum label font size (rem)
+// ────────────────────────────────────────────────────────────────────
+
 // Derive orbit radius and card sizes from the container's rendered dimensions.
 // The constraining axis is whichever is smaller; on wide desktops that's height.
 function computeFromContainer(width: number, height: number) {
-  const pad = 16;
-  const usableW = width - pad * 2;
-  const usableH = height - pad * 2;
-  const minor = Math.min(usableW, usableH);
+  // Card dimensions scale with the smaller container axis, clamped to min/max
+  const cardWidth = Math.max(CARD_MIN, Math.min(CARD_MAX, Math.min(width, height) * CARD_SCALE));
+  const cardHeight = cardWidth * CARD_ASPECT;
 
-  // Card size scales with the smaller dimension
-  const cardWidth = Math.max(60, Math.min(110, minor * 0.2));
-  const cardHeight = cardWidth * 1.22;
+  // Padding scales with card size — bigger cards get proportionally more clearance
+  const padX = cardWidth * ORBIT_PAD_FACTOR;
+  const padY = cardHeight * ORBIT_PAD_FACTOR;
+  const usableW = width - padX * 2;
+  const usableH = height - padY * 2;
 
-  // Radius: fill ~42% of the minor dimension, leaving room for cards
-  const idealRadius = minor * 0.42;
-  // But never let cards poke outside the container
-  const maxRadiusW = (usableW - cardWidth) / 2;
-  const maxRadiusH = (usableH - cardHeight) / 2;
-  const radius = Math.max(80, Math.min(idealRadius, maxRadiusW, maxRadiusH));
+  // Radius based on the smaller available dimension
+  const maxRadiusW = usableW / 2;
+  const maxRadiusH = usableH / 2;
+  const radius = Math.max(RADIUS_MIN, Math.min(maxRadiusW, maxRadiusH));
 
-  const fontSize = Math.max(0.55, Math.min(0.75, cardWidth / 130));
+  const fontSize = Math.max(FONT_MIN, Math.min(FONT_MAX, cardWidth / 130));
 
   return { radius, cardWidth, cardHeight, fontSize };
 }
@@ -273,7 +288,7 @@ export default function OrbitalSelect({
           position: relative;
           width: 100%;
           height: 100%;
-          min-height: 320px;
+          min-height: 400px;
           display: flex;
           align-items: center;
           justify-content: center;

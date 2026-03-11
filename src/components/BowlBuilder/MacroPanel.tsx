@@ -42,7 +42,6 @@ function AnimatedNumber({ value, suffix = '' }: { value: number; suffix?: string
 }
 
 export default function MacroPanel({ totals, onSave, hasSelection, compact = false }: MacroPanelProps) {
-  const calorieProgress = Math.min((totals.calories / dailyGoals.calories) * 100, 100);
   // expanded state removed — compact panel is always open
 
   // Compact mobile version — always expanded, no collapsible behaviour
@@ -338,58 +337,6 @@ export default function MacroPanel({ totals, onSave, hasSelection, compact = fal
           value={<AnimatedNumber value={totals.fat} suffix="g" />}
           subtext={`/ ${dailyGoals.fat}g`}
         />
-      </div>
-
-      {/* Daily Goal Progress */}
-      <div style={{ marginTop: '1.5rem' }}>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginBottom: '0.5rem',
-          }}
-        >
-          <span
-            style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: 'var(--text-xs)',
-              color: 'var(--warm-grey)',
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-            }}
-          >
-            Daily Goal
-          </span>
-          <span
-            style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: 'var(--text-xs)',
-              color: 'var(--forest)',
-              fontWeight: 500,
-            }}
-          >
-            {Math.round(calorieProgress)}%
-          </span>
-        </div>
-        <div
-          style={{
-            height: '6px',
-            borderRadius: '3px',
-            backgroundColor: 'rgba(28, 46, 30, 0.08)',
-            overflow: 'hidden',
-          }}
-        >
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${calorieProgress}%` }}
-            transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
-            style={{
-              height: '100%',
-              backgroundColor: 'var(--terracotta)',
-              borderRadius: '3px',
-            }}
-          />
-        </div>
       </div>
 
       {/* Save Button */}
