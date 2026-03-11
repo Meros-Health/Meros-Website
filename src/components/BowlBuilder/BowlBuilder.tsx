@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CategoryTabs from './CategoryTabs';
 import OrbitalSelect from './OrbitalSelect';
+import MultiSelectList from './MultiSelectList';
 import MacroPanel from './MacroPanel';
 import { categories, type Ingredient } from './ingredients';
 
@@ -114,13 +115,23 @@ export default function BowlBuilder() {
               transition={{ duration: 0.2 }}
               className="bowl-builder__orbital"
             >
-              <OrbitalSelect
-                ingredients={activeIngredients}
-                selectedIngredients={selectedIngredients}
-                onToggleIngredient={toggleIngredient}
-                stepNumber={categories.findIndex((c) => c.id === activeCategory) + 1}
-                stepLabel={categories.find((c) => c.id === activeCategory)?.name || ''}
-              />
+              {categories.find((c) => c.id === activeCategory)?.selectionMode === 'list' ? (
+                <MultiSelectList
+                  ingredients={activeIngredients}
+                  selectedIngredients={selectedIngredients}
+                  onToggleIngredient={toggleIngredient}
+                  stepNumber={categories.findIndex((c) => c.id === activeCategory) + 1}
+                  stepLabel={categories.find((c) => c.id === activeCategory)?.name || ''}
+                />
+              ) : (
+                <OrbitalSelect
+                  ingredients={activeIngredients}
+                  selectedIngredients={selectedIngredients}
+                  onToggleIngredient={toggleIngredient}
+                  stepNumber={categories.findIndex((c) => c.id === activeCategory) + 1}
+                  stepLabel={categories.find((c) => c.id === activeCategory)?.name || ''}
+                />
+              )}
             </motion.div>
           </AnimatePresence>
 

@@ -2,12 +2,12 @@
 import YogurtBowlName from './YogurtBowlName';
 
 const bowls = [
-  { name: 'The Canvas',   image: '/Yogurt/Bowl1.jpg',  descriptor: 'A blank slate to create your own masterpiece.' },
-  { name: 'Avocado Ritual',   image: '/Yogurt/Bowl2a.jpg',  descriptor: 'Açaí base, banana, hemp seeds, cacao nibs.' },
-  { name: 'Golden Bloom',  image: '/Yogurt/Bowl3a.jpg',  descriptor: 'Mango, turmeric coconut, bee pollen.' },
-  { name: 'Forest Floor',  image: '/Yogurt/Bowl4a.jpg',  descriptor: 'Blueberry, almond butter, dark cacao.' },
-  { name: 'Morning Calm',  image: '/Yogurt/Bowl5a.jpg',  descriptor: 'Strawberry, chia seeds, vanilla cream.' },
-  { name: 'The Harvest',   image: '/Yogurt/Bowl6a.jpg',  descriptor: 'Mixed berries, maple granola, coconut flakes.' },
+  { name: 'The Moment', image: '/Yogurt/Bowl1.jpg',   descriptor: 'Blueberries, strawberries, banana, passionfruit preserve, house granola, toasted almonds, chia seeds, toasted coconut.' },
+  { name: 'The Bloom',  image: '/Yogurt/Bowl3a.jpg',  descriptor: 'Mango, pineapple, bee pollen, goji berries, shredded coconut, sunflower seeds, raw honey drizzle.' },
+  { name: 'The Silk',   image: '/Yogurt/Bowl5a.jpg',  descriptor: 'Raw cocoa powder, banana, strawberries, peanut butter mousse, cacao nibs, hemp hearts, maple syrup, flax meal.' },
+  { name: 'The Tropic', image: '/Yogurt/Bowl7a.jpg',  descriptor: 'Mango, pineapple, papaya, toasted coconut, cashews, passionfruit preserve, chia seeds.' },
+  { name: 'The Bounty', image: '/Yogurt/Bowl4c.jpg',  descriptor: 'Mashed avocado, banana, house granola, walnuts, hemp hearts, pumpkin seeds, nutritional yeast, EVOO drizzle, raw honey, flaky salt.' },
+  { name: 'The Crunch', image: '/Yogurt/Bowl6b.jpg',  descriptor: 'Banana, house granola, almonds, pistachios, walnuts, hemp hearts, pumpkin seeds, chia seeds, raw honey drizzle.' },
 ];
 ---
 
@@ -30,6 +30,13 @@ const bowls = [
         </div>
       </article>
     ))}
+  </div>
+
+  <div class="yogurt__cta-wrapper" data-reveal="up" data-reveal-delay="0.2">
+    <a href="/bowl-builder" class="yogurt__cta">
+      <span class="yogurt__cta-text">Build Your Own Bowl</span>
+      <span class="yogurt__cta-arrow" aria-hidden="true">→</span>
+    </a>
   </div>
 </section>
 
@@ -61,17 +68,41 @@ const bowls = [
     });
   }
 
+  function initCtaReveal() {
+    const cta = document.querySelector('.yogurt__cta-wrapper');
+    if (!cta) return;
+
+    gsap.set(cta, { opacity: 0, y: 30 });
+    ScrollTrigger.create({
+      trigger: cta,
+      start: 'top 90%',
+      once: true,
+      onEnter: () => {
+        gsap.to(cta, {
+          opacity: 1,
+          y: 0,
+          duration: 0.9,
+          ease: 'power2.out',
+        });
+      },
+    });
+  }
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initYogurtReveal);
+    document.addEventListener('DOMContentLoaded', () => {
+      initYogurtReveal();
+      initCtaReveal();
+    });
   } else {
     initYogurtReveal();
+    initCtaReveal();
   }
 </script>
 
 <style>
   .yogurt {
     position: relative;
-    z-index: 5;
+    z-index: 3;
     background: var(--color-bg);
     padding: var(--space-24) var(--space-6);
     margin-top: -20px;
@@ -184,5 +215,85 @@ const bowls = [
     color: var(--color-text-muted);
     line-height: var(--leading-normal);
     margin-top: var(--space-2);
+  }
+
+  /* ── CTA Button ────────────────────────────────────────────────────────────── */
+  .yogurt__cta-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: var(--space-16);
+    padding-bottom: var(--space-4);
+  }
+
+  .yogurt__cta {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+    padding: 1rem 2.5rem;
+    font-family: var(--font-body);
+    font-weight: var(--weight-regular);
+    font-size: var(--text-sm);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--color-text);
+    border: 1px solid var(--color-text);
+    border-radius: 0;
+    background: transparent;
+    cursor: pointer;
+    text-decoration: none;
+    overflow: hidden;
+    transition: color 0.4s ease, border-color 0.4s ease;
+  }
+
+  /* Slide-in background fill */
+  .yogurt__cta::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--color-text, #1c2e1e);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 0.45s cubic-bezier(0.25, 0.1, 0.25, 1);
+    z-index: 0;
+  }
+
+  .yogurt__cta:hover::before {
+    transform: scaleX(1);
+  }
+
+  .yogurt__cta:hover {
+    color: var(--color-bg, #fafaf7);
+    border-color: var(--color-text);
+  }
+
+  .yogurt__cta-text,
+  .yogurt__cta-arrow {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Arrow nudge on hover */
+  .yogurt__cta-arrow {
+    display: inline-block;
+    transition: transform 0.35s cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+
+  .yogurt__cta:hover .yogurt__cta-arrow {
+    transform: translateX(5px);
+  }
+
+  /* Subtle pulse animation when idle */
+  @keyframes cta-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(28, 46, 30, 0); }
+    50% { box-shadow: 0 0 0 6px rgba(28, 46, 30, 0.06); }
+  }
+
+  .yogurt__cta {
+    animation: cta-glow 3s ease-in-out infinite;
+  }
+
+  .yogurt__cta:hover {
+    animation: none;
   }
 </style>

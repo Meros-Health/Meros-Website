@@ -21,6 +21,8 @@ const CARD_ASPECT = 1.3;     // Card height = width * this ratio
 const ORBIT_PAD_FACTOR = 0.8; // Padding around orbit = card size * this. Controls node-to-edge spacing.
                               // Higher = more padding = smaller orbit = nodes closer together.
                               // Lower = less padding = larger orbit = nodes further apart.
+const ORBIT_PAD_FACTOR_DESKTOP = 0.45; // Less padding on desktop = larger orbit radius
+const DESKTOP_BREAKPOINT = 768; // Width threshold (px) to switch to desktop orbit padding
 const RADIUS_MIN = 120;       // Minimum orbit radius floor (px)
 const FONT_MIN = 0.6;         // Minimum label font size (rem)
 const FONT_MAX = 0.8;         // Maximum label font size (rem)
@@ -34,8 +36,10 @@ function computeFromContainer(width: number, height: number) {
   const cardHeight = cardWidth * CARD_ASPECT;
 
   // Padding scales with card size — bigger cards get proportionally more clearance
-  const padX = cardWidth * ORBIT_PAD_FACTOR;
-  const padY = cardHeight * ORBIT_PAD_FACTOR;
+  // Use less padding on desktop for a larger orbit radius
+  const padFactor = width >= DESKTOP_BREAKPOINT ? ORBIT_PAD_FACTOR_DESKTOP : ORBIT_PAD_FACTOR;
+  const padX = cardWidth * padFactor;
+  const padY = cardHeight * padFactor;
   const usableW = width - padX * 2;
   const usableH = height - padY * 2;
 
