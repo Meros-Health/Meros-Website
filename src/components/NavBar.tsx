@@ -25,33 +25,37 @@ export default function NavBar() {
     setMenuOpen(false);
   }
 
+  // Scroll-derived transforms (always called unconditionally)
+  const scrollBg = useTransform(navBgOpacity, (v) => `rgba(250, 250, 247, ${v})`);
+  const scrollBlur = useTransform(navBlur, (v) => `blur(${v}px)`);
+  const scrollBorder = useTransform(borderOpacity, (v) => `rgba(28, 46, 30, ${v * 0.12})`);
+
   return (
     <>
       <motion.header
         className="nav"
         style={{
-          backgroundColor: useTransform(
-            navBgOpacity,
-            (v) => `rgba(250, 250, 247, ${v})`
-          ),
-          backdropFilter: useTransform(navBlur, (v) => `blur(${v}px)`),
-          WebkitBackdropFilter: useTransform(navBlur, (v) => `blur(${v}px)`),
+          backgroundColor: menuOpen ? 'rgba(250, 250, 247, 1)' : scrollBg,
+          backdropFilter: menuOpen ? 'blur(8px)' : scrollBlur,
+          WebkitBackdropFilter: menuOpen ? 'blur(8px)' : scrollBlur,
           borderBottomWidth: '1px',
           borderBottomStyle: 'solid',
-          borderBottomColor: useTransform(
-            borderOpacity,
-            (v) => `rgba(28, 46, 30, ${v * 0.12})`
-          ),
+          borderBottomColor: menuOpen ? 'rgba(28, 46, 30, 0.12)' : scrollBorder,
         }}
       >
-        <motion.a href="/" className="nav__logo" style={{ color: textColor }} aria-label="MEROS home">
+        <motion.a
+          href="/"
+          className="nav__logo"
+          style={{ color: menuOpen ? 'rgb(28, 46, 30)' : textColor }}
+          aria-label="MEROS home"
+        >
           MEROS
         </motion.a>
 
         {/* Desktop links */}
         <nav className="nav__links" aria-label="Main">
           {navLinks.map(({ href, label }) => (
-            <motion.a key={href} href={href} className="nav__link" style={{ color: textColor }}>
+            <motion.a key={href} href={href} className="nav__link" style={{ color: menuOpen ? 'rgb(28, 46, 30)' : textColor }}>
               {label}
             </motion.a>
           ))}
@@ -63,7 +67,7 @@ export default function NavBar() {
           onClick={() => setMenuOpen((o) => !o)}
           aria-label={menuOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={menuOpen}
-          style={{ color: textColor }}
+          style={{ color: menuOpen ? 'rgb(28, 46, 30)' : textColor }}
         >
           <motion.span
             className="nav__bar"

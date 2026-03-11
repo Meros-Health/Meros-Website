@@ -39,3 +39,11 @@ CLAUDE.md
 
 # Documents
 documents/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+/tests/*-snapshots/
