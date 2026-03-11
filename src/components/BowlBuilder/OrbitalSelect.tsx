@@ -10,30 +10,26 @@ interface OrbitalSelectProps {
   stepLabel: string;
 }
 
-// Responsive orbit radius and card size calculations
-function getResponsiveValues() {
-  if (typeof window === 'undefined') {
-    return { radius: 160, cardWidth: 90, cardHeight: 110, fontSize: 0.7 };
-  }
-  
-  const width = window.innerWidth;
-  
-  if (width <= 480) {
-    // Mobile small - tighter orbit, larger relative cards
-    return { radius: 110, cardWidth: 72, cardHeight: 90, fontSize: 0.6 };
-  } else if (width <= 640) {
-    // Mobile - tighter orbit, larger cards
-    return { radius: 130, cardWidth: 80, cardHeight: 100, fontSize: 0.65 };
-  } else if (width <= 768) {
-    // Tablet small
-    return { radius: 150, cardWidth: 88, cardHeight: 108, fontSize: 0.7 };
-  } else if (width <= 1024) {
-    // Tablet
-    return { radius: 170, cardWidth: 95, cardHeight: 115, fontSize: 0.72 };
-  } else {
-    // Desktop
-    return { radius: 180, cardWidth: 100, cardHeight: 120, fontSize: 0.75 };
-  }
+// Derive orbit radius and card sizes from the container's rendered dimensions
+function computeFromContainer(width: number, height: number) {
+  // Padding from edges
+  const padX = 12;
+  const padY = 12;
+  const usableW = width - padX * 2;
+  const usableH = height - padY * 2;
+
+  // Card dimensions scale with usable space
+  const cardWidth = Math.max(60, Math.min(100, usableW * 0.12));
+  const cardHeight = cardWidth * 1.22;
+
+  // Radius must leave room for cards on all sides
+  const maxRadiusW = (usableW - cardWidth) / 2;
+  const maxRadiusH = (usableH - cardHeight) / 2;
+  const radius = Math.max(80, Math.min(maxRadiusW, maxRadiusH));
+
+  const fontSize = Math.max(0.55, Math.min(0.75, cardWidth / 130));
+
+  return { radius, cardWidth, cardHeight, fontSize };
 }
 
 export default function OrbitalSelect({
@@ -46,20 +42,28 @@ export default function OrbitalSelect({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [rotationAngle, setRotationAngle] = useState<number>(0);
   const [autoRotate, setAutoRotate] = useState<boolean>(true);
-  const [responsiveValues, setResponsiveValues] = useState(getResponsiveValues);
+  const [responsiveValues, setResponsiveValues] = useState({ radius: 140, cardWidth: 80, cardHeight: 98, fontSize: 0.65 });
   const containerRef = useRef<HTMLDivElement>(null);
   const orbitRef = useRef<HTMLDivElement>(null);
   const nodeRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  
-  // Update responsive values on resize
+
+  // Derive sizes from actual container dimensions via ResizeObserver
   useEffect(() => {
-    const handleResize = () => {
-      setResponsiveValues(getResponsiveValues());
+    const el = containerRef.current;
+    if (!el) return;
+
+    const measure = () => {
+      const { width, height } = el.getBoundingClientRect();
+      if (width > 0 && height > 0) {
+        setResponsiveValues(computeFromContainer(width, height));
+      }
     };
-    
-    handleResize(); // Initial call
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+
+    measure(); // Initial measurement
+
+    const ro = new ResizeObserver(() => measure());
+    ro.observe(el);
+    return () => ro.disconnect();
   }, []);
 
   const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -266,7 +270,8 @@ export default function OrbitalSelect({
         .orbital-container {
           position: relative;
           width: 100%;
-          height: clamp(380px, 50vw, 500px);
+          height: 100%;
+          min-height: 320px;
           display: flex;
           align-items: center;
           justify-content: center;

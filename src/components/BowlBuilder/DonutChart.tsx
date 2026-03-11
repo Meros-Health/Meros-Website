@@ -74,7 +74,7 @@ export default function DonutChart({ protein, carbs, fat, calories }: DonutChart
           fill="none"
           stroke="var(--forest)"
           strokeWidth={strokeWidth}
-          strokeLinecap="round"
+          strokeLinecap="butt"
           initial={{ strokeDasharray: `0 ${circumference}` }}
           animate={{
             strokeDasharray: `${proteinLength} ${circumference - proteinLength}`,
@@ -91,7 +91,7 @@ export default function DonutChart({ protein, carbs, fat, calories }: DonutChart
           fill="none"
           stroke="var(--terracotta)"
           strokeWidth={strokeWidth}
-          strokeLinecap="round"
+          strokeLinecap="butt"
           initial={{ strokeDasharray: `0 ${circumference}` }}
           animate={{
             strokeDasharray: `${carbsLength} ${circumference - carbsLength}`,
@@ -108,7 +108,7 @@ export default function DonutChart({ protein, carbs, fat, calories }: DonutChart
           fill="none"
           stroke="var(--warm-grey)"
           strokeWidth={strokeWidth}
-          strokeLinecap="round"
+          strokeLinecap="butt"
           initial={{ strokeDasharray: `0 ${circumference}` }}
           animate={{
             strokeDasharray: `${fatLength} ${circumference - fatLength}`,
