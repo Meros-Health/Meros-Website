@@ -123,36 +123,6 @@ export default function BowlBuilder() {
               />
             </motion.div>
           </AnimatePresence>
-
-          {/* Selected ingredients summary */}
-          {selectedIngredients.size > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bowl-builder__selected"
-            >
-              <span className="bowl-builder__selected-label">
-                Selected ({selectedIngredients.size})
-              </span>
-              <div className="bowl-builder__selected-items">
-                {categories.flatMap((c) =>
-                  c.ingredients
-                    .filter((i) => selectedIngredients.has(i.id))
-                    .map((i) => (
-                      <motion.span
-                        key={i.id}
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.8, opacity: 0 }}
-                        className="bowl-builder__selected-item"
-                      >
-                        {i.name}
-                      </motion.span>
-                    ))
-                )}
-              </div>
-            </motion.div>
-          )}
         </motion.div>
 
         {/* Right: Macro panel (desktop only) */}
@@ -164,6 +134,36 @@ export default function BowlBuilder() {
           />
         </div>
       </div>
+
+      {/* Selected ingredients summary — pinned to bottom on desktop */}
+      {selectedIngredients.size > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bowl-builder__selected"
+        >
+          <span className="bowl-builder__selected-label">
+            Selected ({selectedIngredients.size})
+          </span>
+          <div className="bowl-builder__selected-items">
+            {categories.flatMap((c) =>
+              c.ingredients
+                .filter((i) => selectedIngredients.has(i.id))
+                .map((i) => (
+                  <motion.span
+                    key={i.id}
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.8, opacity: 0 }}
+                    className="bowl-builder__selected-item"
+                  >
+                    {i.name}
+                  </motion.span>
+                ))
+            )}
+          </div>
+        </motion.div>
+      )}
 
       {/* Mobile sticky panel - compact version */}
       <div className="bowl-builder__mobile-panel">
@@ -279,10 +279,17 @@ export default function BowlBuilder() {
         }
 
         .bowl-builder__selected {
-          margin-top: 2rem;
+          position: fixed;
+          bottom: 1.5rem;
+          left: 1.5rem;
+          right: calc(380px + 3rem + 1.5rem + 1.5rem); /* macro panel width + gap + page padding */
+          max-width: calc(1400px - 380px - 3rem - 3rem);
           padding: 1rem;
-          background-color: rgba(242, 237, 230, 0.5);
+          background-color: rgba(242, 237, 230, 0.85);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
           border-radius: 8px;
+          z-index: 90;
         }
 
         .bowl-builder__selected-label {
@@ -358,7 +365,7 @@ export default function BowlBuilder() {
           }
         }
 
-        @media (max-width: 640px) {
+        @media (max-width: 642px) {
           .bowl-builder {
             padding: 0 1rem 100px;
           }
@@ -372,14 +379,27 @@ export default function BowlBuilder() {
             margin-bottom: 1.5rem;
           }
 
+          .bowl-builder__header-row {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.25rem;
+          }
+
+          .bowl-builder__home-icon {
+            position: static;
+          }
+
           .bowl-builder__home-icon svg {
             width: 20px;
             height: 20px;
           }
 
-          .bowl-builder__selected {
-            margin-top: 1.5rem;
-            padding: 0.75rem;
+          .bowl-builder__title {
+            width: 100%;
+          }
+
+          .bowl-builder__subtitle {
+            display: none;
           }
         }
       `}</style>
