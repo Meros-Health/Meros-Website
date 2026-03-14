@@ -69,6 +69,23 @@ export default function BowlBuilder() {
   };
 
   return (
+    <div className="bowl-builder__page-wrap">
+      {/* Home icon — viewport-anchored, outside max-width container */}
+      <motion.a
+        href="/"
+        onClick={handleHomeClick}
+        className="bowl-builder__home-icon"
+        aria-label="Home"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 10.5L12 3l9 7.5" />
+          <path d="M5 10v9a1 1 0 001 1h3v-5a1 1 0 011-1h4a1 1 0 011 1v5h3a1 1 0 001-1v-9" />
+        </svg>
+      </motion.a>
+
     <div className="bowl-builder">
       {/* Header */}
       <motion.div
@@ -77,15 +94,7 @@ export default function BowlBuilder() {
         transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
         className="bowl-builder__header"
       >
-        <div className="bowl-builder__header-row">
-          <a href="/" onClick={handleHomeClick} className="bowl-builder__home-icon" aria-label="Home">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 10.5L12 3l9 7.5" />
-              <path d="M5 10v9a1 1 0 001 1h3v-5a1 1 0 011-1h4a1 1 0 011 1v5h3a1 1 0 001-1v-9" />
-            </svg>
-          </a>
-          <h1 className="bowl-builder__title">Build Your Bowl</h1>
-        </div>
+        <h1 className="bowl-builder__title">Build Your Bowl</h1>
         <p className="bowl-builder__subtitle">
           Select your ingredients and watch your nutrition come to life
         </p>
@@ -203,7 +212,14 @@ export default function BowlBuilder() {
         )}
       </AnimatePresence>
 
+      </div>{/* end .bowl-builder */}
+
       <style>{`
+        .bowl-builder__page-wrap {
+          position: relative;
+          width: 100%;
+        }
+
         .bowl-builder {
           max-width: 1400px;
           margin: 0 auto;
@@ -217,16 +233,11 @@ export default function BowlBuilder() {
           padding: 0 1rem;
         }
 
-        .bowl-builder__header-row {
-          position: relative;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
         .bowl-builder__home-icon {
           position: absolute;
-          left: 0;
+          top: 0;
+          left: 1.5rem;
+          z-index: 10;
           display: flex;
           align-items: center;
           color: var(--forest);
@@ -264,6 +275,10 @@ export default function BowlBuilder() {
         }
 
         @media (max-width: 642px) {
+          .bowl-builder__home-icon {
+            left: 1rem;
+          }
+
           .bowl-builder__home-icon svg {
             width: 22px;
             height: 22px;
@@ -271,6 +286,7 @@ export default function BowlBuilder() {
 
           .bowl-builder__title {
             font-size: clamp(1.5rem, 5vw, 2rem);
+            padding: 0 2.5rem;
           }
 
           .bowl-builder__subtitle {
