@@ -145,6 +145,16 @@ for (const [label, size] of Object.entries(VIEWPORTS)) {
       await page.setViewportSize(size);
       await page.goto(BASE_URL, { waitUntil: 'networkidle' });
       await page.waitForTimeout(600); // Allow orbital animation to settle
+
+      // Freeze orbital rotation by clearing all setInterval timers.
+      // This only stops the JS-driven orbital spin (setInterval every 50ms).
+      // CSS animations (pulse-ring), CSS transitions, and Framer Motion
+      // animations all continue normally since they use keyframes/rAF.
+      await page.evaluate(() => {
+        const id = window.setInterval(() => {}, 9999);
+        for (let i = 1; i <= id; i++) window.clearInterval(i);
+      });
+      await page.waitForTimeout(100); // Let final frame settle
     });
 
     // ----- Full-page screenshot -----

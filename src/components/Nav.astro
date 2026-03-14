@@ -68,12 +68,35 @@ import NavBar from './NavBar';
   }
 
   /* ── Mobile slide-down menu — hidden on desktop ────────────────────────────── */
+  :global(.nav__mobile-backdrop),
+  :global(.nav__mobile-top-fill),
   :global(.nav__mobile-menu) {
     display: none;
   }
 
   /* ── Mobile breakpoint ─────────────────────────────────────────────────────── */
   @media (max-width: 768px) {
+    :global(:root) {
+      --nav-mobile-offset: calc(53px + env(safe-area-inset-top, 0px));
+    }
+
+    :global(.nav) {
+      padding-top: calc(var(--space-4) + env(safe-area-inset-top, 0px));
+    }
+
+    :global(.nav)::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(-1 * env(safe-area-inset-top, 0px));
+      height: env(safe-area-inset-top, 0px);
+      background: inherit;
+      backdrop-filter: inherit;
+      -webkit-backdrop-filter: inherit;
+      pointer-events: none;
+    }
+
     :global(.nav__links) {
       display: none;
     }
@@ -85,7 +108,7 @@ import NavBar from './NavBar';
     :global(.nav__mobile-menu) {
       display: flex;
       position: fixed;
-      top: 53px; /* nav bar height */
+      top: var(--nav-mobile-offset);
       left: 0;
       right: 0;
       z-index: calc(var(--z-nav) - 1);
@@ -98,6 +121,32 @@ import NavBar from './NavBar';
       gap: var(--space-6);
       border-bottom: 1px solid rgba(28, 46, 30, 0.1);
       overflow: hidden;
+    }
+
+    :global(.nav__mobile-top-fill) {
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--nav-mobile-offset);
+      z-index: calc(var(--z-nav) - 1);
+      background: rgba(250, 250, 247, 0.97);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      pointer-events: none;
+    }
+
+    :global(.nav__mobile-backdrop) {
+      display: block;
+      position: fixed;
+      inset: 0;
+      z-index: calc(var(--z-nav) - 2);
+      background: transparent;
+      border: 0;
+      padding: 0;
+      margin: 0;
+      cursor: default;
     }
 
     :global(.nav__mobile-link) {

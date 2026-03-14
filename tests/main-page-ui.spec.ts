@@ -216,73 +216,56 @@ for (const [label, size] of Object.entries(VIEWPORTS)) {
       });
     });
 
-    // ----- Smoothie menu section -----
-    test('smoothie menu cards are not clipped', async ({ page }) => {
+    // ----- Smoothie menu section (3D carousel) -----
+    test('smoothie menu section is visible on page load', async ({ page }) => {
       const menu = page.locator('#menu');
       await menu.scrollIntoViewIfNeeded();
       await page.waitForTimeout(600);
       await expect(menu).toBeVisible();
-
-      // Check individual cards are not cut off
-      const cards = page.locator('.menu__card');
-      const cardCount = await cards.count();
-      expect(cardCount).toBeGreaterThan(0);
-
-      for (let i = 0; i < cardCount; i++) {
-        const card = cards.nth(i);
-        const box = await card.boundingBox();
-        if (!box) continue;
-        // Card should have non-zero dimensions
-        expect(box.width, `Card ${i} should have width > 0`).toBeGreaterThan(0);
-        expect(box.height, `Card ${i} should have height > 0`).toBeGreaterThan(0);
-      }
 
       await expect(page).toHaveScreenshot(`main-smoothie-menu-${label}.png`, {
         maxDiffPixelRatio: 0.02,
       });
     });
 
-    test('smoothie cards scale proportionally', async ({ page }) => {
+    test('smoothie carousel front card is visible with title and descriptor', async ({ page }) => {
       const menu = page.locator('#menu');
       await menu.scrollIntoViewIfNeeded();
       await page.waitForTimeout(600);
 
-      const cards = page.locator('.menu__card');
-      const count = await cards.count();
-      if (count < 2) return;
+      // The active front card should be aria-current="true"
+      const activeCard = page.locator('[aria-current="true"]');
+      await expect(activeCard).toBeVisible();
 
-      const widths: number[] = [];
-      for (let i = 0; i < count; i++) {
-        const box = await cards.nth(i).boundingBox();
-        if (box) widths.push(box.width);
-      }
-
-      // All cards should have roughly the same width (within 5% tolerance)
-      const avg = widths.reduce((a, b) => a + b, 0) / widths.length;
-      for (const w of widths) {
-        expect(
-          Math.abs(w - avg) / avg,
-          'Card widths should be consistent',
-        ).toBeLessThan(0.05);
-      }
+      // The card's h3 title should be visible
+      const title = activeCard.locator('h3');
+      await expect(title).toBeVisible();
+      const titleText = await title.textContent();
+      expect(titleText?.trim().length).toBeGreaterThan(0);
     });
 
-    test('smoothie horizontal scroll does not break layout', async ({ page }) => {
+    test('smoothie carousel arrow navigation advances cards', async ({ page }) => {
       const menu = page.locator('#menu');
       await menu.scrollIntoViewIfNeeded();
       await page.waitForTimeout(600);
 
-      const track = page.locator('.menu__track');
-      const trackCount = await track.count();
+      const activeCard = page.locator('[aria-current="true"]');
+      const initialTitle = await activeCard.locator('h3').textContent();
 
-      if (trackCount > 0) {
-        const trackBox = await track.first().boundingBox();
-        expect(trackBox).toBeTruthy();
-        // Track should have a reasonable height
-        expect(trackBox!.height).toBeGreaterThan(50);
-      }
+      // Click the next arrow
+      const nextArrow = page.locator('.carousel-arrow--next');
+      await expect(nextArrow).toBeVisible();
+      await nextArrow.click();
+      await page.waitForTimeout(500);
 
-      // Page-level overflow check after scrolling to menu
+      const newTitle = await page.locator('[aria-current="true"]').locator('h3').textContent();
+      expect(newTitle?.trim()).not.toEqual(initialTitle?.trim());
+    });
+
+    test('smoothie carousel does not cause horizontal overflow', async ({ page }) => {
+      const menu = page.locator('#menu');
+      await menu.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(600);
       await expectNoOverflow(page);
     });
 

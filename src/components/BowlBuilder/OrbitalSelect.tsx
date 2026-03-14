@@ -14,25 +14,38 @@ interface OrbitalSelectProps {
 // Adjust these to control node card sizes and orbit spacing.
 // Orbit radius is derived FROM card size so spacing scales automatically.
 
-const CARD_MIN = 80;          // Minimum card width (px) — raise for bigger mobile cards
-const CARD_MAX = 120;         // Maximum card width (px) — raise for bigger desktop cards
-const CARD_SCALE = 0.2;      // How aggressively cards grow with container (0.1 = slow, 0.25 = fast)
+const CARD_MIN = 90;          // Minimum card width (px) — raise for bigger mobile cards
+const CARD_MAX = 160;         // Maximum card width (px) — raise for bigger desktop cards
+const CARD_SCALE = 0.25;      // How aggressively cards grow with container (0.1 = slow, 0.25 = fast)
 const CARD_ASPECT = 1.3;     // Card height = width * this ratio
 const ORBIT_PAD_FACTOR = 0.8; // Padding around orbit = card size * this. Controls node-to-edge spacing.
                               // Higher = more padding = smaller orbit = nodes closer together.
                               // Lower = less padding = larger orbit = nodes further apart.
-const ORBIT_PAD_FACTOR_DESKTOP = 0.45; // Less padding on desktop = larger orbit radius
+const ORBIT_PAD_FACTOR_DESKTOP = 0.3; // Less padding on desktop = larger orbit radius
 const DESKTOP_BREAKPOINT = 768; // Width threshold (px) to switch to desktop orbit padding
 const RADIUS_MIN = 120;       // Minimum orbit radius floor (px)
-const FONT_MIN = 0.6;         // Minimum label font size (rem)
-const FONT_MAX = 0.8;         // Maximum label font size (rem)
+const ORBIT_DOWNSHIFT_WIDTH = 1100;    // Container width (px) above which orbit shifts down
+const ORBIT_DOWNSHIFT_MAX = 28;        // Maximum downward offset (px)
+const FONT_MIN = 0.65;        // Minimum label font size (rem)
+const FONT_MAX = 0.95;        // Maximum label font size (rem)
+
+// Node-count reduction — shrinks cards when many nodes share the orbit
+const NODE_BASELINE = 4;       // Node count at which no reduction is applied
+const NODE_REDUCTION_RATE = 0.05; // Scale reduction per node above baseline (0.05 = 5% per extra node)
+const NODE_REDUCTION_FLOOR = 0.7; // Never shrink below 70% of the computed card size
 // ────────────────────────────────────────────────────────────────────
 
 // Derive orbit radius and card sizes from the container's rendered dimensions.
 // The constraining axis is whichever is smaller; on wide desktops that's height.
-function computeFromContainer(width: number, height: number) {
+function computeFromContainer(width: number, height: number, nodeCount: number) {
   // Card dimensions scale with the smaller container axis, clamped to min/max
-  const cardWidth = Math.max(CARD_MIN, Math.min(CARD_MAX, Math.min(width, height) * CARD_SCALE));
+  let cardWidth = Math.max(CARD_MIN, Math.min(CARD_MAX, Math.min(width, height) * CARD_SCALE));
+
+  // Reduce card size when there are many nodes in orbit
+  const extraNodes = Math.max(0, nodeCount - NODE_BASELINE);
+  const nodeScaleFactor = Math.max(NODE_REDUCTION_FLOOR, 1 - extraNodes * NODE_REDUCTION_RATE);
+  cardWidth = Math.max(CARD_MIN * NODE_REDUCTION_FLOOR, cardWidth * nodeScaleFactor);
+
   const cardHeight = cardWidth * CARD_ASPECT;
 
   // Padding scales with card size — bigger cards get proportionally more clearance
@@ -48,9 +61,13 @@ function computeFromContainer(width: number, height: number) {
   const maxRadiusH = usableH / 2;
   const radius = Math.max(RADIUS_MIN, Math.min(maxRadiusW, maxRadiusH));
 
-  const fontSize = Math.max(FONT_MIN, Math.min(FONT_MAX, cardWidth / 130));
+  const fontSize = Math.max(FONT_MIN, Math.min(FONT_MAX, cardWidth / 150));
 
-  return { radius, cardWidth, cardHeight, fontSize };
+  // Nudge orbit downward on wider screens where larger radius pushes top cards into tab bar
+  const overWidth = Math.max(0, width - ORBIT_DOWNSHIFT_WIDTH);
+  const verticalOffset = width >= DESKTOP_BREAKPOINT ? Math.min(ORBIT_DOWNSHIFT_MAX, overWidth * 0.15) : 0;
+
+  return { radius, cardWidth, cardHeight, fontSize, verticalOffset };
 }
 
 export default function OrbitalSelect({
@@ -58,12 +75,11 @@ export default function OrbitalSelect({
   selectedIngredients,
   onToggleIngredient,
   stepNumber,
-  stepLabel,
 }: OrbitalSelectProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [rotationAngle, setRotationAngle] = useState<number>(0);
   const [autoRotate, setAutoRotate] = useState<boolean>(true);
-  const [responsiveValues, setResponsiveValues] = useState({ radius: 140, cardWidth: 80, cardHeight: 98, fontSize: 0.65 });
+  const [responsiveValues, setResponsiveValues] = useState({ radius: 140, cardWidth: 80, cardHeight: 98, fontSize: 0.65, verticalOffset: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const orbitRef = useRef<HTMLDivElement>(null);
   const nodeRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -76,7 +92,7 @@ export default function OrbitalSelect({
     const measure = () => {
       const { width, height } = el.getBoundingClientRect();
       if (width > 0 && height > 0) {
-        setResponsiveValues(computeFromContainer(width, height));
+        setResponsiveValues(computeFromContainer(width, height, ingredients.length));
       }
     };
 
@@ -85,7 +101,23 @@ export default function OrbitalSelect({
     const ro = new ResizeObserver(() => measure());
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [ingredients.length]);
+
+  // Close card when clicking anywhere outside the expanded node (including MacroPanel, header, etc.)
+  useEffect(() => {
+    if (!expandedId) return;
+
+    const handleDocumentClick = (e: MouseEvent) => {
+      const expandedNode = nodeRefs.current[expandedId];
+      if (expandedNode && !expandedNode.contains(e.target as Node)) {
+        setExpandedId(null);
+        setAutoRotate(true);
+      }
+    };
+
+    document.addEventListener('mousedown', handleDocumentClick);
+    return () => document.removeEventListener('mousedown', handleDocumentClick);
+  }, [expandedId]);
 
   const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === containerRef.current || e.target === orbitRef.current) {
@@ -143,9 +175,9 @@ export default function OrbitalSelect({
     const radian = (angle * Math.PI) / 180;
 
     const x = radius * Math.cos(radian);
-    const y = radius * Math.sin(radian);
+    const y = radius * Math.sin(radian) + responsiveValues.verticalOffset;
 
-    const zIndex = Math.round(100 + 50 * Math.cos(radian));
+    const zIndex = 100 + index;
     const opacity = Math.max(0.5, Math.min(1, 0.5 + 0.5 * ((1 + Math.sin(radian)) / 2)));
 
     return { x, y, angle, zIndex, opacity };
@@ -162,17 +194,16 @@ export default function OrbitalSelect({
         className="orbital-stage"
       >
         {/* Center node - step indicator */}
-        <div className="orbital-center">
+        <div className="orbital-center" style={responsiveValues.verticalOffset > 0 ? { transform: `translateY(${responsiveValues.verticalOffset}px)` } : undefined}>
           <div className="orbital-center__ring orbital-center__ring--outer" />
           <div className="orbital-center__ring orbital-center__ring--inner" />
           <div className="orbital-center__core">
             <span className="orbital-center__number">{stepNumber}</span>
-            <span className="orbital-center__label">{stepLabel}</span>
           </div>
         </div>
 
         {/* Orbit ring */}
-        <div className="orbital-ring" />
+        <div className="orbital-ring" style={responsiveValues.verticalOffset > 0 ? { transform: `translateY(${responsiveValues.verticalOffset}px)` } : undefined} />
 
         {/* Ingredient nodes */}
         {ingredients.map((ingredient, index) => {

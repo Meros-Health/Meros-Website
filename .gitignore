@@ -47,3 +47,7 @@ documents/
 /playwright/.cache/
 /playwright/.auth/
 /tests/*-snapshots/
+.playwright-cli/
+
+# Remotion
+/remotion-video/
