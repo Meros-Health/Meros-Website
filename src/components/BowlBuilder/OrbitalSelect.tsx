@@ -77,12 +77,23 @@ export default function OrbitalSelect({
   stepNumber,
 }: OrbitalSelectProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [rotationAngle, setRotationAngle] = useState<number>(0);
   const [autoRotate, setAutoRotate] = useState<boolean>(true);
   const [responsiveValues, setResponsiveValues] = useState({ radius: 140, cardWidth: 80, cardHeight: 98, fontSize: 0.65, verticalOffset: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const orbitRef = useRef<HTMLDivElement>(null);
   const nodeRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const rotationRef = useRef<number>(0);
+  const rafRef = useRef<number>(0);
+  const lastTimeRef = useRef<number>(0);
+  const snapRafRef = useRef<number>(0);
+  const responsiveRef = useRef(responsiveValues);
+  const ingredientsRef = useRef(ingredients);
+  const expandedIdRef = useRef<string | null>(null);
+
+  // Keep refs in sync with state/props
+  responsiveRef.current = responsiveValues;
+  ingredientsRef.current = ingredients;
+  expandedIdRef.current = expandedId;
 
   // Derive sizes from actual container dimensions via ResizeObserver
   useEffect(() => {
@@ -137,23 +148,44 @@ export default function OrbitalSelect({
     }
   };
 
+  // RAF-driven rotation — updates DOM directly, no React re-renders
   useEffect(() => {
-    let rotationTimer: ReturnType<typeof setInterval>;
+    if (!autoRotate) return;
 
-    if (autoRotate) {
-      rotationTimer = setInterval(() => {
-        setRotationAngle((prev) => {
-          const newAngle = (prev + 0.25) % 360;
-          return Number(newAngle.toFixed(3));
-        });
-      }, 50);
-    }
+    const DEGREES_PER_SECOND = 5; // 0.25 per 50ms = 5 deg/s
 
-    return () => {
-      if (rotationTimer) {
-        clearInterval(rotationTimer);
+    const tick = (timestamp: number) => {
+      if (!lastTimeRef.current) lastTimeRef.current = timestamp;
+      const delta = timestamp - lastTimeRef.current;
+      lastTimeRef.current = timestamp;
+
+      rotationRef.current = (rotationRef.current + DEGREES_PER_SECOND * (delta / 1000)) % 360;
+
+      const items = ingredientsRef.current;
+      const rv = responsiveRef.current;
+      const total = items.length;
+
+      for (let i = 0; i < total; i++) {
+        const el = nodeRefs.current[items[i].id];
+        if (!el) continue;
+
+        const angle = ((i / total) * 360 + rotationRef.current) % 360;
+        const radian = (angle * Math.PI) / 180;
+        const x = rv.radius * Math.cos(radian);
+        const y = rv.radius * Math.sin(radian) + rv.verticalOffset;
+        const opacity = Math.max(0.5, Math.min(1, 0.5 + 0.5 * ((1 + Math.sin(radian)) / 2)));
+
+        el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+        el.style.opacity = String(opacity);
       }
+
+      rafRef.current = requestAnimationFrame(tick);
     };
+
+    lastTimeRef.current = 0;
+    rafRef.current = requestAnimationFrame(tick);
+
+    return () => cancelAnimationFrame(rafRef.current);
   }, [autoRotate]);
 
   // Reset expanded state when ingredients change (tab switch)
@@ -166,12 +198,64 @@ export default function OrbitalSelect({
     const nodeIndex = ingredients.findIndex((item) => item.id === nodeId);
     const totalNodes = ingredients.length;
     const targetAngle = (nodeIndex / totalNodes) * 360;
-    setRotationAngle(270 - targetAngle);
+    const targetRotation = 270 - targetAngle;
+
+    // Cancel any existing snap animation
+    cancelAnimationFrame(snapRafRef.current);
+
+    const startRotation = rotationRef.current;
+    // Find shortest rotation path (handle wrapping around 360)
+    let diff = targetRotation - startRotation;
+    if (diff > 180) diff -= 360;
+    if (diff < -180) diff += 360;
+
+    const duration = 700; // ms — matches original CSS transition duration
+    let startTime = 0;
+
+    // Cubic-bezier(0.25, 0.1, 0.25, 1) approximation via ease-out curve
+    const ease = (t: number) => 1 - Math.pow(1 - t, 3);
+
+    const animateSnap = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const elapsed = timestamp - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      const eased = ease(progress);
+
+      rotationRef.current = (startRotation + diff * eased) % 360;
+      if (rotationRef.current < 0) rotationRef.current += 360;
+      applyNodePositions();
+
+      if (progress < 1) {
+        snapRafRef.current = requestAnimationFrame(animateSnap);
+      }
+    };
+
+    snapRafRef.current = requestAnimationFrame(animateSnap);
+  };
+
+  const applyNodePositions = () => {
+    const items = ingredientsRef.current;
+    const rv = responsiveRef.current;
+    const total = items.length;
+    const currentExpanded = expandedIdRef.current;
+    for (let i = 0; i < total; i++) {
+      const el = nodeRefs.current[items[i].id];
+      if (!el) continue;
+      const isExpanded = items[i].id === currentExpanded;
+      const angle = ((i / total) * 360 + rotationRef.current) % 360;
+      const radian = (angle * Math.PI) / 180;
+      const x = rv.radius * Math.cos(radian);
+      const y = rv.radius * Math.sin(radian) + rv.verticalOffset;
+      const opacity = isExpanded ? 1 : Math.max(0.5, Math.min(1, 0.5 + 0.5 * ((1 + Math.sin(radian)) / 2)));
+      el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+      el.style.opacity = String(opacity);
+      el.style.zIndex = isExpanded ? '200' : String(100 + i);
+    }
   };
 
   const calculateNodePosition = (index: number, total: number) => {
-    const angle = ((index / total) * 360 + rotationAngle) % 360;
-    const radius = responsiveValues.radius; // Responsive radius
+    const angle = ((index / total) * 360 + rotationRef.current) % 360;
+    const radius = responsiveValues.radius;
     const radian = (angle * Math.PI) / 180;
 
     const x = radius * Math.cos(radian);
@@ -412,8 +496,7 @@ export default function OrbitalSelect({
         .orbital-node {
           position: absolute;
           cursor: pointer;
-          transition: transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1), 
-                      opacity 0.5s ease;
+          will-change: transform, opacity;
         }
 
         .orbital-node__card {
@@ -488,8 +571,9 @@ export default function OrbitalSelect({
           top: calc(100% + 10px);
           left: 50%;
           transform: translateX(-50%);
+          z-index: 300;
           width: clamp(180px, 30vw, 220px);
-          background: rgba(28, 46, 30, 0.95);
+          background: rgba(28, 46, 30, 0.98);
           backdrop-filter: blur(16px);
           -webkit-backdrop-filter: blur(16px);
           border: 1px solid rgba(255, 255, 255, 0.15);

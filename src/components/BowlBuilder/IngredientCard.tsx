@@ -96,6 +96,9 @@ export default function IngredientCard({ ingredient, isSelected, onToggle, index
         <img
           src={ingredient.image}
           alt={ingredient.name}
+          loading="lazy"
+          width={80}
+          height={80}
           style={{
             width: '100%',
             height: '100%',

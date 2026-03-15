@@ -8,14 +8,14 @@ const row2 = ['/Yogurt/Hands1.jpg', '/Yogurt/Bowl6a.jpg', '/Smoothies-Menu/Smoot
   <div class="gallery__row gallery__row--1" data-gallery-row="1">
     {row1.map((src) => (
       <div class="gallery__item">
-        <img src={src} alt="" width="400" height="300" />
+        <img src={src} alt="" width="400" height="300" loading="lazy" />
       </div>
     ))}
   </div>
   <div class="gallery__row gallery__row--2" data-gallery-row="2">
     {row2.map((src) => (
       <div class="gallery__item">
-        <img src={src} alt="" width="400" height="300" />
+        <img src={src} alt="" width="400" height="300" loading="lazy" />
       </div>
     ))}
   </div>
