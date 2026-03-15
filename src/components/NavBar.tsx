@@ -1,130 +1,99 @@
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 
-const navLinks = [
-  { href: '/bowl-builder', label: 'BUILD' },
-  { href: '#menu', label: 'MENU' },
+/** In-page scroll targets — hrefs must match section ids on the home page */
+const SCROLL_LINKS = [
   { href: '#about', label: 'ABOUT' },
-  { href: '#find-us', label: 'FIND US' },
-];
+  { href: '#smoothies', label: 'SMOOTHIES' },
+  { href: '#yogurt', label: 'YOGURT' },
+  { href: '#contact', label: 'CONTACT' },
+] as const;
+
+/** Full-page navigation — never treated as a hash/scroll link */
+const PAGE_LINKS = [{ href: '/bowl-builder', label: 'BUILD', isBuild: true }] as const;
+
+const NAV_LINKS = [...SCROLL_LINKS, ...PAGE_LINKS];
 
 export default function NavBar() {
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  const { scrollY } = useScroll();
-  const navBgOpacity = useTransform(scrollY, [0, 120], [0, 1]);
-  const navBlur = useTransform(scrollY, [0, 120], [0, 8]);
-  const borderOpacity = useTransform(scrollY, [0, 120], [0, 1]);
-  const textColor = useTransform(
-    scrollY,
-    [0, 120],
-    ['rgba(250, 250, 247, 1)', 'rgb(28, 46, 30)']
-  );
-
-  function close() {
-    setMenuOpen(false);
-  }
-
-  // Scroll-derived transforms (always called unconditionally)
-  const scrollBg = useTransform(navBgOpacity, (v) => `rgba(250, 250, 247, ${v})`);
-  const scrollBlur = useTransform(navBlur, (v) => `blur(${v}px)`);
-  const scrollBorder = useTransform(borderOpacity, (v) => `rgba(28, 46, 30, ${v * 0.12})`);
+  const [open, setOpen] = useState(false);
+  const close = () => setOpen(false);
 
   return (
     <>
-      <motion.header
-        className="nav"
-        style={{
-          backgroundColor: menuOpen ? 'rgba(250, 250, 247, 1)' : scrollBg,
-          backdropFilter: menuOpen ? 'blur(8px)' : scrollBlur,
-          WebkitBackdropFilter: menuOpen ? 'blur(8px)' : scrollBlur,
-          borderBottomWidth: '1px',
-          borderBottomStyle: 'solid',
-          borderBottomColor: menuOpen ? 'rgba(28, 46, 30, 0.12)' : scrollBorder,
-        }}
-      >
-        <motion.a
-          href="/"
-          className="nav__logo"
-          style={{ color: menuOpen ? 'rgb(28, 46, 30)' : textColor }}
-          aria-label="MEROS home"
-        >
+      <header className="nav">
+        <a href="/" className="nav__logo" aria-label="MEROS home">
           MEROS
-        </motion.a>
+        </a>
 
         {/* Desktop links */}
-        <nav className="nav__links" aria-label="Main">
-          {navLinks.map(({ href, label }) => (
-            <motion.a key={href} href={href} className="nav__link" style={{ color: menuOpen ? 'rgb(28, 46, 30)' : textColor }}>
+        <nav className="nav__links" aria-label="Main navigation">
+          {NAV_LINKS.map(({ href, label, isBuild }) => (
+            <a
+              key={href}
+              href={href}
+              className={isBuild ? 'nav__link nav__link--build' : 'nav__link'}
+            >
               {label}
-            </motion.a>
+            </a>
           ))}
         </nav>
 
         {/* Mobile hamburger */}
-        <motion.button
+        <button
           className="nav__hamburger"
-          onClick={() => setMenuOpen((o) => !o)}
-          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-          aria-expanded={menuOpen}
-          style={{ color: menuOpen ? 'rgb(28, 46, 30)' : textColor }}
+          onClick={() => setOpen(o => !o)}
+          aria-label={open ? 'Close menu' : 'Open menu'}
+          aria-expanded={open}
         >
           <motion.span
             className="nav__bar"
-            animate={menuOpen ? { rotate: 45, y: 6 } : { rotate: 0, y: 0 }}
-            transition={{ duration: 0.25 }}
+            animate={open ? { rotate: 45, y: 5.5 } : { rotate: 0, y: 0 }}
+            transition={{ duration: 0.22 }}
           />
           <motion.span
             className="nav__bar"
-            animate={menuOpen ? { opacity: 0, scaleX: 0 } : { opacity: 1, scaleX: 1 }}
-            transition={{ duration: 0.2 }}
+            animate={open ? { opacity: 0, scaleX: 0 } : { opacity: 1, scaleX: 1 }}
+            transition={{ duration: 0.18 }}
           />
           <motion.span
             className="nav__bar"
-            animate={menuOpen ? { rotate: -45, y: -6 } : { rotate: 0, y: 0 }}
-            transition={{ duration: 0.25 }}
+            animate={open ? { rotate: -45, y: -5.5 } : { rotate: 0, y: 0 }}
+            transition={{ duration: 0.22 }}
           />
-        </motion.button>
-      </motion.header>
+        </button>
+      </header>
 
-      {/* Mobile slide-down menu */}
+      {/* Mobile dropdown */}
       <AnimatePresence>
-        {menuOpen && (
+        {open && (
           <>
             <motion.button
+              key="backdrop"
               className="nav__mobile-backdrop"
-              key="mobile-backdrop"
               type="button"
               onClick={close}
+              aria-label="Close menu"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
-              aria-label="Close mobile menu"
+              transition={{ duration: 0.2 }}
             />
-
-            <motion.div
-              className="nav__mobile-top-fill"
-              key="mobile-top-fill"
-              initial={{ y: '-100%', opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: '-100%', opacity: 0 }}
-              transition={{ duration: 0.32, ease: [0.25, 0.1, 0.25, 1] }}
-              aria-hidden="true"
-            />
-
             <motion.nav
+              key="menu"
               className="nav__mobile-menu"
-              key="mobile-menu"
-              initial={{ y: '-100%', opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: '-100%', opacity: 0 }}
-              transition={{ duration: 0.32, ease: [0.25, 0.1, 0.25, 1] }}
-              onClick={(e) => e.stopPropagation()}
               aria-label="Mobile navigation"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.24, ease: [0.25, 0.1, 0.25, 1] }}
             >
-              {navLinks.map(({ href, label }) => (
-                <a key={href} href={href} className="nav__mobile-link" onClick={close}>
+              {NAV_LINKS.map(({ href, label, isBuild }) => (
+                <a
+                  key={href}
+                  href={href}
+                  className={isBuild ? 'nav__mobile-link nav__mobile-link--build' : 'nav__mobile-link'}
+                  onClick={close}
+                >
                   {label}
                 </a>
               ))}

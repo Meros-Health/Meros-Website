@@ -218,7 +218,7 @@ for (const [label, size] of Object.entries(VIEWPORTS)) {
 
     // ----- Smoothie menu section (3D carousel) -----
     test('smoothie menu section is visible on page load', async ({ page }) => {
-      const menu = page.locator('#menu');
+      const menu = page.locator('#smoothies');
       await menu.scrollIntoViewIfNeeded();
       await page.waitForTimeout(600);
       await expect(menu).toBeVisible();
@@ -229,7 +229,7 @@ for (const [label, size] of Object.entries(VIEWPORTS)) {
     });
 
     test('smoothie carousel front card is visible with title and descriptor', async ({ page }) => {
-      const menu = page.locator('#menu');
+      const menu = page.locator('#smoothies');
       await menu.scrollIntoViewIfNeeded();
       await page.waitForTimeout(600);
 
@@ -245,7 +245,7 @@ for (const [label, size] of Object.entries(VIEWPORTS)) {
     });
 
     test('smoothie carousel arrow navigation advances cards', async ({ page }) => {
-      const menu = page.locator('#menu');
+      const menu = page.locator('#smoothies');
       await menu.scrollIntoViewIfNeeded();
       await page.waitForTimeout(600);
 
@@ -263,7 +263,7 @@ for (const [label, size] of Object.entries(VIEWPORTS)) {
     });
 
     test('smoothie carousel does not cause horizontal overflow', async ({ page }) => {
-      const menu = page.locator('#menu');
+      const menu = page.locator('#smoothies');
       await menu.scrollIntoViewIfNeeded();
       await page.waitForTimeout(600);
       await expectNoOverflow(page);
@@ -271,7 +271,7 @@ for (const [label, size] of Object.entries(VIEWPORTS)) {
 
     // ----- Yogurt menu section -----
     test('yogurt menu layout', async ({ page }) => {
-      const yogurt = page.locator('#yogurt-menu');
+      const yogurt = page.locator('#yogurt');
       await yogurt.scrollIntoViewIfNeeded();
       await page.waitForTimeout(400);
       await expect(yogurt).toBeVisible();
@@ -298,7 +298,7 @@ for (const [label, size] of Object.entries(VIEWPORTS)) {
 
     // ----- Location section -----
     test('location section layout', async ({ page }) => {
-      const location = page.locator('#find-us');
+      const location = page.locator('#contact');
       await location.scrollIntoViewIfNeeded();
       await page.waitForTimeout(400);
       await expect(location).toBeVisible();
@@ -311,7 +311,7 @@ for (const [label, size] of Object.entries(VIEWPORTS)) {
     // ----- Sections do not overlap -----
     test('major sections do not overlap', async ({ page }) => {
       await scrollFullPage(page);
-      const sectionSelectors = ['#hero', '#about', '#menu', '#yogurt-menu', '#find-us'];
+      const sectionSelectors = ['#hero', '#about', '#smoothies', '#yogurt', '#contact'];
       const boxes: { selector: string; y: number; height: number }[] = [];
 
       for (const sel of sectionSelectors) {

@@ -105,38 +105,46 @@
 
     // ═══════════════════════════════════════════════════════════════════════════
     // TUNING KNOBS
-    // Adjust these values to align the chevron reveal on each breakpoint.
     // ═══════════════════════════════════════════════════════════════════════════
 
-    // ── Arrow travel range (vw units) ─────────────────────────────────────────
-    // The arrow centre moves from `startVw` to `startVw + rangeVw` as the user
-    // scrolls through the section.  Keep |startVw| large enough that the arrow
-    // begins fully off-screen left (rule: |startVw| > 50 + half-arrow-width-in-vw).
-    const DESKTOP_START_VW = -30;   // vw at scroll progress = 0
-    const DESKTOP_RANGE_VW =  60;   // total vw distance travelled
-
-    const MOBILE_START_VW  = -65;   // ↑ increase magnitude to start further left
-    const MOBILE_RANGE_VW  = 130;   // ↑ increase to keep arrow off-screen at end
-
-    // ── Reveal fraction ───────────────────────────────────────────────────────
-    // Controls WHERE along the arrow's width the text curtain lifts.
-    // The SVG viewBox is 140 wide; the two chevron tips sit at x = 86 and x = 124.
+    // WHERE along the arrow's width the text curtain lifts.
     //
-    //   0.00  → curtain lifts at the arrow's left edge  (text appears very early)
-    //   0.61  → curtain lifts at the first chevron tip  (x = 86 / 140)
-    //   0.75  → curtain lifts at the visual midpoint of both chevrons
-    //   0.89  → curtain lifts at the leading chevron tip (x = 124 / 140)
-    //   1.00  → curtain lifts at the arrow's right edge (text appears very late)
+    // This targets the TRAILING (left) chevron tip. Derived from SVG geometry:
+    //   - ViewBox width: 140.  Trailing tip path-point: x = 86  → 86/140 ≈ 0.614
+    //   - stroke-width 22 + miter join extends the visual tip ~13 SVG units right
+    //     → (86 + 13) / 140 ≈ 0.707
+    //   - feGaussianBlur stdDeviation=7 softens the tip ~5 units further right
+    //     → ~0.74 as a pure-geometry estimate
     //
-    // Increase → text appears later / follows the leading tip more closely.
-    // Decrease → text appears earlier / leads the arrow.
-    const DESKTOP_REVEAL_FRAC = 0.50;  // tune if text leads/lags on desktop
-    const MOBILE_REVEAL_FRAC  = 0.42;  // tune if text leads/lags on mobile ← start here
+    // This value should NOT need to change with screen size — the SVG scales
+    // proportionally, so the tip fraction is viewport-invariant.
+    // Use CLIP_TRIM_FRAC below for any residual alignment correction.
+    const REVEAL_FRAC = 0.74;
+
+    // How far past the text's right edge the leading tip travels at p=1.
+    // Fraction of arrowW so it scales proportionally on every viewport size.
+    const FINISH_OVERSHOOT = 0.75;
+
+    // Clip-path alignment trim.
+    //
+    // REVEAL_FRAC captures the geometry; this knob absorbs everything else:
+    // GPU/CPU compositing timing skew, perceived glow centre, and device-level
+    // rendering variance. It is scaled by arrowW, so one value corrects
+    // proportionally across all viewport sizes (mobile gets more px of
+    // correction because its arrowW is larger — matching the larger lag there).
+    //
+    //  0    → clip sits exactly at REVEAL_FRAC (no extra shift)
+    //  +ve  → clip shifts RIGHT (text reveals later  — chevron tip appears ahead of curtain)
+    //  -ve  → clip shifts LEFT  (text reveals earlier — curtain appears ahead of chevron tip)
+    //
+    // Tuning procedure:
+    //   1. On desktop, adjust in ±0.05 steps until the curtain lifts exactly as
+    //      the trailing tip reaches each character.
+    //   2. Check mobile — if it still lags, nudge REVEAL_FRAC (not this) because
+    //      the geometry itself may be slightly off; then re-tune CLIP_TRIM_FRAC.
+    const CLIP_TRIM_FRAC = -0.29;
 
     // ── Arrow height padding (px above + below the text block) ────────────────
-    // The JS measures the rendered text height and adds this many px so the
-    // chevron is always visibly taller than the text.  Increase if the chevron
-    // looks clipped; decrease if it feels too tall.
     const ARROW_PAD_PX = 48;
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -151,6 +159,7 @@
     const aw: HTMLElement = arrowWrap;
     const tw: HTMLElement = textWrap;
     const s:  HTMLElement = section;
+    const textEl = section.querySelector<HTMLElement>('.sr__text');
 
     const bgRowTop    = section.querySelector<HTMLElement>('.sr__bg-row--top');
     const bgRowBottom = section.querySelector<HTMLElement>('.sr__bg-row--bottom');
@@ -197,22 +206,33 @@
 
     // ── Unified scroll-driven update (all screen sizes) ────────────────────────
     function update() {
-      const p        = getProgress();
-      const isMobile = window.innerWidth <= 768;
+      const p    = getProgress();
+      const vw   = window.innerWidth;
 
-      const startVw    = isMobile ? MOBILE_START_VW    : DESKTOP_START_VW;
-      const rangeVw    = isMobile ? MOBILE_RANGE_VW    : DESKTOP_RANGE_VW;
-      const revealFrac = isMobile ? MOBILE_REVEAL_FRAC : DESKTOP_REVEAL_FRAC;
+      // Arrow width is stable across horizontal translation — read before moving.
+      const arrowW    = aw.getBoundingClientRect().width || 60;
+      const textRect  = (textEl ?? tw).getBoundingClientRect();
 
-      const arrowX = startVw + rangeVw * p;
-      aw.style.transform = `translate(calc(-50% + ${arrowX}vw), -50%)`;
+      // Start (p=0): leading chevron tip aligned with the LEFT edge of the text <p>.
+      // End   (p=1): leading chevron tip aligned with the RIGHT edge of the text <p>.
+      // leading tip sits at arrowLeft + arrowW * REVEAL_FRAC, so:
+      //   centerX = tipTarget - arrowW * REVEAL_FRAC + arrowW / 2
+      const startCenterX = textRect.left  - arrowW * REVEAL_FRAC + arrowW / 2;
+      const endCenterX   = textRect.right + arrowW * FINISH_OVERSHOOT - arrowW * REVEAL_FRAC + arrowW / 2;
+      const centerX      = startCenterX + (endCenterX - startCenterX) * p;
+
+      // Arrow is anchored at left:50% + translate(-50%), so center sits at vw/2.
+      // Shift by (centerX - vw/2) to place it at the desired center.
+      const offsetX = centerX - vw / 2;
+      aw.style.transform = `translate(calc(-50% + ${offsetX}px), -50%)`;
       aw.style.opacity   = String(Math.min(1, 0.15 + p * 17));
 
-      // revealX = point in viewport coords where the curtain lifts.
-      // revealFrac maps 0→left-edge of arrow, 1→right-edge of arrow.
-      const arrowRect = aw.getBoundingClientRect();
-      const revealX   = arrowRect.left + arrowRect.width * revealFrac;
-      const clipRight = Math.max(0, window.innerWidth - revealX);
+      // Clip-path: curtain lifts at the leading chevron tip (x=124 in 140-wide viewBox).
+      // Derive revealX from the computed center rather than a post-layout getBCR,
+      // so text tracking stays in sync even before the browser commits the new transform.
+      const arrowLeft = centerX - arrowW / 2;
+      const revealX   = arrowLeft + arrowW * (REVEAL_FRAC + CLIP_TRIM_FRAC);
+      const clipRight = Math.max(0, vw - revealX);
       tw.style.clipPath = `inset(0 ${clipRight}px 0 0)`;
 
       if (bgRowTop)    bgRowTop.style.transform    = `translateX(${-5 - p * 35}vw)`;

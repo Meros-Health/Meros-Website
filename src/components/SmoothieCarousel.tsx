@@ -8,6 +8,7 @@ import { motion, useMotionValue, useTransform, animate, type MotionValue } from 
 const SCALE_FACTOR = 10;   // % scale reduction per position away from center
 const SKEW_FACTOR  = 8;    // deg of rotateY per position away from center
 const CARD_GAP     = 8;    // px gap between adjacent card edges
+const ARROW_SIZE   = 48;   // button width = height (px)
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface SmoothieItem {
@@ -29,7 +30,6 @@ const total = smoothies.length;
 
 // ─── Position helpers ────────────────────────────────────────────────────────
 
-/** Unsigned X offset for an integer number of steps from center */
 function getCardXUnsigned(steps: number, baseWidth: number): number {
   let x = 0;
   for (let i = 1; i <= steps; i++) {
@@ -40,7 +40,6 @@ function getCardXUnsigned(steps: number, baseWidth: number): number {
   return x;
 }
 
-/** Continuous X offset — linearly interpolates between integer positions */
 function getCardXContinuous(effectiveSlot: number, baseWidth: number): number {
   if (effectiveSlot === 0) return 0;
   const sign = effectiveSlot < 0 ? -1 : 1;
@@ -63,7 +62,6 @@ interface CardProps {
 }
 
 const CarouselCard: React.FC<CardProps> = ({ slot, offset, smoothie, cardWidth, cardHeight }) => {
-  // Use refs so useTransform closures always read the latest size
   const cwRef = useRef(cardWidth);
   cwRef.current = cardWidth;
 
@@ -79,25 +77,22 @@ const CarouselCard: React.FC<CardProps> = ({ slot, offset, smoothie, cardWidth, 
   });
   const opacityVal = useTransform(offset, o => {
     const absPos = Math.abs(slot + o);
-    // Exponential decay: 1.0 at center → ~0.42 at ±1 → ~0.18 at ±2 → ~0.07 at ±3
     return Math.max(0, Math.pow(0.42, absPos));
   });
   const textOpacity = useTransform(offset, o => {
     const absPos = Math.abs(slot + o);
-    // Smooth fade: 1 at center → 0.55 by 1 slot away
     return Math.max(0.55, 1 - absPos * 0.45);
   });
   const boxShadow = useTransform(offset, o => {
     const absPos = Math.abs(slot + o);
     const t = Math.min(absPos, 1);
-    // Three-layer Apple-style shadow — richest at center, dissolves as card moves away
-    const a1 = (0.50 - t * 0.48).toFixed(3); // ambient lift
+    const a1 = (0.50 - t * 0.48).toFixed(3);
     const b1 = Math.round(72 - t * 68);
     const y1 = Math.round(28 - t * 25);
-    const a2 = (0.30 - t * 0.28).toFixed(3); // mid shadow
+    const a2 = (0.30 - t * 0.28).toFixed(3);
     const b2 = Math.round(22 - t * 19);
     const y2 = Math.round(10 - t * 8);
-    const a3 = (0.20 - t * 0.18).toFixed(3); // close contact
+    const a3 = (0.20 - t * 0.18).toFixed(3);
     const b3 = Math.round(7 - t * 5);
     const y3 = Math.round(3 - t * 2);
     return `0 ${y1}px ${b1}px rgba(0,0,0,${a1}), 0 ${y2}px ${b2}px rgba(0,0,0,${a2}), 0 ${y3}px ${b3}px rgba(0,0,0,${a3})`;
@@ -122,16 +117,15 @@ const CarouselCard: React.FC<CardProps> = ({ slot, offset, smoothie, cardWidth, 
         zIndex,
         transformOrigin: 'center center',
         pointerEvents: isFront ? 'auto' : 'none',
-        borderRadius: '10px',
+        borderRadius: '12px',
       }}
     >
       <motion.div style={{
         width: '100%',
         height: '100%',
-        borderRadius: '10px',
+        borderRadius: '12px',
         overflow: 'hidden',
-        // clipPath clips the image reliably even inside a 3D-transformed ancestor
-        clipPath: 'inset(0 round 10px)',
+        clipPath: 'inset(0 round 12px)',
         boxShadow,
       }}>
         <img
@@ -152,7 +146,7 @@ const CarouselCard: React.FC<CardProps> = ({ slot, offset, smoothie, cardWidth, 
           bottom: 0,
           left: 0,
           width: '100%',
-          padding: '2rem 1.5rem 1.5rem',
+          padding: '2.5rem 1.5rem 1.75rem',
           background: 'linear-gradient(to top, rgba(20,36,22,0.97) 0%, rgba(20,36,22,0.72) 55%, transparent 100%)',
           opacity: textOpacity,
         }}>
@@ -184,6 +178,79 @@ const CarouselCard: React.FC<CardProps> = ({ slot, offset, smoothie, cardWidth, 
   );
 };
 
+// ─── Arrow button ─────────────────────────────────────────────────────────────
+
+const ChevronLeft = () => (
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 4L6 9L11 14" />
+  </svg>
+);
+
+const ChevronRight = () => (
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M7 4L12 9L7 14" />
+  </svg>
+);
+
+interface ArrowProps {
+  direction: 'prev' | 'next';
+  pad: number;
+  onClick: () => void;
+}
+
+const ArrowButton: React.FC<ArrowProps> = ({ direction, pad, onClick }) => (
+  <motion.button
+    onClick={onClick}
+    aria-label={direction === 'prev' ? 'Previous smoothie' : 'Next smoothie'}
+    className={`carousel-arrow carousel-arrow--${direction}`}
+    style={{
+      position: 'absolute',
+      [direction === 'prev' ? 'left' : 'right']: `${pad}px`,
+      top: '50%',
+      translateY: '-50%',
+      zIndex: 10,
+    }}
+    whileHover={{ scale: 1.1 }}
+    whileTap={{ scale: 0.88 }}
+    transition={{ duration: 0.15, ease: [0.25, 0.1, 0.25, 1] }}
+  >
+    {direction === 'prev' ? <ChevronLeft /> : <ChevronRight />}
+  </motion.button>
+);
+
+// ─── Dot indicators ───────────────────────────────────────────────────────────
+
+const DotIndicators: React.FC<{ total: number; active: number }> = ({ total, active }) => (
+  <div
+    style={{
+      display: 'flex',
+      gap: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 32,
+      paddingBottom: 4,
+    }}
+    aria-hidden="true"
+  >
+    {Array.from({ length: total }).map((_, i) => (
+      <motion.div
+        key={i}
+        animate={{
+          width: i === active ? 22 : 6,
+          opacity: i === active ? 1 : 0.32,
+        }}
+        style={{
+          height: 6,
+          borderRadius: 3,
+          backgroundColor: i === active ? '#C96A4A' : '#FAFAF7',
+          flexShrink: 0,
+        }}
+        transition={{ duration: 0.32, ease: [0.25, 0.1, 0.25, 1] }}
+      />
+    ))}
+  </div>
+);
+
 // ─── Main carousel ───────────────────────────────────────────────────────────
 
 const RENDER_SLOTS = [-3, -2, -1, 0, 1, 2, 3];
@@ -191,7 +258,7 @@ const RENDER_SLOTS = [-3, -2, -1, 0, 1, 2, 3];
 const SmoothieCarousel: React.FC = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [cardWidth, setCardWidth] = useState(280);
-  const [arrowPad, setArrowPad] = useState(16);
+  const [arrowPad, setArrowPad] = useState(24);
   const offset = useMotionValue(0);
   const isAnimating = useRef(false);
 
@@ -204,12 +271,16 @@ const SmoothieCarousel: React.FC = () => {
       else if (w <= 1024) width = Math.round(w * 0.34);
       else if (w <= 1440) width = Math.round(w * 0.26);
       else                width = Math.round(w * 0.22);
-      setCardWidth(Math.min(Math.max(width, 200), 520));
+      width = Math.min(Math.max(width, 200), 520);
+      setCardWidth(width);
 
-      if (w <= 480)       setArrowPad(8);
-      else if (w <= 768)  setArrowPad(12);
-      else if (w <= 1024) setArrowPad(20);
-      else                setArrowPad(32);
+      // Place arrow in the middle of the gap between front card edge and screen edge.
+      // Gap on one side = (viewport - cardWidth) / 2
+      // Midpoint of that gap from edge = gap / 2
+      // Subtract half the arrow button so the button center lands at the midpoint.
+      const gapHalf = (w - width) / 2;
+      const pad = Math.max(8, Math.round(gapHalf / 2 - ARROW_SIZE / 2));
+      setArrowPad(pad);
     };
     calc();
     window.addEventListener('resize', calc);
@@ -263,51 +334,40 @@ const SmoothieCarousel: React.FC = () => {
         position: 'relative',
         width: '100%',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
       }}
     >
-      {/* Prev arrow */}
-      <button
-        onClick={prev}
-        aria-label="Previous smoothie"
-        className="carousel-arrow carousel-arrow--prev"
-        style={{ position: 'absolute', left: `${arrowPad}px`, top: '50%', transform: 'translateY(-50%)', zIndex: 10 }}
-      >
-        ←
-      </button>
+      {/* Track wrapper — arrows absolutely positioned relative to this */}
+      <div style={{ position: 'relative', width: '100%' }}>
+        <ArrowButton direction="prev" pad={arrowPad} onClick={prev} />
 
-      {/* Card track — perspective on parent for unified 3D depth */}
-      <div style={{
-        position: 'relative',
-        width: '100%',
-        height: `${cardHeight}px`,
-        perspective: '1200px',
-      }}>
-        {RENDER_SLOTS.map(s => {
-          const dataIndex = ((activeIndex + s) % total + total) % total;
-          return (
-            <CarouselCard
-              key={s}
-              slot={s}
-              offset={offset}
-              smoothie={smoothies[dataIndex]}
-              cardWidth={cardWidth}
-              cardHeight={cardHeight}
-            />
-          );
-        })}
+        {/* Card track */}
+        <div style={{
+          position: 'relative',
+          width: '100%',
+          height: `${cardHeight}px`,
+          perspective: '1200px',
+        }}>
+          {RENDER_SLOTS.map(s => {
+            const dataIndex = ((activeIndex + s) % total + total) % total;
+            return (
+              <CarouselCard
+                key={s}
+                slot={s}
+                offset={offset}
+                smoothie={smoothies[dataIndex]}
+                cardWidth={cardWidth}
+                cardHeight={cardHeight}
+              />
+            );
+          })}
+        </div>
+
+        <ArrowButton direction="next" pad={arrowPad} onClick={next} />
       </div>
 
-      {/* Next arrow */}
-      <button
-        onClick={next}
-        aria-label="Next smoothie"
-        className="carousel-arrow carousel-arrow--next"
-        style={{ position: 'absolute', right: `${arrowPad}px`, top: '50%', transform: 'translateY(-50%)', zIndex: 10 }}
-      >
-        →
-      </button>
+      <DotIndicators total={total} active={activeIndex} />
     </div>
   );
 };
