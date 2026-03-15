@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import DonutChart from './DonutChart';
 import { dailyGoals } from './ingredients';
@@ -44,30 +44,54 @@ function AnimatedNumber({ value, suffix = '' }: { value: number; suffix?: string
 export default function MacroPanel({ totals, onSave, hasSelection, compact = false }: MacroPanelProps) {
   // expanded state removed — compact panel is always open
 
-  // Compact mobile version — always expanded, no collapsible behaviour
+  // Compact mobile version — single-row layout: calories | donut | macros
   if (compact) {
     return (
       <div className="macro-panel-compact">
-        {/* Summary bar with save button */}
-        <div className="macro-panel-compact__bar">
-          <div className="macro-panel-compact__summary">
-            <div className="macro-panel-compact__calories">
+        <div className="macro-panel-compact__row">
+          {/* Left: Calories */}
+          <div className="macro-panel-compact__calories">
+            <span className="macro-panel-compact__cal-value">
               <AnimatedNumber value={totals.calories} />
-              <span className="macro-panel-compact__unit">cal</span>
+            </span>
+            <span className="macro-panel-compact__cal-unit">cal</span>
+          </div>
+
+          {/* Center: Mini donut */}
+          <div className="macro-panel-compact__chart">
+            <MiniDonut
+              protein={totals.protein}
+              carbs={totals.carbs}
+              fat={totals.fat}
+            />
+          </div>
+
+          {/* Right: Macro breakdown */}
+          <div className="macro-panel-compact__macros">
+            <div className="macro-panel-compact__macro">
+              <span className="macro-panel-compact__dot macro-panel-compact__dot--protein" />
+              <span className="macro-panel-compact__macro-value">
+                <AnimatedNumber value={totals.protein} suffix="g" />
+              </span>
+              <span className="macro-panel-compact__macro-label">Protein</span>
             </div>
-            <div className="macro-panel-compact__macros">
-              <span className="macro-panel-compact__macro macro-panel-compact__macro--protein">
-                P: <AnimatedNumber value={totals.protein} suffix="g" />
+            <div className="macro-panel-compact__macro">
+              <span className="macro-panel-compact__dot macro-panel-compact__dot--carbs" />
+              <span className="macro-panel-compact__macro-value">
+                <AnimatedNumber value={totals.carbs} suffix="g" />
               </span>
-              <span className="macro-panel-compact__macro macro-panel-compact__macro--carbs">
-                C: <AnimatedNumber value={totals.carbs} suffix="g" />
+              <span className="macro-panel-compact__macro-label">Carbs</span>
+            </div>
+            <div className="macro-panel-compact__macro">
+              <span className="macro-panel-compact__dot macro-panel-compact__dot--fat" />
+              <span className="macro-panel-compact__macro-value">
+                <AnimatedNumber value={totals.fat} suffix="g" />
               </span>
-              <span className="macro-panel-compact__macro macro-panel-compact__macro--fat">
-                F: <AnimatedNumber value={totals.fat} suffix="g" />
-              </span>
+              <span className="macro-panel-compact__macro-label">Fat</span>
             </div>
           </div>
 
+          {/* Save button */}
           <motion.button
             whileTap={{ scale: 0.96 }}
             onClick={onSave}
@@ -82,51 +106,6 @@ export default function MacroPanel({ totals, onSave, hasSelection, compact = fal
           </motion.button>
         </div>
 
-        {/* Always-visible details */}
-        <div className="macro-panel-compact__expanded">
-          <div className="macro-panel-compact__details">
-            {/* Mini donut */}
-            <div className="macro-panel-compact__chart">
-              <MiniDonut
-                protein={totals.protein}
-                carbs={totals.carbs}
-                fat={totals.fat}
-              />
-            </div>
-
-            {/* Macro breakdown */}
-            <div className="macro-panel-compact__breakdown">
-              <div className="macro-panel-compact__row">
-                <span className="macro-panel-compact__label">
-                  <span className="macro-panel-compact__dot macro-panel-compact__dot--protein" />
-                  Protein
-                </span>
-                <span className="macro-panel-compact__value">
-                  <AnimatedNumber value={totals.protein} suffix="g" />
-                </span>
-              </div>
-              <div className="macro-panel-compact__row">
-                <span className="macro-panel-compact__label">
-                  <span className="macro-panel-compact__dot macro-panel-compact__dot--carbs" />
-                  Carbs
-                </span>
-                <span className="macro-panel-compact__value">
-                  <AnimatedNumber value={totals.carbs} suffix="g" />
-                </span>
-              </div>
-              <div className="macro-panel-compact__row">
-                <span className="macro-panel-compact__label">
-                  <span className="macro-panel-compact__dot macro-panel-compact__dot--fat" />
-                  Fat
-                </span>
-                <span className="macro-panel-compact__value">
-                  <AnimatedNumber value={totals.fat} suffix="g" />
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <style>{`
           .macro-panel-compact {
             background: rgba(250, 250, 247, 0.98);
@@ -134,115 +113,63 @@ export default function MacroPanel({ totals, onSave, hasSelection, compact = fal
             -webkit-backdrop-filter: blur(20px);
           }
 
-          .macro-panel-compact__bar {
+          .macro-panel-compact__row {
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            padding: 0.75rem 1rem;
-          }
-
-          .macro-panel-compact__summary {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
+            padding: 0.625rem 1rem;
           }
 
           .macro-panel-compact__calories {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 3rem;
+          }
+
+          .macro-panel-compact__cal-value {
             font-family: var(--font-display);
-            font-size: 1.5rem;
+            font-size: 1.375rem;
             font-weight: 300;
             color: var(--forest);
             line-height: 1;
           }
 
-          .macro-panel-compact__unit {
+          .macro-panel-compact__cal-unit {
             font-family: var(--font-body);
-            font-size: 0.625rem;
-            letter-spacing: 0.1em;
+            font-size: 0.5625rem;
+            letter-spacing: 0.12em;
             text-transform: uppercase;
             color: var(--warm-grey);
-            margin-left: 0.25rem;
-          }
-
-          .macro-panel-compact__macros {
-            display: flex;
-            gap: 0.75rem;
-          }
-
-          .macro-panel-compact__macro {
-            font-family: var(--font-body);
-            font-size: 0.6875rem;
-            letter-spacing: 0.05em;
-          }
-
-          .macro-panel-compact__macro--protein {
-            color: var(--forest);
-          }
-
-          .macro-panel-compact__macro--carbs {
-            color: var(--terracotta);
-          }
-
-          .macro-panel-compact__macro--fat {
-            color: var(--warm-grey);
-          }
-
-          .macro-panel-compact__save {
-            padding: 0.625rem 1.25rem;
-            font-family: var(--font-body);
-            font-size: 0.6875rem;
-            letter-spacing: 0.15em;
-            text-transform: uppercase;
-            color: var(--white);
-            background-color: var(--terracotta);
-            border: none;
-            border-radius: 4px;
-            white-space: nowrap;
-          }
-
-          .macro-panel-compact__expanded {
-            overflow: hidden;
-            border-top: 1px solid rgba(28, 46, 30, 0.08);
-          }
-
-          .macro-panel-compact__details {
-            padding: 1rem;
-            display: grid;
-            grid-template-columns: auto 1fr;
-            gap: 1rem;
-            align-items: start;
           }
 
           .macro-panel-compact__chart {
-            grid-row: span 2;
+            flex-shrink: 0;
           }
 
-          .macro-panel-compact__breakdown {
+          .macro-panel-compact__chart svg {
+            width: 56px;
+            height: 56px;
+          }
+
+          .macro-panel-compact__macros {
+            flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
+            gap: 0.1875rem;
           }
 
-          .macro-panel-compact__row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-          }
-
-          .macro-panel-compact__label {
+          .macro-panel-compact__macro {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            font-family: var(--font-body);
-            font-size: 0.75rem;
-            color: var(--warm-grey);
+            gap: 0.375rem;
           }
 
           .macro-panel-compact__dot {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
+            flex-shrink: 0;
           }
 
           .macro-panel-compact__dot--protein {
@@ -257,12 +184,35 @@ export default function MacroPanel({ totals, onSave, hasSelection, compact = fal
             background-color: var(--warm-grey);
           }
 
-          .macro-panel-compact__value {
+          .macro-panel-compact__macro-value {
             font-family: var(--font-display);
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             color: var(--forest);
+            line-height: 1;
+            min-width: 1.75rem;
           }
 
+          .macro-panel-compact__macro-label {
+            font-family: var(--font-body);
+            font-size: 0.5625rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--warm-grey);
+          }
+
+          .macro-panel-compact__save {
+            padding: 0.5rem 0.875rem;
+            font-family: var(--font-body);
+            font-size: 0.625rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--white);
+            background-color: var(--terracotta);
+            border: none;
+            border-radius: 4px;
+            white-space: nowrap;
+            flex-shrink: 0;
+          }
         `}</style>
       </div>
     );
