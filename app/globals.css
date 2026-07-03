@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-juniper: #818a83;
+    --color-cream: #fff7f0;
+    --color-midnight: #292d2a;
+    --color-grapefruit: #d78e77;
+
+    /* ── Nav frame (mapped to brand tokens — never hardcode here) ── */
+    --nav-overlay-bg:     #ffffff;
+    --nav-overlay-text:   var(--color-midnight);
+    --nav-accent:         var(--color-grapefruit);
+    --nav-hole-width:     32vw;
+    --nav-hole-height:    62vh;
+    --nav-padding-x:      7vw;
+    --nav-frame-duration: 0.7s;
+    --nav-frame-ease:     cubic-bezier(0.76, 0, 0.24, 1);
+
+    /* ── Font aliases (for components using CSS vars directly, e.g. nav) ─
+       Three-font palette:
+         --font-display    → Montage Serif  (primary, headlines, MEROS wordmark)
+         --font-secondary  → Aetheria       (accent, pull quotes, editorial)
+         --font-body       → DM Sans        (tertiary, subtext, labels, UI)     */
+    --font-display:   var(--font-montage-serif), Georgia, serif;
+    --font-secondary: var(--font-aetheria), Georgia, serif;
+    --font-body:      var(--font-dm-sans), system-ui, sans-serif;
+  }
+
+  /* ── Squared brand: no rounded corners anywhere ──────────────────
+     Single source of enforcement for the whole site. Overrides Tailwind
+     radius utilities, inline `borderRadius` styles, and images alike.
+     Do not add rounding at the component level — it will be neutralized. */
+  *,
+  *::before,
+  *::after {
+    border-radius: 0 !important;
+  }
+
+  html {
+    /* Lenis overrides scroll behavior — do not set scroll-behavior: smooth here */
+    background-color: var(--color-cream);
+    color: var(--color-midnight);
+  }
+
+  /* Lenis requires this to prevent double-scroll on html/body */
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
+
+  .lenis.lenis-smooth [data-lenis-prevent] {
+    overscroll-behavior: contain;
+  }
+
+  .lenis.lenis-stopped {
+    overflow: hidden;
+  }
+}
+
+@layer utilities {
+  /* ── Montage Serif utilities ──────────────────────────────────── */
+  /* "MEROS" and all primary display text. Always pair with uppercase. */
+  .font-headline {
+    font-family: var(--font-montage-serif), Georgia, serif;
+    font-weight: 400;
+    letter-spacing: 0.10em;
+  }
+
+  /* ── Aetheria utilities ───────────────────────────────────────── */
+  /* Accent / editorial. Pull quotes, product callouts, special moments. */
+  .font-aetheria {
+    font-family: var(--font-aetheria), Georgia, serif;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+  }
+
+  /* ── DM Sans utilities ────────────────────────────────────────── */
+  /* Subtext, labels, UI copy — the "Nike and modern" layer. */
+  .font-body-caps {
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
+    font-weight: 300;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .font-body-mixed {
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
+    font-weight: 300;
+    letter-spacing: 0.02em;
+  }
+
+  /* Legacy aliases — kept so existing components don't break while
+     we migrate naming. Remove once all sections are built. */
+  .font-subhead-caps  { @apply font-body-caps; }
+  .font-subhead-mixed { @apply font-body-mixed; }
+}
