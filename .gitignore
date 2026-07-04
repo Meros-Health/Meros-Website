@@ -55,3 +55,6 @@ next-env.d.ts
 
 # Internal brand documents — sensitive, never commit to public repo.
 /documents/
+
+# Catch-all for any .env variant not covered above
+.env*
