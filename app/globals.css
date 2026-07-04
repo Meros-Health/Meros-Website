@@ -10,8 +10,8 @@
     --color-grapefruit: #d78e77;
 
     /* ── Nav frame (mapped to brand tokens — never hardcode here) ── */
-    --nav-overlay-bg:     #ffffff;
-    --nav-overlay-text:   var(--color-midnight);
+    --nav-overlay-bg:     #292D2A;
+    --nav-overlay-text:   #FFF7F0;
     --nav-accent:         var(--color-grapefruit);
     --nav-hole-width:     32vw;
     --nav-hole-height:    62vh;
@@ -32,17 +32,36 @@
   /* ── Squared brand: no rounded corners anywhere ──────────────────
      Single source of enforcement for the whole site. Overrides Tailwind
      radius utilities, inline `borderRadius` styles, and images alike.
-     Do not add rounding at the component level — it will be neutralized. */
+     Do not add rounding at the component level — it will be neutralized.
+     Opt-in exception: `.allow-round` (e.g. Instagram avatar ring).
+     clip-path is intentional — it is not covered by the border-radius reset,
+     so the circle cannot lose a specificity fight with the universal rule. */
   *,
   *::before,
   *::after {
     border-radius: 0 !important;
   }
 
+  .allow-round,
+  .allow-round > * {
+    border-radius: 50% !important;
+    -webkit-clip-path: circle(50%);
+    clip-path: circle(50%);
+  }
+
   html {
     /* Lenis overrides scroll behavior — do not set scroll-behavior: smooth here */
     background-color: var(--color-cream);
     color: var(--color-midnight);
+    /* Site-wide minimum viewport — no section targets below this width */
+    min-width: 322px;
+    /* Reserve the scrollbar gutter at all times so locking scroll (nav overlay,
+       Lenis stop) never removes the scrollbar and shifts the layout/viewport. */
+    scrollbar-gutter: stable;
+  }
+
+  body {
+    min-width: 322px;
   }
 
   /* Lenis requires this to prevent double-scroll on html/body */
@@ -61,6 +80,46 @@
 
   .lenis.lenis-stopped {
     overflow: hidden;
+  }
+}
+
+/* ── Gallery marquee — always-running CSS animation (not scroll-driven).
+   The track contains 2× the images; -50% translate = exactly one full set.
+   The loop is seamless because the second half is identical to the first. */
+@keyframes gallery-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.gallery-marquee-track {
+  animation: gallery-marquee 120s linear infinite;
+}
+
+.gallery-marquee-track-reverse {
+  animation-direction: reverse;
+}
+
+@media (max-width: 639px) {
+  .gallery-marquee-track {
+    animation-duration: 80s;
+  }
+}
+
+/* ── Preloader skeleton — pulsing placeholder blocks shown while hero
+   assets load. Opacity-only so it reads as a "breathing" frame, not a shimmer. */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 0.85; }
+}
+
+.skeleton-pulse {
+  animation: skeleton-pulse 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-pulse {
+    animation: none;
+    opacity: 0.6;
   }
 }
 

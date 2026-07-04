@@ -137,7 +137,7 @@ export function NavMenuOverlay({
     );
   }
 
-  // ── Desktop: four panels + black center panel ─────────────────────────────
+  // ── Desktop: four panels around a transparent window ─────────────────────
   // Wait for dims before rendering so we always have pixel values ready.
   if (!dims) return null;
 
@@ -158,6 +158,36 @@ export function NavMenuOverlay({
           pointerEvents: "none",
         }}
       >
+        {/* Blur layer — sits behind the panels, blurs the website through the window */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: FRAME_DURATION * 0.5, ease: "easeOut" }}
+          style={{
+            position: "absolute",
+            inset: 0,
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
+            pointerEvents: "none",
+          }}
+        />
+
+        {/* Window click-to-close — transparent hit area over the center hole */}
+        <div
+          onClick={onClose}
+          style={{
+            position: "absolute",
+            top: halfH,
+            left: halfW,
+            width: holeW,
+            height: holeH,
+            pointerEvents: "auto",
+            cursor: "pointer",
+            zIndex: 2,
+          }}
+        />
+
         {/* Left panel — nav links, slides in from left edge */}
         <motion.div
           initial={{ width: 0 }}

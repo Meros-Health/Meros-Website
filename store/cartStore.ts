@@ -1,31 +1,28 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import type { BuildItem } from "@/lib/menu/buildCatalog";
+import type { NutritionFacts } from "@/lib/menu/nutrition";
 
 // ---------------------------------------------------------------------------
-// Types — placeholder shape. Swap in your real menu/builder types when ready.
+// Types
 // ---------------------------------------------------------------------------
 
-export type Base = {
-  id: string;
-  name: string;
-  priceModifier: number; // delta from default base price
-};
-
-export type Topping = {
-  id: string;
-  name: string;
-  price: number;
+export type CustomBowlSelection = {
+  base: BuildItem;
+  toppings: BuildItem[];
+  drizzle: BuildItem | null;
+  supplements: BuildItem[];
 };
 
 export type CartItem = {
-  /** Unique ID for this cart line (not the product ID — allows multiple identical builds) */
   lineId: string;
+  kind: "signature" | "custom";
   productId: string;
   name: string;
-  base: Base;
-  toppings: Topping[];
+  selection?: CustomBowlSelection;
+  nutrition: NutritionFacts;
   quantity: number;
-  unitPrice: number; // base price + base modifier + sum(toppings)
+  unitPrice: number;
 };
 
 // ---------------------------------------------------------------------------
@@ -34,17 +31,21 @@ export type CartItem = {
 
 interface CartState {
   items: CartItem[];
+  isOpen: boolean;
   addItem: (item: Omit<CartItem, "lineId">) => void;
   removeItem: (lineId: string) => void;
   updateQuantity: (lineId: string, quantity: number) => void;
   clearCart: () => void;
   subtotal: () => number;
+  openCart: () => void;
+  closeCart: () => void;
 }
 
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
+      isOpen: false,
 
       addItem: (item) => {
         const lineId = crypto.randomUUID();
@@ -74,11 +75,13 @@ export const useCartStore = create<CartState>()(
       subtotal: () => {
         return get().items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
       },
+
+      openCart: () => set({ isOpen: true }),
+      closeCart: () => set({ isOpen: false }),
     }),
     {
       name: "meros-cart",
-      // Future auth integration: add `partialize` here to strip sensitive fields,
-      // or swap `storage` to a server-synced adapter once accounts exist.
+      partialize: (state) => ({ items: state.items }),
     }
   )
 );

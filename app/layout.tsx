@@ -3,10 +3,19 @@ import "./globals.css";
 import { montageSerif, aetheria, dmSans } from "@/lib/fonts";
 import { LenisProvider } from "@/components/animation/LenisProvider";
 import { Navbar } from "@/components/ui/Navbar";
+import { RouteScroll } from "@/components/ui/RouteScroll";
+import { Footer } from "@/components/ui/Footer";
+import { Preloader } from "@/components/ui/Preloader";
+import { CartDrawer } from "@/components/ui/CartDrawer";
 
 export const metadata: Metadata = {
   title: "Meros — House of Yogurt",
   description: "Build your bowl. Yaletown, Vancouver.",
+  icons: {
+    icon: "/logos/logo-terracotta.png",
+    shortcut: "/logos/logo-terracotta.png",
+    apple: "/logos/logo-terracotta.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -14,8 +23,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${montageSerif.variable} ${aetheria.variable} ${dmSans.variable}`}>
       <body className="bg-cream text-midnight antialiased">
         <LenisProvider>
-          <Navbar />
-          {children}
+          <RouteScroll />
+          <Preloader>
+            <Navbar />
+            {children}
+            <Footer />
+            <CartDrawer />
+          </Preloader>
         </LenisProvider>
       </body>
     </html>

@@ -36,3 +36,22 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# playwright
+.playwright/
+.playwright-cli/
+
+# cursor
+.cursor/
+
+# Paid / licensed brand assets — keep local only, never commit.
+# Drop files into these folders for local dev and deploy builds.
+/public/fonts/*
+!/public/fonts/.gitkeep
+!/public/fonts/README.md
+/public/images-web/
+/public/logos/
+
+# Internal brand documents — sensitive, never commit to public repo.
+/documents/
+
