@@ -32,6 +32,7 @@ yarn-error.log*
 
 # vercel
 .vercel
+!.vercel/project.json
 
 # typescript
 *.tsbuildinfo
@@ -54,4 +55,3 @@ next-env.d.ts
 
 # Internal brand documents — sensitive, never commit to public repo.
 /documents/
-
