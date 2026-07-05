@@ -58,10 +58,14 @@
     /* Reserve the scrollbar gutter at all times so locking scroll (nav overlay,
        Lenis stop) never removes the scrollbar and shifts the layout/viewport. */
     scrollbar-gutter: stable;
+    /* Never allow horizontal scroll — some laptop widths (~1440–1512px) can see a
+       few pixels of overflow from nowrap headlines + gutter math in dev. */
+    overflow-x: clip;
   }
 
   body {
     min-width: 322px;
+    overflow-x: clip;
   }
 
   /* Lenis requires this to prevent double-scroll on html/body */

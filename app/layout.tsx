@@ -20,8 +20,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${montageSerif.variable} ${aetheria.variable} ${dmSans.variable}`}>
-      <body className="bg-cream text-midnight antialiased">
+    <html lang="en" className={`${montageSerif.variable} ${aetheria.variable} ${dmSans.variable}`} suppressHydrationWarning>
+      <body className="bg-cream text-midnight antialiased" suppressHydrationWarning>
         <LenisProvider>
           <RouteScroll />
           <Preloader>
