@@ -9,6 +9,8 @@ import { CTAButton } from "@/components/ui/CTAButton";
 
 gsap.registerPlugin(ScrollTrigger);
 
+const BOWL_SIZE = 1080;
+
 // ─── Scroll choreography config ───────────────────────────────────────────────
 // Load-bearing "feel" values — do not tune without reading the scaling-title prompt.
 const CONFIG = {
@@ -24,7 +26,7 @@ const CONFIG = {
   },
 
   title: {
-    travelVh: 0.2,
+    travelVh: 0.3,
     finalScale: 0.55,
     ease: "power2.out",
   },
@@ -33,18 +35,42 @@ const CONFIG = {
     initialOffsetVh: 0.8,
     finalOffsetVh: -0.03,
     initialScale: 3.0,
-    finalScale: 1.2,
+    finalScale: 1.0,
     ease: "power3.out",
     transformOrigin: "top center",
   },
+
+  spread: {
+    start: 0.45,
+    end: 0.74,
+    ease: "power3.out",
+    left: { xVw: -0.2, yVh: 0.06 },
+    right: { xVw: 0.2, yVh: 0.06 },
+  },
 };
 
-const BOWL_IMAGE = {
-  src: "/images-web/Transparent/Bounty.png",
-  alt: "The Bounty bowl",
-  width: 1080,
-  height: 1080,
+const BOWLS = {
+  center: {
+    src: "/images-web/Transparent/Bounty.png",
+    alt: "The Bounty bowl",
+  },
+  left: {
+    src: "/images-web/Transparent/Moment.png",
+    alt: "",
+  },
+  right: {
+    src: "/images-web/Transparent/Tropic.png",
+    alt: "",
+  },
 } as const;
+
+const bowlImageStyle = {
+  width: "100%",
+  height: "100%",
+  objectFit: "contain" as const,
+  objectPosition: "center",
+  display: "block",
+};
 
 export function BuildSection() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -52,7 +78,10 @@ export function BuildSection() {
   const titleScaleRef = useRef<HTMLDivElement>(null);
   const eyebrowRef = useRef<HTMLParagraphElement>(null);
   const ctaRef = useRef<HTMLDivElement>(null);
-  const imageWrapRef = useRef<HTMLDivElement>(null);
+  const bowlStageRef = useRef<HTMLDivElement>(null);
+  const centerBowlRef = useRef<HTMLDivElement>(null);
+  const sideLeftRef = useRef<HTMLDivElement>(null);
+  const sideRightRef = useRef<HTMLDivElement>(null);
 
   const staticSectionRef = useRef<HTMLElement>(null);
   const staticEyebrowRef = useRef<HTMLParagraphElement>(null);
@@ -92,13 +121,35 @@ export function BuildSection() {
 
       const p = CONFIG.phases;
       const img = CONFIG.image;
+      const spread = CONFIG.spread;
+      const spreadDuration = spread.end - spread.start;
+
+      const spreadMagnitude = () =>
+        window.innerWidth * (window.innerWidth < 900 ? 0.16 : 0.2);
+      const spreadY = () => window.innerHeight * spread.left.yVh;
 
       gsap.set(eyebrowRef.current, { opacity: 0 });
       gsap.set(ctaRef.current, { opacity: 0 });
-      gsap.set(imageWrapRef.current, {
+
+      gsap.set(bowlStageRef.current, {
         y: () => window.innerHeight * img.initialOffsetVh,
+      });
+
+      gsap.set(centerBowlRef.current, {
+        xPercent: -50,
+        yPercent: -50,
         scale: img.initialScale,
         transformOrigin: img.transformOrigin,
+      });
+
+      gsap.set([sideLeftRef.current, sideRightRef.current], {
+        xPercent: -50,
+        yPercent: -50,
+        x: 0,
+        y: 0,
+        scale: img.finalScale,
+        transformOrigin: img.transformOrigin,
+        opacity: 0,
       });
 
       const tl = gsap.timeline({
@@ -135,20 +186,75 @@ export function BuildSection() {
       );
 
       tl.fromTo(
-        imageWrapRef.current,
+        bowlStageRef.current,
+        { y: () => window.innerHeight * img.initialOffsetVh },
         {
-          y: () => window.innerHeight * img.initialOffsetVh,
+          y: () => window.innerHeight * img.finalOffsetVh,
+          ease: img.ease,
+          duration: p.imageEnd,
+        },
+        0
+      );
+
+      tl.fromTo(
+        centerBowlRef.current,
+        {
+          xPercent: -50,
+          yPercent: -50,
           scale: img.initialScale,
           transformOrigin: img.transformOrigin,
         },
         {
-          y: () => window.innerHeight * img.finalOffsetVh,
+          xPercent: -50,
+          yPercent: -50,
           scale: img.finalScale,
           transformOrigin: img.transformOrigin,
           ease: img.ease,
           duration: p.imageEnd,
         },
         0
+      );
+
+      tl.fromTo(
+        sideLeftRef.current,
+        {
+          x: 0,
+          y: 0,
+          scale: img.finalScale,
+          transformOrigin: img.transformOrigin,
+          opacity: 0,
+        },
+        {
+          x: () => -spreadMagnitude(),
+          y: spreadY,
+          scale: img.finalScale,
+          transformOrigin: img.transformOrigin,
+          opacity: 1,
+          ease: spread.ease,
+          duration: spreadDuration,
+        },
+        spread.start
+      );
+
+      tl.fromTo(
+        sideRightRef.current,
+        {
+          x: 0,
+          y: 0,
+          scale: img.finalScale,
+          transformOrigin: img.transformOrigin,
+          opacity: 0,
+        },
+        {
+          x: spreadMagnitude,
+          y: spreadY,
+          scale: img.finalScale,
+          transformOrigin: img.transformOrigin,
+          opacity: 1,
+          ease: spread.ease,
+          duration: spreadDuration,
+        },
+        spread.start
       );
 
       tl.to(eyebrowRef.current, { opacity: 1, duration: 0.08 }, p.eyebrowStart);
@@ -217,10 +323,10 @@ export function BuildSection() {
             style={{ maxWidth: "min(72vw, 18rem)", aspectRatio: "1 / 1", ...revealHiddenStyle }}
           >
             <Image
-              src={BOWL_IMAGE.src}
-              alt={BOWL_IMAGE.alt}
-              width={BOWL_IMAGE.width}
-              height={BOWL_IMAGE.height}
+              src={BOWLS.center.src}
+              alt={BOWLS.center.alt}
+              width={BOWL_SIZE}
+              height={BOWL_SIZE}
               style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
               priority
             />
@@ -303,7 +409,7 @@ export function BuildSection() {
         </div>
 
         <div
-          ref={imageWrapRef}
+          ref={bowlStageRef}
           style={{
             position: "absolute",
             top: "34vh",
@@ -315,29 +421,84 @@ export function BuildSection() {
         >
           <div
             style={{
+              position: "relative",
               width: "100%",
               height: "100%",
-              maxWidth: "34rem",
+              maxWidth: "min(92vw, 56rem)",
               margin: "0 auto",
-              padding: "0 1rem",
-              overflow: "hidden",
+              overflow: "visible",
             }}
           >
-            <Image
-              src={BOWL_IMAGE.src}
-              alt={BOWL_IMAGE.alt}
-              width={BOWL_IMAGE.width}
-              height={BOWL_IMAGE.height}
-              loading="eager"
-              priority
+            {/* Side bowls — underneath center, translate only */}
+            <div
+              ref={sideLeftRef}
+              aria-hidden
               style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "contain",
-                objectPosition: "center",
-                display: "block",
+                position: "absolute",
+                left: "50%",
+                top: "42%",
+                width: "58%",
+                aspectRatio: "1 / 1",
+                zIndex: 1,
+                willChange: "transform",
               }}
-            />
+            >
+              <Image
+                src={BOWLS.left.src}
+                alt={BOWLS.left.alt}
+                width={BOWL_SIZE}
+                height={BOWL_SIZE}
+                loading="eager"
+                style={bowlImageStyle}
+              />
+            </div>
+
+            <div
+              ref={sideRightRef}
+              aria-hidden
+              style={{
+                position: "absolute",
+                left: "50%",
+                top: "42%",
+                width: "58%",
+                aspectRatio: "1 / 1",
+                zIndex: 1,
+                willChange: "transform",
+              }}
+            >
+              <Image
+                src={BOWLS.right.src}
+                alt={BOWLS.right.alt}
+                width={BOWL_SIZE}
+                height={BOWL_SIZE}
+                loading="eager"
+                style={bowlImageStyle}
+              />
+            </div>
+
+            {/* Center bowl — on top, scale + shared stage rise */}
+            <div
+              ref={centerBowlRef}
+              style={{
+                position: "absolute",
+                left: "50%",
+                top: "38%",
+                width: "58%",
+                aspectRatio: "1 / 1",
+                zIndex: 2,
+                willChange: "transform",
+              }}
+            >
+              <Image
+                src={BOWLS.center.src}
+                alt={BOWLS.center.alt}
+                width={BOWL_SIZE}
+                height={BOWL_SIZE}
+                loading="eager"
+                priority
+                style={bowlImageStyle}
+              />
+            </div>
           </div>
         </div>
       </div>

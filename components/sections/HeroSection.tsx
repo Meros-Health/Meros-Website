@@ -28,13 +28,6 @@ const fadeIn: Variants = {
   visible: { opacity: 1 },
 };
 
-// Text stays put; the clip window grows from 0 at the top to full height,
-// so the line reveals top-to-bottom without moving.
-const wipeDown: Variants = {
-  hidden: { clipPath: "inset(0 0 100% 0)" },
-  visible: { clipPath: "inset(0 0 0% 0)" },
-};
-
 export function HeroSection() {
   const ready = usePreloadReady();
   const animate = ready ? "visible" : "hidden";

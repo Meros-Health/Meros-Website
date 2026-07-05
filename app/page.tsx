@@ -12,7 +12,7 @@ export default function HomePage() {
         <HeroSection />
       </div>
 
-      <SectionBand>A DAY'S FUEL, DEFINED BY YOU</SectionBand>
+      <SectionBand>{"A DAY'S FUEL, DEFINED BY YOU"}</SectionBand>
 
       <div id="gallery">
         <GallerySection />
