@@ -13,6 +13,17 @@ export function useLenis() {
   return useContext(LenisContext);
 }
 
+// Site-wide scroll feel — single place to tune calmness.
+// lerp replaces duration/easing for wheel smoothing (per Lenis docs).
+const SCROLL_CONFIG = {
+  lerp: 0.065,
+  wheelMultiplier: 0.72,
+  touchMultiplier: 0.82,
+  smoothWheel: true,
+  /** Cap aggressive trackpad/wheel spikes per event */
+  maxWheelDelta: 90,
+} as const;
+
 interface LenisProviderProps {
   children: React.ReactNode;
 }
@@ -24,9 +35,20 @@ export function LenisProvider({ children }: LenisProviderProps) {
 
   useEffect(() => {
     const instance = new Lenis({
-      duration: 1.2,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smoothWheel: true,
+      lerp: SCROLL_CONFIG.lerp,
+      wheelMultiplier: SCROLL_CONFIG.wheelMultiplier,
+      touchMultiplier: SCROLL_CONFIG.touchMultiplier,
+      smoothWheel: SCROLL_CONFIG.smoothWheel,
+      virtualScroll: (data) => {
+        const cap = SCROLL_CONFIG.maxWheelDelta;
+        if (Math.abs(data.deltaY) > cap) {
+          data.deltaY = Math.sign(data.deltaY) * cap;
+        }
+        if (Math.abs(data.deltaX) > cap) {
+          data.deltaX = Math.sign(data.deltaX) * cap;
+        }
+        return true;
+      },
     });
 
     setLenis(instance);

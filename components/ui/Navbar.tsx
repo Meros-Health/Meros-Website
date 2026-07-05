@@ -46,10 +46,15 @@ export function Navbar() {
       opacity >= 1 ? `rgb(${BAND_RGB})` : `rgba(${BAND_RGB}, ${opacity})`;
   };
 
-  // Dark band: always solid on non-home routes; on home, opacity tracks scroll
-  // over BAND_FADE_DISTANCE for a gradual fade-in.
+  const resolveBandOpacity = () => {
+    if (pathname !== "/" || isMobile) return 1;
+    return scrollOpacityRef.current;
+  };
+
+  // Dark band: always solid on non-home routes and on mobile.
+  // On home (tablet/desktop only), opacity tracks scroll over BAND_FADE_DISTANCE.
   useLayoutEffect(() => {
-    if (pathname !== "/") {
+    if (pathname !== "/" || isMobile) {
       scrollOpacityRef.current = 1;
       if (!menuOpenRef.current) applyBandOpacity(1);
       return;
@@ -70,12 +75,12 @@ export function Navbar() {
     }
 
     return lenis.on("scroll", (instance) => update(instance.scroll));
-  }, [lenis, pathname]);
+  }, [lenis, pathname, isMobile]);
 
-  // Menu open forces a solid band; closing restores scroll-driven opacity.
+  // Menu open forces a solid band; closing restores scroll-driven opacity (tablet/desktop home only).
   useLayoutEffect(() => {
-    applyBandOpacity(menuOpen ? 1 : scrollOpacityRef.current);
-  }, [menuOpen]);
+    applyBandOpacity(menuOpen ? 1 : resolveBandOpacity());
+  }, [menuOpen, pathname, isMobile]);
 
   useEffect(() => {
     if (menuOpen) lenis?.stop();

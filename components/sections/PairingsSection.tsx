@@ -408,7 +408,7 @@ export function PairingsSection() {
                 text-[clamp(2.25rem,7vw,4.75rem)]
               "
             >
-              WHAT WE'RE HAVING 
+              {"WHAT WE'RE HAVING"}
             </h2>
           </div>
 
