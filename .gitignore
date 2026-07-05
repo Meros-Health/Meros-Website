@@ -54,8 +54,8 @@ next-env.d.ts
 !/public/fonts/MontageSerif-Regular.woff2
 !/public/fonts/Montage Serif Font Regular.otf
 !/public/fonts/Satoshi-Light.woff2
-/public/images-web/
-/public/logos/
+!/public/images-web/**
+!/public/logos/**
 
 # Internal brand documents — sensitive, never commit to public repo.
 /documents/
