@@ -50,6 +50,10 @@ next-env.d.ts
 /public/fonts/*
 !/public/fonts/.gitkeep
 !/public/fonts/README.md
+!/public/fonts/Aetheria.woff
+!/public/fonts/MontageSerif-Regular.woff2
+!/public/fonts/Montage Serif Font Regular.otf
+!/public/fonts/Satoshi-Light.woff2
 /public/images-web/
 /public/logos/
 
