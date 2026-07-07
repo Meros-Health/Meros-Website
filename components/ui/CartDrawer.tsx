@@ -1,20 +1,28 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCartStore } from "@/store/cartStore";
 import { CartLineItem } from "@/components/cart/CartLineItem";
+import { CHECKOUT_ENABLED } from "@/lib/config";
 
 const DRAWER_Z = 130;
 const PANEL_DURATION = 0.5;
 const PANEL_EASE = [0.16, 1, 0.3, 1] as const;
 
 export function CartDrawer() {
+  const router = useRouter();
   const isOpen = useCartStore((s) => s.isOpen);
   const closeCart = useCartStore((s) => s.closeCart);
   const items = useCartStore((s) => s.items);
   const subtotal = useCartStore((s) => s.subtotal());
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  const handleCheckout = () => {
+    closeCart();
+    router.push("/checkout");
+  };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -125,23 +133,39 @@ export function CartDrawer() {
                   ${subtotal.toFixed(2)}
                 </span>
               </div>
-              <div className="group relative">
+              {CHECKOUT_ENABLED ? (
                 <button
                   type="button"
-                  disabled
-                  aria-disabled="true"
-                  className="w-full font-body-caps text-[10px] tracking-widest px-10 py-3 cursor-not-allowed"
+                  onClick={handleCheckout}
+                  disabled={items.length === 0}
+                  className="w-full font-body-caps text-[10px] tracking-widest px-10 py-3 transition-opacity hover:opacity-85 disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{
-                    border: "0.5px solid rgba(41,45,42,0.25)",
-                    color: "rgba(41,45,42,0.35)",
+                    background: "var(--color-midnight)",
+                    color: "var(--color-cream)",
+                    border: "0.5px solid var(--color-midnight)",
                   }}
                 >
                   Checkout
                 </button>
-                <span className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap bg-midnight px-2 py-1 font-body-caps text-[10px] text-cream opacity-0 transition-opacity group-hover:opacity-100">
-                  Coming Soon
-                </span>
-              </div>
+              ) : (
+                <div className="group relative">
+                  <button
+                    type="button"
+                    disabled
+                    aria-disabled="true"
+                    className="w-full font-body-caps text-[10px] tracking-widest px-10 py-3 cursor-not-allowed"
+                    style={{
+                      border: "0.5px solid rgba(41,45,42,0.25)",
+                      color: "rgba(41,45,42,0.35)",
+                    }}
+                  >
+                    Checkout
+                  </button>
+                  <span className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap bg-midnight px-2 py-1 font-body-caps text-[10px] text-cream opacity-0 transition-opacity group-hover:opacity-100">
+                    Coming Soon
+                  </span>
+                </div>
+              )}
             </div>
           </motion.div>
         </div>

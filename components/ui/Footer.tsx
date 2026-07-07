@@ -11,7 +11,8 @@ import { INSTAGRAM_POSTS, INSTAGRAM_URL, INSTAGRAM_HANDLE } from "@/lib/instagra
 const MAPS_EMBED_URL =
   "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2602.571!2d-123.12076!3d49.27423!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x5486717d03c8fc6b%3A0xf7d24c85a5d4efdc!2sYaletown%2C%20Vancouver%2C%20BC!5e0!3m2!1sen!2sca!4v1720000000000";
 
-const HIDDEN_ON = ["/order", "/build", "/checkout"];
+// Prefix-matched so dynamic routes (e.g. /cart/edit/[lineId]) are covered too.
+const HIDDEN_ON = ["/order", "/build", "/checkout", "/cart"];
 
 export function Footer() {
   const pathname = usePathname();
@@ -29,7 +30,9 @@ export function Footer() {
     if (result.status === "success") formRef.current?.reset();
   }
 
-  if (HIDDEN_ON.includes(pathname)) return null;
+  if (HIDDEN_ON.some((route) => pathname === route || pathname.startsWith(`${route}/`))) {
+    return null;
+  }
 
   return (
     <footer className="w-full bg-midnight text-cream" style={{ borderTop: "0.5px solid rgba(255,247,240,0.10)" }}>

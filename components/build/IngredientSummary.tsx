@@ -9,9 +9,10 @@ export function IngredientSummary() {
 
   const groups = [
     { label: "Base", items: [selection.base] },
-    { label: "Toppings", items: selection.toppings },
-    { label: "Drizzle", items: selection.drizzle ? [selection.drizzle] : [] },
-    { label: "Supplements", items: selection.supplements },
+    { label: "Fruits & Berries", items: selection.fruitsBerries },
+    { label: "Nuts & Seeds", items: selection.nutsSeeds },
+    { label: "Finish", items: selection.finish ? [selection.finish] : [] },
+    { label: "Enhancers", items: selection.enhancers },
   ].filter((g) => g.items.length > 0);
 
   return (
@@ -24,10 +25,7 @@ export function IngredientSummary() {
           </p>
           <ul className="flex flex-wrap gap-x-2 gap-y-1">
             {group.items.map((item) => (
-              <li
-                key={item.id}
-                className="font-body-mixed text-xs text-midnight"
-              >
+              <li key={item.id} className="font-body-mixed text-xs text-midnight">
                 {item.name}
               </li>
             ))}

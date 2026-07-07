@@ -1,37 +1,40 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { BUILD_STEPS } from "@/lib/menu/buildCatalog";
 import { useBowlBuilderStore } from "@/store/bowlBuilderStore";
 import { useCartStore } from "@/store/cartStore";
 import { AddToCartButton } from "@/components/cart/AddToCartButton";
 
-export function BuildFooter() {
+interface EditBuildFooterProps {
+  lineId: string;
+}
+
+export function EditBuildFooter({ lineId }: EditBuildFooterProps) {
+  const router = useRouter();
   const activeStep = useBowlBuilderStore((s) => s.activeStep);
   const selection = useBowlBuilderStore((s) => s.selection);
   const nutrition = useBowlBuilderStore((s) => s.nutrition);
   const price = useBowlBuilderStore((s) => s.price);
   const nextStep = useBowlBuilderStore((s) => s.nextStep);
   const prevStep = useBowlBuilderStore((s) => s.prevStep);
-  const reset = useBowlBuilderStore((s) => s.reset);
-  const showAddedFeedback = useBowlBuilderStore((s) => s.showAddedFeedback);
-  const clearAddedFeedback = useBowlBuilderStore((s) => s.clearAddedFeedback);
-  const addedFeedback = useBowlBuilderStore((s) => s.addedFeedback);
-  const addItem = useCartStore((s) => s.addItem);
+  const updateCustomBowl = useCartStore((s) => s.updateCustomBowl);
   const openCart = useCartStore((s) => s.openCart);
+
+  const [saved, setSaved] = useState(false);
 
   const stepIndex = BUILD_STEPS.findIndex((s) => s.id === activeStep);
   const isFirst = stepIndex === 0;
   const isLast = stepIndex === BUILD_STEPS.length - 1;
-  const canAdd = selection.base !== null;
+  const canSave = selection.base !== null;
 
-  const handleAddToCart = () => {
+  const handleSave = () => {
     if (!selection.base) return;
 
-    addItem({
-      kind: "custom",
-      productId: "custom-bowl",
-      name: "Custom Bowl",
-      selection: {
+    updateCustomBowl(
+      lineId,
+      {
         base: selection.base,
         fruitsBerries: selection.fruitsBerries,
         nutsSeeds: selection.nutsSeeds,
@@ -39,15 +42,14 @@ export function BuildFooter() {
         enhancers: selection.enhancers,
       },
       nutrition,
-      quantity: 1,
-      unitPrice: price,
-    });
+      price
+    );
 
-    // Order matters: reset() clears the feedback flag, so set it afterwards.
-    reset();
-    showAddedFeedback();
-    setTimeout(() => openCart(), 600);
-    setTimeout(() => clearAddedFeedback(), 2000);
+    setSaved(true);
+    setTimeout(() => {
+      openCart();
+      router.push("/order");
+    }, 500);
   };
 
   return (
@@ -70,7 +72,7 @@ export function BuildFooter() {
         <button
           type="button"
           onClick={nextStep}
-          disabled={!canAdd}
+          disabled={!canSave}
           className="font-body-caps text-[10px] tracking-widest text-midnight px-6 py-3 transition-opacity hover:opacity-70 disabled:opacity-30 disabled:cursor-not-allowed"
           style={{ border: "0.5px solid rgba(41,45,42,0.28)" }}
         >
@@ -80,12 +82,14 @@ export function BuildFooter() {
 
       <div className="flex-1" />
 
-      {addedFeedback ? (
-        <span className="font-body-caps text-[10px] tracking-widest text-grapefruit">
-          Added to cart
-        </span>
-      ) : canAdd ? (
-        <AddToCartButton onClick={handleAddToCart} className="!w-auto" />
+      {canSave ? (
+        <AddToCartButton
+          onClick={handleSave}
+          label="Save Changes"
+          addedLabel="Saved"
+          added={saved}
+          className="!w-auto"
+        />
       ) : (
         <button
           type="button"

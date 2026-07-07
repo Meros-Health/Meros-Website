@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { useIsMobile } from "@/lib/useIsMobile";
 
 const FRAME_DURATION = 0.7;
 const FRAME_EASE = [0.76, 0, 0.24, 1] as const;
@@ -315,20 +316,6 @@ export function NavMenuOverlay({
 }
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
-
-function useIsMobile(breakpoint = 768) {
-  const query = `(max-width: ${breakpoint}px)`;
-  const [matches, setMatches] = useState(
-    typeof window !== "undefined" ? window.matchMedia(query).matches : false
-  );
-  useEffect(() => {
-    const mq = window.matchMedia(query);
-    const handler = (e: MediaQueryListEvent) => setMatches(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, [query]);
-  return matches;
-}
 
 function LinkHoverStyles() {
   return (

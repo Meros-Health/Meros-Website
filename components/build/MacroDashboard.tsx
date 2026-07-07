@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useBowlBuilderStore } from "@/store/bowlBuilderStore";
 import { MacroBar } from "./MacroBar";
 import { IngredientSummary } from "./IngredientSummary";
@@ -17,15 +16,6 @@ export function MacroDashboard({ compact = false, expanded = false, onToggleExpa
   const price = useBowlBuilderStore((s) => s.price);
   const activeStep = useBowlBuilderStore((s) => s.activeStep);
   const selection = useBowlBuilderStore((s) => s.selection);
-  const [reducedMotion, setReducedMotion] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
 
   const stepIndex = BUILD_STEPS.findIndex((s) => s.id === activeStep);
 
@@ -47,9 +37,7 @@ export function MacroDashboard({ compact = false, expanded = false, onToggleExpa
             <span>{Math.round(nutrition.protein)}g protein</span>
             <span>{Math.round(nutrition.calories)} cal</span>
           </div>
-          <span className="font-body-caps text-[10px] text-midnight">
-            ${price.toFixed(2)}
-          </span>
+          <span className="font-body-caps text-[10px] text-midnight">${price.toFixed(2)}</span>
         </div>
       </button>
     );
@@ -74,52 +62,26 @@ export function MacroDashboard({ compact = false, expanded = false, onToggleExpa
         </button>
       )}
 
-      <p className="font-body-caps text-[9px] tracking-[0.25em] text-juniper mb-4">
-        Your macros
-      </p>
+      <p className="font-body-caps text-[9px] tracking-[0.25em] text-juniper mb-3">Your macros</p>
 
-      <div className="flex flex-col gap-4">
-        <MacroBar
-          label="Protein"
-          value={nutrition.protein}
-          macroKey="protein"
-          reducedMotion={reducedMotion}
-        />
+      <div className="flex flex-col gap-3">
+        <MacroBar label="Protein" value={nutrition.protein} macroKey="protein" />
         <MacroBar
           label="Carbs"
           value={nutrition.carbs}
           macroKey="carbs"
           fillClass="bg-juniper"
-          reducedMotion={reducedMotion}
         />
-        <MacroBar
-          label="Fat"
-          value={nutrition.fat}
-          macroKey="fat"
-          fillClass="bg-juniper"
-          reducedMotion={reducedMotion}
-        />
-        <MacroBar
-          label="Fiber"
-          value={nutrition.fiber}
-          macroKey="fiber"
-          fillClass="bg-juniper"
-          reducedMotion={reducedMotion}
-        />
-        <MacroBar
-          label="Calories"
-          value={nutrition.calories}
-          macroKey="calories"
-          unit=""
-          reducedMotion={reducedMotion}
-        />
+        <MacroBar label="Fat" value={nutrition.fat} macroKey="fat" fillClass="bg-juniper" />
+        <MacroBar label="Fiber" value={nutrition.fiber} macroKey="fiber" fillClass="bg-juniper" />
+        <MacroBar label="Calories" value={nutrition.calories} macroKey="calories" unit="" />
       </div>
 
       {(nutrition.calcium > 0 || nutrition.iron > 0 || nutrition.potassium > 0) && (
-        <div className="mt-5 flex flex-wrap gap-2">
+        <div className="mt-4 flex flex-wrap gap-1.5">
           {nutrition.calcium > 0 && (
             <span
-              className="font-body-caps text-[9px] tracking-widest text-juniper px-2 py-1"
+              className="font-body-caps text-[8px] tracking-widest text-juniper px-1.5 py-0.5"
               style={{ border: "0.5px solid rgba(41,45,42,0.15)" }}
             >
               Ca {Math.round(nutrition.calcium)}mg
@@ -127,7 +89,7 @@ export function MacroDashboard({ compact = false, expanded = false, onToggleExpa
           )}
           {nutrition.iron > 0 && (
             <span
-              className="font-body-caps text-[9px] tracking-widest text-juniper px-2 py-1"
+              className="font-body-caps text-[8px] tracking-widest text-juniper px-1.5 py-0.5"
               style={{ border: "0.5px solid rgba(41,45,42,0.15)" }}
             >
               Fe {Math.round(nutrition.iron)}mg
@@ -135,7 +97,7 @@ export function MacroDashboard({ compact = false, expanded = false, onToggleExpa
           )}
           {nutrition.potassium > 0 && (
             <span
-              className="font-body-caps text-[9px] tracking-widest text-juniper px-2 py-1"
+              className="font-body-caps text-[8px] tracking-widest text-juniper px-1.5 py-0.5"
               style={{ border: "0.5px solid rgba(41,45,42,0.15)" }}
             >
               K {Math.round(nutrition.potassium)}mg
@@ -144,27 +106,23 @@ export function MacroDashboard({ compact = false, expanded = false, onToggleExpa
         </div>
       )}
 
-      <p className="font-body-mixed text-[10px] text-juniper/70 mt-4">
-        Estimated nutrition
-      </p>
+      <p className="font-body-mixed text-[9px] text-juniper/70 mt-3">Estimated nutrition</p>
 
       {selection.base && (
-        <div className="mt-6 pt-5" style={{ borderTop: "0.5px solid rgba(41,45,42,0.12)" }}>
+        <div className="mt-4 pt-4" style={{ borderTop: "0.5px solid rgba(41,45,42,0.12)" }}>
           <IngredientSummary />
         </div>
       )}
 
       <div
-        className="mt-6 flex items-baseline justify-between pt-4"
+        className="mt-4 flex items-baseline justify-between pt-3"
         style={{ borderTop: "0.5px solid rgba(41,45,42,0.12)" }}
       >
-        <span className="font-body-caps text-[10px] tracking-widest text-juniper">Total</span>
-        <span className="font-headline text-midnight text-xl">
-          ${price.toFixed(2)}
-        </span>
+        <span className="font-body-caps text-[9px] tracking-widest text-juniper">Total</span>
+        <span className="font-headline text-midnight text-lg">${price.toFixed(2)}</span>
       </div>
 
-      <div className="mt-4 flex gap-1.5" aria-hidden>
+      <div className="mt-3 flex gap-1" aria-hidden>
         {BUILD_STEPS.map((step, i) => (
           <span
             key={step.id}
