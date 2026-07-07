@@ -1,9 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCartStore } from "@/store/cartStore";
 import { EMPTY_NUTRITION } from "@/lib/menu/nutrition";
+import { AddToCartButton } from "@/components/cart/AddToCartButton";
+import { getSignaturePrice } from "@/lib/menu/pricing";
 
 // ── Menu data ──────────────────────────────────────────────────────────────────
 
@@ -12,7 +14,6 @@ type MenuItem = {
   name: string;
   tag: string;
   ingredients: string[];
-  price: number;
   image: string;
 };
 
@@ -22,7 +23,6 @@ const SIGNATURE_BOWLS: MenuItem[] = [
     name: "Moment",
     tag: "Seasonal & Light",
     ingredients: ["Greek yogurt", "seasonal berries", "wildflower honey", "toasted coconut", "chia"],
-    price: 15.0,
     image: "/images-web/Bowls/Moment-1.jpg",
   },
   {
@@ -30,7 +30,6 @@ const SIGNATURE_BOWLS: MenuItem[] = [
     name: "Silk",
     tag: "Tropical & Smooth",
     ingredients: ["Greek yogurt", "mango", "passion fruit", "lychee", "lime zest"],
-    price: 15.5,
     image: "/images-web/Bowls/Silk-1.jpg",
   },
   {
@@ -38,7 +37,6 @@ const SIGNATURE_BOWLS: MenuItem[] = [
     name: "Crunch",
     tag: "Granola & Nut Butter",
     ingredients: ["Greek yogurt", "housemade granola", "almond butter", "banana", "cacao nibs", "maple"],
-    price: 14.5,
     image: "/images-web/Bowls/Crunch-1.jpg",
   },
   {
@@ -46,7 +44,6 @@ const SIGNATURE_BOWLS: MenuItem[] = [
     name: "Tropic",
     tag: "Island Fruit",
     ingredients: ["Greek yogurt", "pineapple", "mango", "coconut flakes", "passion fruit"],
-    price: 14.5,
     image: "/images-web/Bowls/Tropic-1.jpg",
   },
   {
@@ -54,7 +51,6 @@ const SIGNATURE_BOWLS: MenuItem[] = [
     name: "Bloom",
     tag: "Berry & Honey",
     ingredients: ["Greek yogurt", "fresh strawberries", "blueberries", "rose granola", "wildflower honey"],
-    price: 14.5,
     image: "/images-web/Bowls/Bloom-1.jpg",
   },
   {
@@ -62,7 +58,6 @@ const SIGNATURE_BOWLS: MenuItem[] = [
     name: "Bounty",
     tag: "Rich & Layered",
     ingredients: ["Greek yogurt", "mixed berries", "house granola", "hemp seeds", "raw honey"],
-    price: 14.5,
     image: "/images-web/Bowls/Bounty-1.jpg",
   },
 ];
@@ -73,7 +68,6 @@ const SIGNATURE_SMOOTHIES: MenuItem[] = [
     name: "Rise",
     tag: "Bright & Energizing",
     ingredients: ["orange", "mango", "banana", "turmeric", "fresh ginger"],
-    price: 12.0,
     image: "/images-web/Smoothies/rise-1.jpg",
   },
   {
@@ -81,7 +75,6 @@ const SIGNATURE_SMOOTHIES: MenuItem[] = [
     name: "Crave",
     tag: "Cacao & Indulgent",
     ingredients: ["raw cacao", "banana", "peanut butter", "oat milk", "medjool dates"],
-    price: 12.5,
     image: "/images-web/Smoothies/crave-1.jpg",
   },
   {
@@ -89,7 +82,6 @@ const SIGNATURE_SMOOTHIES: MenuItem[] = [
     name: "Essence",
     tag: "Green & Cleansing",
     ingredients: ["spinach", "kale", "green apple", "cucumber", "lime", "mint"],
-    price: 12.5,
     image: "/images-web/Smoothies/essence-1.jpg",
   },
   {
@@ -97,7 +89,6 @@ const SIGNATURE_SMOOTHIES: MenuItem[] = [
     name: "Recovery",
     tag: "Protein & Restorative",
     ingredients: ["banana", "blueberry", "vanilla protein", "almond milk", "cinnamon"],
-    price: 13.0,
     image: "/images-web/Smoothies/recovery-1.jpg",
   },
   {
@@ -105,7 +96,6 @@ const SIGNATURE_SMOOTHIES: MenuItem[] = [
     name: "Cabana",
     tag: "Tropical & Coconut",
     ingredients: ["pineapple", "coconut milk", "mango", "passion fruit", "lime"],
-    price: 12.5,
     image: "/images-web/Smoothies/cabana-1.jpg",
   },
   {
@@ -113,16 +103,23 @@ const SIGNATURE_SMOOTHIES: MenuItem[] = [
     name: "Nutty",
     tag: "Almond & Creamy",
     ingredients: ["almond butter", "banana", "oat milk", "wildflower honey", "flax"],
-    price: 12.0,
     image: "/images-web/Smoothies/nutty-1.jpg",
   },
 ];
 
 // ── Menu card ──────────────────────────────────────────────────────────────────
 
-function MenuCard({ item }: { item: MenuItem }) {
+function MenuCard({ item, priority = false }: { item: MenuItem; priority?: boolean }) {
   const addItem = useCartStore((s) => s.addItem);
   const [added, setAdded] = useState(false);
+  const addedTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const price = getSignaturePrice(item.id);
+
+  useEffect(() => {
+    return () => {
+      if (addedTimeout.current) clearTimeout(addedTimeout.current);
+    };
+  }, []);
 
   const handleAdd = () => {
     addItem({
@@ -131,10 +128,11 @@ function MenuCard({ item }: { item: MenuItem }) {
       name: item.name,
       nutrition: { ...EMPTY_NUTRITION },
       quantity: 1,
-      unitPrice: item.price,
+      unitPrice: price,
     });
     setAdded(true);
-    setTimeout(() => setAdded(false), 1400);
+    if (addedTimeout.current) clearTimeout(addedTimeout.current);
+    addedTimeout.current = setTimeout(() => setAdded(false), 1400);
   };
 
   return (
@@ -149,6 +147,7 @@ function MenuCard({ item }: { item: MenuItem }) {
           alt={item.name}
           fill
           sizes="(max-width: 1024px) 42vw, 22vw"
+          priority={priority}
           className="object-cover object-center"
         />
       </div>
@@ -171,7 +170,7 @@ function MenuCard({ item }: { item: MenuItem }) {
             className="font-body-caps text-juniper shrink-0"
             style={{ fontSize: "clamp(0.55rem, 4.2cqw, 0.75rem)" }}
           >
-            ${item.price.toFixed(2)}
+            ${price.toFixed(2)}
           </span>
         </div>
 
@@ -192,21 +191,9 @@ function MenuCard({ item }: { item: MenuItem }) {
         </p>
 
         {/* Add to cart */}
-        <button
-          type="button"
-          onClick={handleAdd}
-          className="mt-auto w-full font-body-caps tracking-widest transition-colors duration-200"
-          style={{
-            fontSize: "clamp(0.5rem, 3.4cqw, 0.625rem)",
-            padding: "clamp(0.45rem, 4cqw, 0.75rem) 0",
-            border: "0.5px solid",
-            borderColor: added ? "var(--color-grapefruit)" : "rgba(41,45,42,0.28)",
-            color: added ? "var(--color-grapefruit)" : "var(--color-midnight)",
-            background: "transparent",
-          }}
-        >
-          {added ? "Added" : "Add to Cart"}
-        </button>
+        <div className="mt-auto">
+          <AddToCartButton onClick={handleAdd} added={added} />
+        </div>
       </div>
     </article>
   );
@@ -225,12 +212,15 @@ function MenuSection({
   titleBottom,
   items,
   heading = "h2",
+  priorityFirstImage = false,
 }: {
   id?: string;
   titleTop: string;
   titleBottom: string;
   items: MenuItem[];
   heading?: "h1" | "h2";
+  /** Marks the first card's image as the LCP candidate (above the fold). */
+  priorityFirstImage?: boolean;
 }) {
   const Title = heading;
   return (
@@ -260,8 +250,8 @@ function MenuSection({
           className="min-w-0 flex-1 grid grid-cols-2"
           style={{ gap: "clamp(0.6rem, 2.5vw, 1.25rem)" }}
         >
-          {items.map((item) => (
-            <MenuCard key={item.id} item={item} />
+          {items.map((item, i) => (
+            <MenuCard key={item.id} item={item} priority={priorityFirstImage && i === 0} />
           ))}
         </div>
       </div>
@@ -288,7 +278,13 @@ export default function OrderPage() {
       </section>
 
       {/* ── Signature Bowls ── */}
-      <MenuSection id="bowls" titleTop="Signature" titleBottom="Bowls" items={SIGNATURE_BOWLS} />
+      <MenuSection
+        id="bowls"
+        titleTop="Signature"
+        titleBottom="Bowls"
+        items={SIGNATURE_BOWLS}
+        priorityFirstImage
+      />
 
       {/* ── Signature Smoothies ── */}
       <MenuSection id="smoothies" titleTop="Signature" titleBottom="Smoothies" items={SIGNATURE_SMOOTHIES} />

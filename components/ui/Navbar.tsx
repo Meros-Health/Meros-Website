@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -9,6 +9,7 @@ import { NavMenuOverlay } from "./NavMenuOverlay";
 import { useLenis } from "@/components/animation/LenisProvider";
 import { scrollToTop } from "@/lib/scroll";
 import { useCartStore } from "@/store/cartStore";
+import { useIsMobile } from "@/lib/useIsMobile";
 
 const HEADER_Z = 120;
 const MENU_ICON_SIZE = 18;
@@ -39,17 +40,12 @@ export function Navbar() {
   const cartCount = useCartStore((s) => s.items.reduce((n, item) => n + item.quantity, 0));
   const openCart = useCartStore((s) => s.openCart);
 
-  const applyBandOpacity = (opacity: number) => {
+  const applyBandOpacity = useCallback((opacity: number) => {
     const band = bandRef.current;
     if (!band) return;
     band.style.backgroundColor =
       opacity >= 1 ? `rgb(${BAND_RGB})` : `rgba(${BAND_RGB}, ${opacity})`;
-  };
-
-  const resolveBandOpacity = () => {
-    if (pathname !== "/" || isMobile) return 1;
-    return scrollOpacityRef.current;
-  };
+  }, []);
 
   // Dark band: always solid on non-home routes and on mobile.
   // On home (tablet/desktop only), opacity tracks scroll over BAND_FADE_DISTANCE.
@@ -75,12 +71,13 @@ export function Navbar() {
     }
 
     return lenis.on("scroll", (instance) => update(instance.scroll));
-  }, [lenis, pathname, isMobile]);
+  }, [lenis, pathname, isMobile, applyBandOpacity]);
 
   // Menu open forces a solid band; closing restores scroll-driven opacity (tablet/desktop home only).
   useLayoutEffect(() => {
-    applyBandOpacity(menuOpen ? 1 : resolveBandOpacity());
-  }, [menuOpen, pathname, isMobile]);
+    const solid = pathname !== "/" || isMobile;
+    applyBandOpacity(menuOpen ? 1 : solid ? 1 : scrollOpacityRef.current);
+  }, [menuOpen, pathname, isMobile, applyBandOpacity]);
 
   useEffect(() => {
     if (menuOpen) lenis?.stop();
@@ -503,18 +500,4 @@ function TextSlot({ open }: { open: boolean }) {
       </AnimatePresence>
     </span>
   );
-}
-
-function useIsMobile(breakpoint = 768) {
-  const query = `(max-width: ${breakpoint}px)`;
-  const [matches, setMatches] = useState(
-    typeof window !== "undefined" ? window.matchMedia(query).matches : false
-  );
-  useEffect(() => {
-    const mq = window.matchMedia(query);
-    const handler = (e: MediaQueryListEvent) => setMatches(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, [query]);
-  return matches;
 }

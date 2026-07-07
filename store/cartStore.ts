@@ -1,18 +1,19 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { BuildItem } from "@/lib/menu/buildCatalog";
 import type { NutritionFacts } from "@/lib/menu/nutrition";
+import {
+  findMatchingCustomLine,
+  findMatchingSignatureLine,
+  migrateLegacySelection,
+  type BowlSelectionSnapshot,
+  type LegacyBowlSelectionSnapshot,
+} from "@/lib/menu/selectionUtils";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-export type CustomBowlSelection = {
-  base: BuildItem;
-  toppings: BuildItem[];
-  drizzle: BuildItem | null;
-  supplements: BuildItem[];
-};
+export type CustomBowlSelection = BowlSelectionSnapshot;
 
 export type CartItem = {
   lineId: string;
@@ -35,10 +36,39 @@ interface CartState {
   addItem: (item: Omit<CartItem, "lineId">) => void;
   removeItem: (lineId: string) => void;
   updateQuantity: (lineId: string, quantity: number) => void;
+  incrementItem: (lineId: string) => void;
+  decrementItem: (lineId: string) => void;
+  updateCustomBowl: (
+    lineId: string,
+    selection: CustomBowlSelection,
+    nutrition: NutritionFacts,
+    unitPrice: number
+  ) => void;
+  getItem: (lineId: string) => CartItem | undefined;
   clearCart: () => void;
   subtotal: () => number;
   openCart: () => void;
   closeCart: () => void;
+}
+
+const MAX_QUANTITY = 99;
+
+function makeLineId(): string {
+  // crypto.randomUUID requires a secure context (throws on plain-HTTP LAN access).
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `line-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function migrateCartItem(item: CartItem): CartItem {
+  if (item.kind !== "custom" || !item.selection) return item;
+  const selection = migrateLegacySelection(item.selection as LegacyBowlSelectionSnapshot);
+  return {
+    ...item,
+    selection,
+    name: `Custom Bowl · ${selection.base.name}`,
+  };
 }
 
 export const useCartStore = create<CartState>()(
@@ -48,9 +78,37 @@ export const useCartStore = create<CartState>()(
       isOpen: false,
 
       addItem: (item) => {
-        const lineId = crypto.randomUUID();
+        const { items } = get();
+
+        if (item.kind === "signature") {
+          const existing = findMatchingSignatureLine(items, item.productId);
+          if (existing) {
+            get().updateQuantity(existing.lineId, existing.quantity + item.quantity);
+            return;
+          }
+        }
+
+        if (item.kind === "custom" && item.selection) {
+          const selection = migrateLegacySelection(item.selection as LegacyBowlSelectionSnapshot);
+          const existing = findMatchingCustomLine(items, selection);
+          if (existing) {
+            get().updateQuantity(existing.lineId, existing.quantity + item.quantity);
+            return;
+          }
+        }
+
+        const lineId = makeLineId();
+        const selection =
+          item.kind === "custom" && item.selection
+            ? migrateLegacySelection(item.selection as LegacyBowlSelectionSnapshot)
+            : item.selection;
+        const name =
+          item.kind === "custom" && selection
+            ? `Custom Bowl · ${selection.base.name}`
+            : item.name;
+
         set((state) => ({
-          items: [...state.items, { ...item, lineId }],
+          items: [...state.items, { ...item, lineId, name, selection }],
         }));
       },
 
@@ -65,10 +123,66 @@ export const useCartStore = create<CartState>()(
           get().removeItem(lineId);
           return;
         }
+        const clamped = Math.min(quantity, MAX_QUANTITY);
         set((state) => ({
-          items: state.items.map((i) => (i.lineId === lineId ? { ...i, quantity } : i)),
+          items: state.items.map((i) => (i.lineId === lineId ? { ...i, quantity: clamped } : i)),
         }));
       },
+
+      incrementItem: (lineId) => {
+        const item = get().getItem(lineId);
+        if (!item) return;
+        get().updateQuantity(lineId, item.quantity + 1);
+      },
+
+      decrementItem: (lineId) => {
+        const item = get().getItem(lineId);
+        if (!item) return;
+        get().updateQuantity(lineId, item.quantity - 1);
+      },
+
+      updateCustomBowl: (lineId, selection, nutrition, unitPrice) => {
+        const { items } = get();
+        const current = items.find((i) => i.lineId === lineId);
+        if (!current || current.kind !== "custom") return;
+
+        const normalized = migrateLegacySelection(selection as LegacyBowlSelectionSnapshot);
+        const duplicate = findMatchingCustomLine(
+          items.filter((i) => i.lineId !== lineId),
+          normalized
+        );
+
+        if (duplicate) {
+          set({
+            items: items
+              .map((i) =>
+                i.lineId === duplicate.lineId
+                  ? { ...i, quantity: i.quantity + current.quantity }
+                  : i
+              )
+              .filter((i) => i.lineId !== lineId),
+          });
+          return;
+        }
+
+        set({
+          items: items.map((i) =>
+            i.lineId === lineId
+              ? {
+                  ...i,
+                  selection: normalized,
+                  nutrition,
+                  unitPrice,
+                  name: `Custom Bowl · ${normalized.base.name}`,
+                }
+              : i
+          ),
+        });
+      },
+
+      // Items are normalized on add, on update, and on rehydration, so no
+      // re-migration is needed here.
+      getItem: (lineId) => get().items.find((i) => i.lineId === lineId),
 
       clearCart: () => set({ items: [] }),
 
@@ -82,6 +196,27 @@ export const useCartStore = create<CartState>()(
     {
       name: "meros-cart",
       partialize: (state) => ({ items: state.items }),
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        if (!Array.isArray(state.items)) {
+          state.items = [];
+          return;
+        }
+        // A single unreadable line (older shape, corrupted write, tampering)
+        // must not crash store creation and take the whole app down — drop it.
+        state.items = state.items.flatMap((item) => {
+          try {
+            return [migrateCartItem(item)];
+          } catch {
+            return [];
+          }
+        });
+      },
     }
   )
 );
+
+export function getCartItemDisplayName(item: CartItem): string {
+  // `name` is kept in sync everywhere a custom line is created or updated.
+  return item.name;
+}

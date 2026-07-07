@@ -7,7 +7,7 @@ import { SectionBand } from "@/components/ui/SectionBand";
 
 export default function HomePage() {
   return (
-    <main>
+    <main className="overflow-x-clip">
       <div id="hero">
         <HeroSection />
       </div>

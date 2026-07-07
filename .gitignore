@@ -62,3 +62,6 @@ next-env.d.ts
 
 # Catch-all for any .env variant not covered above
 .env*
+
+# graphify — local knowledge-graph cache and build artifacts, never commit
+/graphify-out/

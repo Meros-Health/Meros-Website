@@ -1,10 +1,25 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCartStore } from "@/store/cartStore";
 import { CartLineItem } from "@/components/cart/CartLineItem";
 import { submitCheckout, type CheckoutFormState } from "@/app/actions/checkout";
+import { CHECKOUT_ENABLED } from "@/lib/config";
+
+const LAST_ORDER_KEY = "meros-last-order";
+
+function readLastOrder(): CheckoutFormState | null {
+  try {
+    const raw = sessionStorage.getItem(LAST_ORDER_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CheckoutFormState;
+    return parsed.status === "success" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -14,13 +29,36 @@ export default function CheckoutPage() {
 
   const [state, setState] = useState<CheckoutFormState>({ status: "idle", message: "" });
   const [pending, setPending] = useState(false);
+  // Wait for the persisted cart to rehydrate before deciding anything —
+  // otherwise a fresh page load always sees an empty cart and redirects.
+  const [hydrated, setHydrated] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    if (items.length === 0 && state.status !== "success") {
-      router.replace("/order");
+    if (useCartStore.persist.hasHydrated()) {
+      setHydrated(true);
+      return;
     }
-  }, [items.length, state.status, router]);
+    return useCartStore.persist.onFinishHydration(() => setHydrated(true));
+  }, []);
+
+  useEffect(() => {
+    if (!CHECKOUT_ENABLED) {
+      router.replace("/order");
+      return;
+    }
+    if (!hydrated || state.status === "success") return;
+    if (items.length > 0) return;
+
+    // Empty cart: restore the last confirmation (e.g. the user refreshed the
+    // success screen) instead of silently bouncing to the menu.
+    const lastOrder = readLastOrder();
+    if (lastOrder) {
+      setState(lastOrder);
+      return;
+    }
+    router.replace("/order");
+  }, [hydrated, items.length, state.status, router]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -32,7 +70,16 @@ export default function CheckoutPage() {
     if (result.status === "success") {
       formRef.current?.reset();
       clearCart();
+      try {
+        sessionStorage.setItem(LAST_ORDER_KEY, JSON.stringify(result));
+      } catch {
+        // Confirmation persistence is best-effort only.
+      }
     }
+  }
+
+  if (!CHECKOUT_ENABLED || !hydrated) {
+    return null;
   }
 
   if (items.length === 0 && state.status !== "success") {
@@ -49,11 +96,20 @@ export default function CheckoutPage() {
       </h1>
 
       {state.status === "success" ? (
-        <div className="mx-auto flex max-w-lg flex-col gap-2 py-16 text-center">
+        <div className="mx-auto flex max-w-lg flex-col items-center gap-3 py-16 text-center">
           <span className="font-body-caps text-grapefruit text-[10px] tracking-[0.25em]">
             Order Received
           </span>
+          {state.orderRef && (
+            <p className="font-headline text-midnight text-lg uppercase">{state.orderRef}</p>
+          )}
           <p className="font-body-mixed text-sm text-juniper">{state.message}</p>
+          <Link
+            href="/order"
+            className="mt-4 font-body-caps text-[10px] tracking-widest text-cream bg-midnight px-8 py-3 hover:opacity-85 transition-opacity duration-300"
+          >
+            Back to Menu
+          </Link>
         </div>
       ) : (
         <div
@@ -67,7 +123,7 @@ export default function CheckoutPage() {
             </h2>
             <ul className="space-y-3">
               {items.map((item) => (
-                <CartLineItem key={item.lineId} item={item} />
+                <CartLineItem key={item.lineId} item={item} showActions={false} />
               ))}
             </ul>
             <div className="flex justify-between pt-4">

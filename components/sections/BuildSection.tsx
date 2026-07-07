@@ -44,8 +44,9 @@ const CONFIG = {
     start: 0.45,
     end: 0.74,
     ease: "power3.out",
-    left: { xVw: -0.2, yVh: 0.06 },
-    right: { xVw: 0.2, yVh: 0.06 },
+    xVw: { desktop: 0.14, tablet: 0.11 },
+    left: { yVh: 0.06 },
+    right: { yVh: 0.06 },
   },
 };
 
@@ -125,7 +126,8 @@ export function BuildSection() {
       const spreadDuration = spread.end - spread.start;
 
       const spreadMagnitude = () =>
-        window.innerWidth * (window.innerWidth < 900 ? 0.16 : 0.2);
+        window.innerWidth *
+        (window.innerWidth < 900 ? spread.xVw.tablet : spread.xVw.desktop);
       const spreadY = () => window.innerHeight * spread.left.yVh;
 
       gsap.set(eyebrowRef.current, { opacity: 0 });
@@ -366,7 +368,16 @@ export function BuildSection() {
             willChange: "transform",
           }}
         >
-          <div ref={titleScaleRef} style={{ position: "relative", willChange: "transform" }}>
+          <div
+            ref={titleScaleRef}
+            style={{
+              position: "relative",
+              willChange: "transform",
+              maxWidth: "100%",
+              padding: "0 1.5rem",
+              overflow: "hidden",
+            }}
+          >
             <p
               ref={eyebrowRef}
               className="font-body-caps text-midnight/50"
@@ -386,7 +397,7 @@ export function BuildSection() {
             <h2
               className="font-headline text-midnight"
               style={{
-                fontSize: "clamp(1.5rem, 5vw, 5.5rem)",
+                fontSize: "clamp(1.5rem, 4.75vw, 5.5rem)",
                 lineHeight: 1.1,
                 whiteSpace: "nowrap",
                 textAlign: "center",
@@ -426,7 +437,6 @@ export function BuildSection() {
               height: "100%",
               maxWidth: "min(92vw, 56rem)",
               margin: "0 auto",
-              overflow: "visible",
             }}
           >
             {/* Side bowls — underneath center, translate only */}

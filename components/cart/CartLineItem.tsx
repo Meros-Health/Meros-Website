@@ -1,20 +1,32 @@
 import type { CartItem } from "@/store/cartStore";
+import { getCartItemDisplayName } from "@/store/cartStore";
 import { formatMacroSummary } from "@/lib/menu/nutrition";
+import { migrateLegacySelection, type LegacyBowlSelectionSnapshot } from "@/lib/menu/selectionUtils";
+import { CartLineActions } from "./CartLineActions";
 
 export function formatCustomBowlIngredients(item: CartItem): string {
   if (!item.selection) return "";
-  const parts: string[] = [item.selection.base.name];
-  if (item.selection.toppings.length > 0) {
-    parts.push(...item.selection.toppings.map((t) => t.name));
+  const selection = migrateLegacySelection(item.selection as LegacyBowlSelectionSnapshot);
+  const parts: string[] = [selection.base.name];
+  if (selection.fruitsBerries.length > 0) {
+    parts.push(...selection.fruitsBerries.map((t) => t.name));
   }
-  if (item.selection.drizzle) parts.push(item.selection.drizzle.name);
-  if (item.selection.supplements.length > 0) {
-    parts.push(...item.selection.supplements.map((s) => s.name));
+  if (selection.nutsSeeds.length > 0) {
+    parts.push(...selection.nutsSeeds.map((t) => t.name));
+  }
+  if (selection.finish) parts.push(selection.finish.name);
+  if (selection.enhancers.length > 0) {
+    parts.push(...selection.enhancers.map((s) => s.name));
   }
   return parts.join(", ");
 }
 
-export function CartLineItem({ item }: { item: CartItem }) {
+interface CartLineItemProps {
+  item: CartItem;
+  showActions?: boolean;
+}
+
+export function CartLineItem({ item, showActions = true }: CartLineItemProps) {
   const isCustom = item.kind === "custom" && item.selection;
 
   return (
@@ -27,7 +39,7 @@ export function CartLineItem({ item }: { item: CartItem }) {
       <div className="flex justify-between gap-4">
         <div className="min-w-0 flex-1">
           <span className="font-body-mixed text-sm text-midnight">
-            {item.name}
+            {getCartItemDisplayName(item)}
             <span className="text-juniper ml-2">× {item.quantity}</span>
           </span>
           {isCustom && (
@@ -45,6 +57,9 @@ export function CartLineItem({ item }: { item: CartItem }) {
           ${(item.unitPrice * item.quantity).toFixed(2)}
         </span>
       </div>
+      {showActions && (
+        <CartLineActions lineId={item.lineId} kind={item.kind} quantity={item.quantity} />
+      )}
     </li>
   );
 }

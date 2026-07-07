@@ -1,53 +1,52 @@
 "use client";
 
-import { getItemsByCategory, SELECTION_LIMITS } from "@/lib/menu/buildCatalog";
+import { getItemsByStep } from "@/lib/menu/buildCatalog";
+import {
+  getCategorySurchargeBannerText,
+  getItemPriceLabel,
+  showCategorySurchargeBanner,
+} from "@/lib/menu/calcBowlPrice";
+import { PRICING } from "@/lib/menu/pricing";
 import { useBowlBuilderStore } from "@/store/bowlBuilderStore";
 import { IngredientCard } from "./IngredientCard";
 
 const STEP_COPY = {
   base: "Choose one yogurt base. All bowls start here.",
-  toppings: `Add up to ${SELECTION_LIMITS.toppings} toppings — fruits, crunch, nuts, and seeds.`,
-  drizzle: "Optional. Pick one drizzle or skip.",
-  supplements: `Add up to ${SELECTION_LIMITS.supplements} supplements for an extra boost.`,
+  "fruits-berries": `Pick up to ${PRICING.includedPerCategory.fruitsBerries} fruits & berries included — extras are +$${PRICING.extraItemSurcharge} each.`,
+  "nuts-seeds": `Pick up to ${PRICING.includedPerCategory.nutsSeeds} nuts & seeds included — extras are +$${PRICING.extraItemSurcharge} each.`,
+  finish: "Optional. Pick one finish drizzle.",
+  enhancers: `Add enhancers for an extra boost — each +$${PRICING.enhancerPrice}.`,
 } as const;
 
 export function StepPanel() {
   const activeStep = useBowlBuilderStore((s) => s.activeStep);
   const selection = useBowlBuilderStore((s) => s.selection);
   const selectBase = useBowlBuilderStore((s) => s.selectBase);
-  const toggleTopping = useBowlBuilderStore((s) => s.toggleTopping);
-  const selectDrizzle = useBowlBuilderStore((s) => s.selectDrizzle);
-  const toggleSupplement = useBowlBuilderStore((s) => s.toggleSupplement);
+  const toggleFruitBerry = useBowlBuilderStore((s) => s.toggleFruitBerry);
+  const toggleNutsSeeds = useBowlBuilderStore((s) => s.toggleNutsSeeds);
+  const selectFinish = useBowlBuilderStore((s) => s.selectFinish);
+  const skipFinish = useBowlBuilderStore((s) => s.skipFinish);
+  const toggleEnhancer = useBowlBuilderStore((s) => s.toggleEnhancer);
+  const finishSkipped = useBowlBuilderStore((s) => s.finishSkipped);
 
-  const items = getItemsByCategory(
-    activeStep === "toppings" ? "topping" : activeStep === "supplements" ? "supplement" : activeStep
-  );
+  const items = getItemsByStep(activeStep);
+  const isSingleSelect = activeStep === "base" || activeStep === "finish";
 
   const isSelected = (id: string): boolean => {
     switch (activeStep) {
       case "base":
         return selection.base?.id === id;
-      case "toppings":
-        return selection.toppings.some((t) => t.id === id);
-      case "drizzle":
-        return selection.drizzle?.id === id;
-      case "supplements":
-        return selection.supplements.some((s) => s.id === id);
+      case "fruits-berries":
+        return selection.fruitsBerries.some((t) => t.id === id);
+      case "nuts-seeds":
+        return selection.nutsSeeds.some((t) => t.id === id);
+      case "finish":
+        return selection.finish?.id === id;
+      case "enhancers":
+        return selection.enhancers.some((s) => s.id === id);
       default:
         return false;
     }
-  };
-
-  const isDisabled = (id: string): boolean => {
-    if (activeStep === "toppings") {
-      const atLimit = selection.toppings.length >= SELECTION_LIMITS.toppings;
-      return atLimit && !selection.toppings.some((t) => t.id === id);
-    }
-    if (activeStep === "supplements") {
-      const atLimit = selection.supplements.length >= SELECTION_LIMITS.supplements;
-      return atLimit && !selection.supplements.some((s) => s.id === id);
-    }
-    return false;
   };
 
   const handleSelect = (item: (typeof items)[0]) => {
@@ -55,44 +54,60 @@ export function StepPanel() {
       case "base":
         selectBase(item);
         break;
-      case "toppings":
-        toggleTopping(item);
+      case "fruits-berries":
+        toggleFruitBerry(item);
         break;
-      case "drizzle":
-        selectDrizzle(isSelected(item.id) ? null : item);
+      case "nuts-seeds":
+        toggleNutsSeeds(item);
         break;
-      case "supplements":
-        toggleSupplement(item);
+      case "finish":
+        selectFinish(isSelected(item.id) ? null : item);
+        break;
+      case "enhancers":
+        toggleEnhancer(item);
         break;
     }
   };
 
   return (
     <div>
-      <p className="font-body-mixed text-sm text-juniper mb-6 max-w-md">
-        {STEP_COPY[activeStep]}
-      </p>
+      <p className="font-body-mixed text-sm text-juniper mb-4 max-w-md">{STEP_COPY[activeStep]}</p>
 
-      {activeStep === "drizzle" && (
+      {showCategorySurchargeBanner(activeStep, selection) && (
+        <p
+          className="font-body-caps text-[10px] tracking-widest text-grapefruit mb-4"
+          style={{ borderLeft: "2px solid var(--color-grapefruit)", paddingLeft: "0.75rem" }}
+        >
+          {getCategorySurchargeBannerText(activeStep)}
+        </p>
+      )}
+
+      {activeStep === "finish" && (
         <div className="mb-4">
           <button
             type="button"
-            onClick={() => selectDrizzle(null)}
-            aria-pressed={selection.drizzle === null}
+            onClick={skipFinish}
+            aria-pressed={selection.finish === null && finishSkipped}
             className="font-body-caps text-[10px] tracking-widest transition-colors"
             style={{
-              color: selection.drizzle === null ? "var(--color-grapefruit)" : "var(--color-juniper)",
-              borderBottom: selection.drizzle === null ? "0.5px solid var(--color-grapefruit)" : "none",
+              color:
+                selection.finish === null && finishSkipped
+                  ? "var(--color-grapefruit)"
+                  : "var(--color-juniper)",
+              borderBottom:
+                selection.finish === null && finishSkipped
+                  ? "0.5px solid var(--color-grapefruit)"
+                  : "none",
             }}
           >
-            No drizzle
+            No finish
           </button>
         </div>
       )}
 
       <div
         className="grid grid-cols-1 sm:grid-cols-2 gap-3"
-        role={activeStep === "base" || activeStep === "drizzle" ? "radiogroup" : "group"}
+        role={isSingleSelect ? "radiogroup" : "group"}
         aria-label={`${activeStep} options`}
       >
         {items.map((item) => (
@@ -100,7 +115,7 @@ export function StepPanel() {
             key={item.id}
             item={item}
             selected={isSelected(item.id)}
-            disabled={isDisabled(item.id)}
+            priceLabel={getItemPriceLabel(activeStep, item, selection)}
             onSelect={() => handleSelect(item)}
           />
         ))}
