@@ -437,7 +437,6 @@ export function BuildSection() {
               height: "100%",
               maxWidth: "min(92vw, 56rem)",
               margin: "0 auto",
-              overflow: "hidden",
             }}
           >
             {/* Side bowls — underneath center, translate only */}

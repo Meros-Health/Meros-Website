@@ -1,7 +1,7 @@
 "use client";
 
 import { useBowlBuilderStore } from "@/store/bowlBuilderStore";
-import { MacroBar } from "./MacroBar";
+import { MacroRingChart } from "./MacroRingChart";
 import { IngredientSummary } from "./IngredientSummary";
 import { BUILD_STEPS } from "@/lib/menu/buildCatalog";
 
@@ -64,49 +64,9 @@ export function MacroDashboard({ compact = false, expanded = false, onToggleExpa
 
       <p className="font-body-caps text-[9px] tracking-[0.25em] text-juniper mb-3">Your macros</p>
 
-      <div className="flex flex-col gap-3">
-        <MacroBar label="Protein" value={nutrition.protein} macroKey="protein" />
-        <MacroBar
-          label="Carbs"
-          value={nutrition.carbs}
-          macroKey="carbs"
-          fillClass="bg-juniper"
-        />
-        <MacroBar label="Fat" value={nutrition.fat} macroKey="fat" fillClass="bg-juniper" />
-        <MacroBar label="Fiber" value={nutrition.fiber} macroKey="fiber" fillClass="bg-juniper" />
-        <MacroBar label="Calories" value={nutrition.calories} macroKey="calories" unit="" />
-      </div>
+      <MacroRingChart nutrition={nutrition} />
 
-      {(nutrition.calcium > 0 || nutrition.iron > 0 || nutrition.potassium > 0) && (
-        <div className="mt-4 flex flex-wrap gap-1.5">
-          {nutrition.calcium > 0 && (
-            <span
-              className="font-body-caps text-[8px] tracking-widest text-juniper px-1.5 py-0.5"
-              style={{ border: "0.5px solid rgba(41,45,42,0.15)" }}
-            >
-              Ca {Math.round(nutrition.calcium)}mg
-            </span>
-          )}
-          {nutrition.iron > 0 && (
-            <span
-              className="font-body-caps text-[8px] tracking-widest text-juniper px-1.5 py-0.5"
-              style={{ border: "0.5px solid rgba(41,45,42,0.15)" }}
-            >
-              Fe {Math.round(nutrition.iron)}mg
-            </span>
-          )}
-          {nutrition.potassium > 0 && (
-            <span
-              className="font-body-caps text-[8px] tracking-widest text-juniper px-1.5 py-0.5"
-              style={{ border: "0.5px solid rgba(41,45,42,0.15)" }}
-            >
-              K {Math.round(nutrition.potassium)}mg
-            </span>
-          )}
-        </div>
-      )}
-
-      <p className="font-body-mixed text-[9px] text-juniper/70 mt-3">Estimated nutrition</p>
+      <p className="font-body-mixed text-[9px] text-juniper/70 mt-4">Estimated nutrition</p>
 
       {selection.base && (
         <div className="mt-4 pt-4" style={{ borderTop: "0.5px solid rgba(41,45,42,0.12)" }}>

@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
@@ -235,9 +236,23 @@ export function Footer() {
         <span className="font-body-mixed text-cream/30 text-[10px]">
           © {new Date().getFullYear()} Meros. All rights reserved.
         </span>
-        <span className="font-body-mixed text-cream/30 text-[10px]">
-          Yaletown, Vancouver
-        </span>
+        <div className="flex items-center gap-5">
+          <Link
+            href="/privacy"
+            className="font-body-mixed text-cream/30 text-[10px] hover:text-cream/70 transition-colors duration-200"
+          >
+            Privacy Policy
+          </Link>
+          <Link
+            href="/terms"
+            className="font-body-mixed text-cream/30 text-[10px] hover:text-cream/70 transition-colors duration-200"
+          >
+            Terms of Service
+          </Link>
+          <span className="font-body-mixed text-cream/30 text-[10px]">
+            Yaletown, Vancouver
+          </span>
+        </div>
       </div>
     </footer>
   );

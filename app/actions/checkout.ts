@@ -138,6 +138,16 @@ export async function submitCheckout(
   // TODO(payment): integrate a payment processor here (e.g. Stripe PaymentIntent)
   // before marking the order placed. Prices above are recomputed server-side
   // from the catalog, so they are safe to charge.
+  //
+  // TODO(stripe): when Stripe lands, also update the legal pages — both
+  // app/privacy/page.tsx and app/terms/page.tsx have TODO(stripe) comments
+  // listing exactly what to change (list Stripe as a processor, describe
+  // payment/refund flow, bump effective dates). Stripe's ToS also requires
+  // a privacy policy to be live, which /privacy satisfies.
+  //
+  // Note: this log includes customer personal info (name/email/phone). Fine
+  // for local dev, but before production either remove it or make sure log
+  // retention is treated as personal-data storage under the privacy policy.
   console.log("[checkout]", { orderRef, name, email, phone, items, total });
 
   return {
