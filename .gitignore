@@ -65,3 +65,7 @@ next-env.d.ts
 
 # graphify — local knowledge-graph cache and build artifacts, never commit
 /graphify-out/
+
+# cloudflare / opennext build artifacts
+/.open-next/
+/.wrangler/

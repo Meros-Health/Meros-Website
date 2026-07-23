@@ -2,7 +2,11 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { useLenis } from "@/components/animation/LenisProvider";
-import { HERO_BG_SRC, HERO_LOGO_SRC } from "@/lib/heroAssets";
+import {
+  HERO_RIGHT_IMAGE_SRC,
+  HERO_LOGO_DARK_SRC,
+  HERO_LOGO_LIGHT_SRC,
+} from "@/lib/heroAssets";
 
 // ── Tunables ──────────────────────────────────────────────────────────────
 const MIN_DISPLAY_MS = 500; // floor so the skeleton never flashes for a single frame
@@ -37,11 +41,17 @@ export function Preloader({ children }: { children: React.ReactNode }) {
     const minDelay = new Promise<void>((resolve) => setTimeout(resolve, MIN_DISPLAY_MS));
     const fontsReady = document.fonts ? document.fonts.ready : Promise.resolve();
 
-    Promise.all([preloadImage(HERO_BG_SRC), preloadImage(HERO_LOGO_SRC), fontsReady, minDelay]).then(
-      () => {
-        if (!cancelled) setReady(true);
-      }
-    );
+    // Gate only on the hero's above-the-fold assets. Carousel imagery is left
+    // to lazy-load so the gate never stalls on the full image set.
+    Promise.all([
+      preloadImage(HERO_RIGHT_IMAGE_SRC),
+      preloadImage(HERO_LOGO_DARK_SRC),
+      preloadImage(HERO_LOGO_LIGHT_SRC),
+      fontsReady,
+      minDelay,
+    ]).then(() => {
+      if (!cancelled) setReady(true);
+    });
 
     return () => {
       cancelled = true;

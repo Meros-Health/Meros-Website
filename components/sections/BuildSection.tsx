@@ -261,6 +261,13 @@ export function BuildSection() {
 
       tl.to(eyebrowRef.current, { opacity: 1, duration: 0.08 }, p.eyebrowStart);
       tl.to(ctaRef.current, { opacity: 1, duration: p.ctaEnd - p.ctaStart }, p.ctaStart);
+
+      // This section swaps from a short static layout into a ~3.2-viewport-tall
+      // pinned one on mount (see the layoutMode effect below), well after
+      // sections further down the page have already measured their own
+      // ScrollTriggers against the shorter layout. Without this, every trigger
+      // below (e.g. OurStorySection's reveal) fires against stale coordinates.
+      requestAnimationFrame(() => ScrollTrigger.refresh());
     },
     { scope: sectionRef, dependencies: [useScrollAnimation] }
   );
