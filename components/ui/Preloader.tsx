@@ -84,31 +84,45 @@ export function Preloader({ children }: { children: React.ReactNode }) {
             zIndex: 300,
             display: "flex",
             flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "clamp(1rem, 3vw, 2rem)",
             background: "var(--color-cream)",
             opacity: ready ? 0 : 1,
             pointerEvents: ready ? "none" : "auto",
             transition: `opacity ${FADE_OUT_MS}ms ease`,
+            padding: "clamp(1rem, 3vw, 2rem)",
+            gap: "clamp(0.85rem, 1.4vw, 1.4rem)",
           }}
         >
-          {/* Skeleton mirrors the hero's layout: logo lockup block, then the subtitle bar. */}
+          {/* Skeleton mirrors the hero's layout: left/right split up top, carousel bar along the bottom. */}
+          <div style={{ flex: "1 1 0%", minHeight: 0, display: "flex", gap: "clamp(0.85rem, 1.4vw, 1.4rem)" }}>
+            <div
+              className="skeleton-pulse"
+              style={{
+                width: "50%",
+                height: "100%",
+                borderRadius: "0.5rem",
+                background: "rgba(41, 45, 42, 0.12)",
+              }}
+            />
+            <div
+              className="skeleton-pulse"
+              style={{
+                width: "50%",
+                height: "100%",
+                borderRadius: "0.5rem",
+                background: "rgba(41, 45, 42, 0.12)",
+                animationDelay: "0.15s",
+              }}
+            />
+          </div>
           <div
             className="skeleton-pulse"
             style={{
-              width: "clamp(280px, 62vw, 1200px)",
-              height: "calc(clamp(280px, 62vw, 1200px) / 2.485)",
+              width: "100%",
+              height: "clamp(150px, 20vh, 260px)",
+              flexShrink: 0,
+              borderRadius: "0.5rem",
               background: "rgba(41, 45, 42, 0.12)",
-            }}
-          />
-          <div
-            className="skeleton-pulse"
-            style={{
-              width: "clamp(200px, 28vw, 380px)",
-              height: "clamp(0.8rem, 1.3vw, 1rem)",
-              background: "rgba(41, 45, 42, 0.12)",
-              animationDelay: "0.15s",
+              animationDelay: "0.3s",
             }}
           />
         </div>

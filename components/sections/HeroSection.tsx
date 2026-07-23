@@ -6,7 +6,6 @@ import { motion, type Variants } from "framer-motion";
 import { usePreloadReady } from "@/components/ui/Preloader";
 import { useIsMobile } from "@/lib/useIsMobile";
 import { HeroCarousel } from "@/components/ui/HeroCarousel";
-import { CTAButton } from "@/components/ui/CTAButton";
 import {
   HERO_RIGHT_IMAGE_SRC,
   HERO_LOGO_DARK_SRC,
@@ -14,14 +13,13 @@ import {
 } from "@/lib/heroAssets";
 
 // ── Entrance timing ──────────────────────────────────────────────────────
-// Three-beat sequence: (1) left column — title + CTAs — fades in, (2) right
+// Three-beat sequence: (1) left column — title — fades in, (2) right
 // image fades in, (3) a cream cover panel sitting over the carousel slides
 // off to the right, revealing it left-to-right.
-// Every knob for the whole sequence lives here — tweak freely. Title and CTAs
-// always move together as "the left column", so they share one delay/duration.
+// Every knob for the whole sequence lives here — tweak freely.
 const TIMING = {
   ease: [0.16, 1, 0.3, 1] as number[],
-  leftColumn: { delay: 0.5, duration: 3.0 }, // step 1 — title + CTAs
+  leftColumn: { delay: 0.5, duration: 3.0 }, // step 1 — title
   image: { delay: 0.75, duration: 2.25 }, // step 2 — right image
   carousel: { delay: 1.5, duration: 2.0 }, // step 3 — carousel cover slide-off
 } as const;
@@ -46,8 +44,6 @@ const slideOff: Variants = {
 const NAV_HEIGHT_PX = 72;
 const HERO_GAP = "clamp(0.85rem, 1.4vw, 1.4rem)";
 const CAROUSEL_TILE = "clamp(150px, 20vh, 260px)";
-const CTA_LABEL_ORDER = "Order Now →";
-const CTA_LABEL_BUILD = "Build Your Own Bowl →";
 
 export function HeroSection() {
   const ready = usePreloadReady();
@@ -57,7 +53,7 @@ export function HeroSection() {
   // removed from the DOM for good (nothing left animating or painting).
   const [carouselCoverGone, setCarouselCoverGone] = useState(false);
 
-  // ── Mobile: full-bleed portrait + scrim, centered title + stacked CTAs ──
+  // ── Mobile: full-bleed portrait + scrim, centered title ──
   if (isMobile) {
     return (
       <section
@@ -105,26 +101,6 @@ export function HeroSection() {
               priority
               style={{ width: "100%", height: "auto" }}
             />
-          </motion.div>
-
-          <motion.div
-            initial="hidden"
-            animate={animate}
-            variants={fadeIn}
-            transition={{ duration: TIMING.leftColumn.duration, delay: TIMING.leftColumn.delay, ease: TIMING.ease }}
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "0.75rem",
-              width: "clamp(220px, 72vw, 340px)",
-            }}
-          >
-            <CTAButton href="/order" variant="light" className="w-full">
-              {CTA_LABEL_ORDER}
-            </CTAButton>
-            <CTAButton href="/build" variant="light" className="w-full">
-              {CTA_LABEL_BUILD}
-            </CTAButton>
           </motion.div>
         </div>
       </section>
@@ -191,34 +167,6 @@ export function HeroSection() {
               priority
               style={{ width: "100%", height: "auto" }}
             />
-          </motion.div>
-
-          {/* CTAs — side by side, centered, at the bottom above the carousel */}
-          <motion.div
-            initial="hidden"
-            animate={animate}
-            variants={fadeIn}
-            transition={{ duration: TIMING.leftColumn.duration, delay: TIMING.leftColumn.delay, ease: TIMING.ease }}
-            style={{
-              position: "absolute",
-              left: 0,
-              bottom: 0,
-              width: "100%",
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "0.75rem",
-              paddingInline: "clamp(1.5rem, 5vw, 5.5rem)",
-              paddingBottom: "clamp(1.25rem, 3vh, 2.5rem)",
-            }}
-          >
-            <CTAButton href="/order" variant="dark">
-              {CTA_LABEL_ORDER}
-            </CTAButton>
-            <CTAButton href="/build" variant="dark">
-              {CTA_LABEL_BUILD}
-            </CTAButton>
           </motion.div>
         </div>
       </div>
