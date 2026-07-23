@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -13,11 +13,8 @@ import { useIsMobile } from "@/lib/useIsMobile";
 
 const HEADER_Z = 120;
 const MENU_ICON_SIZE = 18;
-/** Scroll distance (px) over which the band fades from 0 → 1 on home. */
-const BAND_FADE_DISTANCE = 125;
 const TOGGLE_FADE = { duration: 0.2, ease: "easeInOut" } as const;
-const ICON_COLOR = "var(--color-cream)";
-const BAND_RGB = "41, 45, 42";
+const ICON_COLOR = "var(--color-midnight)";
 
 const NAV_LINKS = [
   { label: "Home", href: "/" },
@@ -32,52 +29,9 @@ export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const isMobile = useIsMobile();
   const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const bandRef = useRef<HTMLDivElement>(null);
-  const scrollOpacityRef = useRef(pathname === "/" ? 0 : 1);
-  const menuOpenRef = useRef(menuOpen);
-  menuOpenRef.current = menuOpen;
 
   const cartCount = useCartStore((s) => s.items.reduce((n, item) => n + item.quantity, 0));
   const openCart = useCartStore((s) => s.openCart);
-
-  const applyBandOpacity = useCallback((opacity: number) => {
-    const band = bandRef.current;
-    if (!band) return;
-    band.style.backgroundColor =
-      opacity >= 1 ? `rgb(${BAND_RGB})` : `rgba(${BAND_RGB}, ${opacity})`;
-  }, []);
-
-  // Dark band: always solid on non-home routes and on mobile.
-  // On home (tablet/desktop only), opacity tracks scroll over BAND_FADE_DISTANCE.
-  useLayoutEffect(() => {
-    if (pathname !== "/" || isMobile) {
-      scrollOpacityRef.current = 1;
-      if (!menuOpenRef.current) applyBandOpacity(1);
-      return;
-    }
-
-    const update = (scrollY: number) => {
-      const opacity = Math.min(1, Math.max(0, scrollY / BAND_FADE_DISTANCE));
-      scrollOpacityRef.current = opacity;
-      if (!menuOpenRef.current) applyBandOpacity(opacity);
-    };
-
-    update(lenis?.scroll ?? window.scrollY);
-
-    if (!lenis) {
-      const onScroll = () => update(window.scrollY);
-      window.addEventListener("scroll", onScroll, { passive: true });
-      return () => window.removeEventListener("scroll", onScroll);
-    }
-
-    return lenis.on("scroll", (instance) => update(instance.scroll));
-  }, [lenis, pathname, isMobile, applyBandOpacity]);
-
-  // Menu open forces a solid band; closing restores scroll-driven opacity (tablet/desktop home only).
-  useLayoutEffect(() => {
-    const solid = pathname !== "/" || isMobile;
-    applyBandOpacity(menuOpen ? 1 : solid ? 1 : scrollOpacityRef.current);
-  }, [menuOpen, pathname, isMobile, applyBandOpacity]);
 
   useEffect(() => {
     if (menuOpen) lenis?.stop();
@@ -184,11 +138,12 @@ export function Navbar() {
         }}
       >
         <div
-          ref={bandRef}
           style={{
             display: "flex",
             alignItems: "center",
             padding: "0.85rem var(--nav-padding-x, 7vw)",
+            backgroundColor: "var(--color-cream)",
+            borderBottom: "1px solid rgba(41, 45, 42, 0.18)",
             pointerEvents: "auto",
           }}
         >
@@ -237,7 +192,7 @@ export function Navbar() {
               }}
             >
               <Image
-                src="/logos/logo-light.png"
+                src="/logos/logo-dark.png"
                 alt="Meros"
                 width={1376}
                 height={1376}

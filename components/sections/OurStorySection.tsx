@@ -1,11 +1,7 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
-import { useGSAP } from "@gsap/react";
-import gsap from "gsap";
-import ScrollTrigger from "gsap/ScrollTrigger";
-
-gsap.registerPlugin(ScrollTrigger);
+import { useEffect, useState } from "react";
+import { motion, type Variants } from "framer-motion";
 
 const PILLARS = [
   {
@@ -27,13 +23,27 @@ const PILLARS = [
 
 const HEADLINE_WORDS = ["SOURCED.", "STRAINED.", "SERVED."];
 
-export function OurStorySection() {
-  const sectionRef    = useRef<HTMLElement>(null);
-  const eyebrowRef    = useRef<HTMLSpanElement>(null);
-  const headlineRef   = useRef<HTMLHeadingElement>(null);
-  const dividerRef    = useRef<HTMLDivElement>(null);
-  const pillarsRef    = useRef<HTMLDivElement>(null);
+// Each reveal fires when *its own* element scrolls into view (IntersectionObserver),
+// so it's immune to the on-mount layout shift from BuildSection's pin above it.
+const ENTER_VIEWPORT = { once: true, margin: "-100px" } as const;
+// Headline fires later than the rest so the line-by-line reveal lands
+// mid-screen instead of starting near the bottom edge. Pillars/eyebrow/divider
+// keep ENTER_VIEWPORT — their timing was already right.
+const HEADLINE_VIEWPORT = { once: true, margin: "-30%" } as const;
+const REVEAL_EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
+// Stagger parent — children reveal in sequence (headline lines, then pillars).
+const container: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.15, delayChildren: 0.06 } },
+};
+
+const lineReveal: Variants = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 1.0, ease: REVEAL_EASE } },
+};
+
+export function OurStorySection() {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   useEffect(() => {
@@ -44,80 +54,8 @@ export function OurStorySection() {
     return () => mq.removeEventListener("change", handler);
   }, []);
 
-  useGSAP(() => {
-    if (!sectionRef.current || prefersReducedMotion) return;
-
-    // ── Eyebrow ───────────────────────────────────────────────────────────
-    gsap.fromTo(eyebrowRef.current,
-      { opacity: 0, x: -12 },
-      {
-        opacity: 1,
-        x: 0,
-        duration: 0.7,
-        ease: "power2.out",
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: "top 70%",
-          once: true,
-        },
-      }
-    );
-
-    // ── Headline: staggered clip reveal per word ──────────────────────────
-    const wordInners = headlineRef.current?.querySelectorAll<HTMLElement>(".word-inner");
-    if (wordInners?.length) {
-      gsap.set(wordInners, { y: "105%" });
-      gsap.to(wordInners, {
-        y: "0%",
-        stagger: 0.14,
-        duration: 1.0,
-        ease: "power4.out",
-        scrollTrigger: {
-          trigger: headlineRef.current,
-          start: "top 72%",
-          once: true,
-        },
-      });
-    }
-
-    // ── Divider: draw from left ───────────────────────────────────────────
-    gsap.fromTo(dividerRef.current,
-      { scaleX: 0, transformOrigin: "left center" },
-      {
-        scaleX: 1,
-        duration: 1.1,
-        ease: "power3.inOut",
-        scrollTrigger: {
-          trigger: dividerRef.current,
-          start: "top 88%",
-          once: true,
-        },
-      }
-    );
-
-    // ── Pillars: staggered fade + lift ────────────────────────────────────
-    const pillarEls = pillarsRef.current?.querySelectorAll<HTMLElement>(".pillar");
-    if (pillarEls?.length) {
-      gsap.set(pillarEls, { opacity: 0, y: 20 });
-      gsap.to(pillarEls, {
-        opacity: 1,
-        y: 0,
-        stagger: 0.15,
-        duration: 0.75,
-        ease: "power2.out",
-        delay: 0.2,
-        scrollTrigger: {
-          trigger: pillarsRef.current,
-          start: "top 88%",
-          once: true,
-        },
-      });
-    }
-  }, { scope: sectionRef, dependencies: [prefersReducedMotion] });
-
   return (
     <section
-      ref={sectionRef}
       className="relative w-full overflow-hidden bg-midnight text-cream"
       style={{ minHeight: "100svh" }}
     >
@@ -126,40 +64,60 @@ export function OurStorySection() {
 
         {/* Eyebrow */}
         <div className="mb-auto">
-          <span
-            ref={eyebrowRef}
+          <motion.span
             className="font-body-caps text-cream/50 text-[10px] tracking-[0.30em]"
-            style={{ opacity: 0 }}
+            initial={prefersReducedMotion ? false : { opacity: 0, x: -12 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={ENTER_VIEWPORT}
+            transition={{ duration: 1.0, ease: REVEAL_EASE }}
           >
             Our Story
-          </span>
+          </motion.span>
         </div>
 
-        {/* Headline */}
-        <h2
-          ref={headlineRef}
+        {/* Headline — line by line */}
+        <motion.h2
           className="font-headline text-cream leading-[1.0] mt-auto mb-auto text-[clamp(2.4rem,10.5vw,3.2rem)] md:text-[clamp(3.8rem,8.5vw,9.5rem)]"
+          variants={container}
+          initial={prefersReducedMotion ? false : "hidden"}
+          whileInView="show"
+          viewport={HEADLINE_VIEWPORT}
         >
           {HEADLINE_WORDS.map((word) => (
-            <span
+            <motion.span
               key={word}
-              className="block overflow-hidden"
+              className="block"
               style={{ paddingBottom: "0.06em" }}
+              variants={lineReveal}
             >
-              <span className="word-inner block">{word}</span>
-            </span>
+              {word}
+            </motion.span>
           ))}
-        </h2>
+        </motion.h2>
 
         {/* Bottom strip: divider + pillars */}
         <div className="mt-auto pt-16">
-          <div ref={dividerRef} className="w-full bg-cream/20" style={{ height: "0.5px" }} />
+          <motion.div
+            className="w-full bg-cream/20"
+            style={{ height: "0.5px", transformOrigin: "left center" }}
+            initial={prefersReducedMotion ? false : { scaleX: 0 }}
+            whileInView={{ scaleX: 1 }}
+            viewport={ENTER_VIEWPORT}
+            transition={{ duration: 1.3, ease: REVEAL_EASE }}
+          />
 
-          <div ref={pillarsRef} className="grid grid-cols-1 md:grid-cols-3 mt-10 gap-10 md:gap-0">
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-3 mt-10 gap-10 md:gap-0"
+            variants={container}
+            initial={prefersReducedMotion ? false : "hidden"}
+            whileInView="show"
+            viewport={ENTER_VIEWPORT}
+          >
             {PILLARS.map((p, i) => (
-              <div
+              <motion.div
                 key={p.index}
-                className={`pillar pr-12 ${i < PILLARS.length - 1 ? "md:border-r md:border-cream/15" : ""} ${i > 0 ? "md:pl-12 md:pr-0" : ""}`}
+                className={`pr-12 ${i < PILLARS.length - 1 ? "md:border-r md:border-cream/15" : ""} ${i > 0 ? "md:pl-12 md:pr-0" : ""}`}
+                variants={lineReveal}
               >
                 <div className="flex items-center gap-3 mb-3">
                   <span className="font-body-caps text-cream/35 text-[9px] tracking-[0.25em]">
@@ -173,9 +131,9 @@ export function OurStorySection() {
                 <p className="font-body-mixed text-cream/55 text-sm leading-relaxed">
                   {p.body}
                 </p>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
 
       </div>

@@ -18,95 +18,39 @@ interface CTAButtonProps {
 
 const THEME = {
   dark: {
-    fill: "bg-midnight",
-    invert: "bg-cream",
+    fill: "bg-transparent",
     border: "border border-midnight",
-    textRest: "text-cream",
-    textHover: "text-midnight",
+    text: "text-midnight",
+    outline: "focus-visible:outline-midnight",
   },
   light: {
     fill: "bg-cream",
-    invert: "bg-midnight",
     border: "border border-cream",
-    textRest: "text-midnight",
-    textHover: "text-cream",
+    text: "text-midnight",
+    outline: "focus-visible:outline-cream",
   },
 } as const;
 
-/** Invert panel slides in from the left (rightward wipe). */
-const slideVariants = {
-  rest: { x: "-101%" },
-  hover: { x: "0%" },
-};
-
-const textRestVariants = {
-  rest: { opacity: 1 },
-  hover: { opacity: 0 },
-};
-
-const textHoverVariants = {
-  rest: { opacity: 0 },
-  hover: { opacity: 1 },
-};
-
-const slideTransition = {
-  duration: 0.52,
-  ease: [0.16, 1, 0.3, 1] as number[],
-};
-
-const textTransition = {
-  duration: 0.28,
-  delay: 0.08,
-  ease: "easeInOut" as const,
-};
-
-const interactionProps = {
-  initial: "rest" as const,
-  whileHover: "hover" as const,
-  whileFocus: "hover" as const,
-  animate: "rest" as const,
-};
-
-function ButtonInner({
-  children,
-  variant,
-}: {
-  children: React.ReactNode;
-  variant: CTAVariant;
-}) {
-  const theme = THEME[variant];
-
-  return (
-    <>
-      {/* Sliding invert fill — travels left → right */}
-      <motion.span
-        aria-hidden
-        className={`pointer-events-none absolute inset-0 ${theme.invert}`}
-        variants={slideVariants}
-        transition={slideTransition}
-      />
-
-      {/* Dual-layer label: rest fades out, hover colour fades in */}
-      <span className="relative z-10 grid font-body tracking-body-caps text-xs uppercase">
-        <motion.span
-          className={`col-start-1 row-start-1 ${theme.textRest}`}
-          variants={textRestVariants}
-          transition={textTransition}
-        >
-          {children}
-        </motion.span>
-        <motion.span
-          aria-hidden
-          className={`col-start-1 row-start-1 ${theme.textHover}`}
-          variants={textHoverVariants}
-          transition={textTransition}
-        >
-          {children}
-        </motion.span>
-      </span>
-    </>
-  );
-}
+/**
+ * Dark (outline-only): fades toward transparent on hover/press.
+ * Light (filled): background darkens a touch, like a natural button press.
+ */
+const interaction = {
+  dark: {
+    initial: { opacity: 1 },
+    whileHover: { opacity: 0.55 },
+    whileFocus: { opacity: 0.55 },
+    whileTap: { opacity: 0.35 },
+    transition: { duration: 0.2, ease: "easeInOut" as const },
+  },
+  light: {
+    initial: { filter: "brightness(1)" },
+    whileHover: { filter: "brightness(0.92)" },
+    whileFocus: { filter: "brightness(0.92)" },
+    whileTap: { filter: "brightness(0.86)" },
+    transition: { duration: 0.2, ease: "easeInOut" as const },
+  },
+} as const;
 
 export function CTAButton({
   children,
@@ -122,9 +66,7 @@ export function CTAButton({
     "relative inline-flex items-center justify-center overflow-hidden",
     "rounded-btn px-8 py-3.5",
     "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
-    variant === "dark"
-      ? "focus-visible:outline-midnight"
-      : "focus-visible:outline-cream",
+    theme.outline,
     theme.fill,
     theme.border,
     className,
@@ -132,17 +74,27 @@ export function CTAButton({
     .filter(Boolean)
     .join(" ");
 
+  const inner = (
+    <span
+      className={`relative z-10 font-body tracking-body-caps text-xs uppercase ${theme.text}`}
+    >
+      {children}
+    </span>
+  );
+
+  const motionProps = interaction[variant];
+
   if (href) {
     return (
-      <MotionLink href={href} className={base} {...interactionProps}>
-        <ButtonInner variant={variant}>{children}</ButtonInner>
+      <MotionLink href={href} className={base} {...motionProps}>
+        {inner}
       </MotionLink>
     );
   }
 
   return (
-    <motion.button type="button" onClick={onClick} className={base} {...interactionProps}>
-      <ButtonInner variant={variant}>{children}</ButtonInner>
+    <motion.button type="button" onClick={onClick} className={base} {...motionProps}>
+      {inner}
     </motion.button>
   );
 }
