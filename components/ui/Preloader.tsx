@@ -92,39 +92,56 @@ export function Preloader({ children }: { children: React.ReactNode }) {
             gap: "clamp(0.85rem, 1.4vw, 1.4rem)",
           }}
         >
-          {/* Skeleton mirrors the hero's layout: left/right split up top, carousel bar along the bottom. */}
-          <div style={{ flex: "1 1 0%", minHeight: 0, display: "flex", gap: "clamp(0.85rem, 1.4vw, 1.4rem)" }}>
+          {/* Both variants render on the server and client alike; CSS media
+              queries (not JS viewport state) decide which is visible, so the
+              correct one is on screen from first paint — no post-hydration flash. */}
+          <div className="preloader-skeleton-desktop">
+            <div style={{ flex: "1 1 0%", minHeight: 0, display: "flex", gap: "clamp(0.85rem, 1.4vw, 1.4rem)" }}>
+              <div
+                className="skeleton-pulse"
+                style={{
+                  width: "50%",
+                  height: "100%",
+                  borderRadius: "0.5rem",
+                  background: "rgba(41, 45, 42, 0.12)",
+                }}
+              />
+              <div
+                className="skeleton-pulse"
+                style={{
+                  width: "50%",
+                  height: "100%",
+                  borderRadius: "0.5rem",
+                  background: "rgba(41, 45, 42, 0.12)",
+                  animationDelay: "0.15s",
+                }}
+              />
+            </div>
             <div
               className="skeleton-pulse"
               style={{
-                width: "50%",
-                height: "100%",
+                width: "100%",
+                height: "clamp(150px, 20vh, 260px)",
+                flexShrink: 0,
                 borderRadius: "0.5rem",
                 background: "rgba(41, 45, 42, 0.12)",
-              }}
-            />
-            <div
-              className="skeleton-pulse"
-              style={{
-                width: "50%",
-                height: "100%",
-                borderRadius: "0.5rem",
-                background: "rgba(41, 45, 42, 0.12)",
-                animationDelay: "0.15s",
+                animationDelay: "0.3s",
               }}
             />
           </div>
-          <div
-            className="skeleton-pulse"
-            style={{
-              width: "100%",
-              height: "clamp(150px, 20vh, 260px)",
-              flexShrink: 0,
-              borderRadius: "0.5rem",
-              background: "rgba(41, 45, 42, 0.12)",
-              animationDelay: "0.3s",
-            }}
-          />
+
+          {/* Mobile hero has no split/carousel layout — just a centered title. */}
+          <div className="preloader-skeleton-mobile">
+            <div
+              className="skeleton-pulse"
+              style={{
+                width: "clamp(220px, 72vw, 420px)",
+                height: "clamp(88px, 29vw, 168px)",
+                borderRadius: "0.5rem",
+                background: "rgba(41, 45, 42, 0.12)",
+              }}
+            />
+          </div>
         </div>
       )}
     </PreloadReadyContext.Provider>
