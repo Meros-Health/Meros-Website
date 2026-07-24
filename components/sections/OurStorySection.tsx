@@ -56,11 +56,10 @@ export function OurStorySection() {
 
   return (
     <section
-      className="relative w-full overflow-hidden bg-midnight text-cream"
-      style={{ minHeight: "100svh" }}
+      className="relative w-full overflow-hidden bg-midnight text-cream min-h-[70svh] md:min-h-[100svh]"
     >
       {/* ── Content ────────────────────────────────────────────────────── */}
-      <div className="flex flex-col min-h-[100svh] px-section-x py-16 md:py-24">
+      <div className="flex flex-col min-h-[70svh] md:min-h-[100svh] px-section-x py-16 md:py-24">
 
         {/* Eyebrow */}
         <div className="mb-auto">

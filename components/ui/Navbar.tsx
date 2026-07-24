@@ -217,10 +217,13 @@ export function Navbar() {
               gap: "0.15rem",
             }}
           >
+            {/* Hidden on mobile via CSS media query (not JS viewport state) so
+                there's no post-hydration flash of these icons on load. */}
             <button
               type="button"
               aria-label="Build your bowl"
               onClick={goToBuild}
+              className="nav-icon-desktop-only"
               style={iconButtonStyle}
             >
               <BowlIcon />
@@ -230,6 +233,7 @@ export function Navbar() {
               type="button"
               aria-label="Our Menu"
               onClick={goToMenu}
+              className="nav-icon-desktop-only"
               style={iconButtonStyle}
             >
               <MenuListIcon />
