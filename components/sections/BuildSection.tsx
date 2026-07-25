@@ -12,78 +12,56 @@ gsap.registerPlugin(ScrollTrigger);
 const BOWL_SIZE = 1080;
 
 // ─── Scroll choreography config ───────────────────────────────────────────────
-// Load-bearing "feel" values — do not tune without reading the scaling-title prompt.
-const CONFIG = {
-  pinDurationVh: 3.2,
-  scrub: 0.8,
+// Load-bearing "feel" values. The section pins via native position: sticky (NOT
+// GSAP pin) so there is no fixed-position handoff frame with Lenis — nothing to
+// "feel" at engage/release. A no-pin ScrollTrigger only reads 0→1 progress and
+// drives the horizontal sweep + intra-window parallax.
+const TRACK_VH = 320; // scroll distance: ~3 screen-heights to complete the sweep
+const SCRUB = 0.5; // small — Lenis already smooths; avoid double-lag floatiness
+const PARALLAX_STRENGTH = 0.16; // bowl lag depth; higher = slower bowl, more drama
+const BOWL_OVERFLOW = 1.6; // bowl box width as a fraction of window width (room to lag)
+const WINDOW = { aspectW: 1, aspectH: 1 }; // square frames
+const CARD_HEIGHT = "clamp(320px, 58vh, 540px)"; // taller cards; width derives from aspect
 
-  phases: {
-    titleEnd: 0.46,
-    imageEnd: 0.74,
-    eyebrowStart: 0.42,
-    ctaStart: 0.38,
-    ctaEnd: 0.52,
-  },
+const STAGE_VH = 100; // sticky stage height; used to locate the pin within the transit
 
-  title: {
-    travelVh: 0.3,
-    finalScale: 0.55,
-    ease: "power2.out",
-  },
+// Row position (fraction of viewport width) at the exact moments the sticky
+// stage engages and releases the pin. The sweep is linearly extrapolated BEYOND
+// these two points across the section's full viewport transit, so the row is
+// already gliding before the section pins and keeps gliding through the release
+// (while the next section rises) — the pin boundaries are no longer motion
+// boundaries. engageVw = row shifted left (right-side windows visible);
+// releaseVw = row shifted right (left-side windows exiting). Tuned in-browser.
+const SWEEP = { engageVw: 0.85, releaseVw: 0.15 };
 
-  image: {
-    initialOffsetVh: 0.8,
-    finalOffsetVh: -0.03,
-    initialScale: 3.0,
-    finalScale: 1.0,
-    ease: "power3.out",
-    transformOrigin: "top center",
-  },
+const WINDOWS: { src: string; alt: string }[] = [
+  { src: "/images-web/Transparent/Plain.png", alt: "The Plain bowl" },
+  { src: "/images-web/Transparent/Bounty.png", alt: "" },
+  { src: "/images-web/Transparent/Tropic.png", alt: "" },
+  { src: "/images-web/Transparent/Moment.png", alt: "" },
+  { src: "/images-web/Transparent/Silk.png", alt: "" },
+  { src: "/images-web/Transparent/Bloom.png", alt: "" },
+  { src: "/images-web/Transparent/Crunch.png", alt: "" },
+];
 
-  spread: {
-    start: 0.45,
-    end: 0.74,
-    ease: "power3.out",
-    xVw: { desktop: 0.14, tablet: 0.11 },
-    left: { yVh: 0.06 },
-    right: { yVh: 0.06 },
-  },
-};
-
-const BOWLS = {
-  center: {
-    src: "/images-web/Transparent/Bounty.png",
-    alt: "The Bounty bowl",
-  },
-  left: {
-    src: "/images-web/Transparent/Moment.png",
-    alt: "",
-  },
-  right: {
-    src: "/images-web/Transparent/Tropic.png",
-    alt: "",
-  },
-} as const;
-
-const bowlImageStyle = {
-  width: "100%",
-  height: "100%",
-  objectFit: "contain" as const,
-  objectPosition: "center",
-  display: "block",
+const STATIC_BOWL = {
+  src: "/images-web/Transparent/Bounty.png",
+  alt: "The Bounty bowl",
 };
 
 export function BuildSection() {
+  // ── Scroll (desktop/tablet) refs ──────────────────────────────────────────
   const sectionRef = useRef<HTMLElement>(null);
-  const titleWrapRef = useRef<HTMLDivElement>(null);
-  const titleScaleRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
   const eyebrowRef = useRef<HTMLParagraphElement>(null);
+  const headlineRef = useRef<HTMLHeadingElement>(null);
   const ctaRef = useRef<HTMLDivElement>(null);
-  const bowlStageRef = useRef<HTMLDivElement>(null);
-  const centerBowlRef = useRef<HTMLDivElement>(null);
-  const sideLeftRef = useRef<HTMLDivElement>(null);
-  const sideRightRef = useRef<HTMLDivElement>(null);
+  const rowRef = useRef<HTMLDivElement>(null);
+  const windowRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const bowlRefs = useRef<(HTMLDivElement | null)[]>([]);
 
+  // ── Static (mobile / reduced-motion) refs ─────────────────────────────────
   const staticSectionRef = useRef<HTMLElement>(null);
   const staticEyebrowRef = useRef<HTMLParagraphElement>(null);
   const staticTitleRef = useRef<HTMLHeadingElement>(null);
@@ -115,159 +93,92 @@ export function BuildSection() {
   const useMobileReveal = layoutMode === "static" && !prefersReducedMotion;
   const revealHiddenStyle = useMobileReveal ? { opacity: 0 } : undefined;
 
-  // ── Desktop / tablet: pinned scroll scaling ───────────────────────────────
+  // ── Desktop / tablet: sticky horizontal-parallax sweep ────────────────────
   useGSAP(
     () => {
-      if (!useScrollAnimation || !sectionRef.current) return;
+      if (!useScrollAnimation || !trackRef.current || !rowRef.current) return;
 
-      const p = CONFIG.phases;
-      const img = CONFIG.image;
-      const spread = CONFIG.spread;
-      const spreadDuration = spread.end - spread.start;
+      const row = rowRef.current;
+      const windows = windowRefs.current.filter(Boolean) as HTMLDivElement[];
+      const bowls = bowlRefs.current.filter(Boolean) as HTMLDivElement[];
 
-      const spreadMagnitude = () =>
-        window.innerWidth *
-        (window.innerWidth < 900 ? spread.xVw.tablet : spread.xVw.desktop);
-      const spreadY = () => window.innerHeight * spread.left.yVh;
+      // Center each bowl on its own axis; parallax x is composed on top of this.
+      gsap.set(bowls, { xPercent: -50 });
 
-      gsap.set(eyebrowRef.current, { opacity: 0 });
-      gsap.set(ctaRef.current, { opacity: 0 });
+      const setRowX = gsap.quickSetter(row, "x", "px") as (v: number) => void;
+      const setBowlX = bowls.map(
+        (b) => gsap.quickSetter(b, "x", "px") as (v: number) => void
+      );
 
-      gsap.set(bowlStageRef.current, {
-        y: () => window.innerHeight * img.initialOffsetVh,
+      // The trigger spans the whole transit ("top bottom" → "bottom top"), so the
+      // pin engages/releases at these interior progress fractions (derived from
+      // track vs stage height): entry is the first `engP`, the stuck phase the
+      // middle, exit the tail. We map the sweep in real px against those two
+      // interior anchors and extrapolate outward, giving free runway on both ends.
+      const engP = STAGE_VH / (TRACK_VH + STAGE_VH);
+      const relP = TRACK_VH / (TRACK_VH + STAGE_VH);
+
+      let vw = window.innerWidth;
+      let baseX = 0; // row x at the pin-engage anchor (engP)
+      let slope = 0; // row x change per unit progress
+
+      const measure = () => {
+        vw = window.innerWidth;
+        const rowW = row.scrollWidth;
+        const engageX = vw * SWEEP.engageVw - rowW; // row x when pin engages
+        const releaseX = vw * SWEEP.releaseVw; // row x when pin releases
+        slope = (releaseX - engageX) / (relP - engP);
+        baseX = engageX;
+      };
+
+      const applyProgress = (p: number) => {
+        setRowX(baseX + slope * (p - engP));
+        // Per-window parallax: the bowl lags its frame based on where that frame
+        // currently sits relative to viewport center (locomotive-style, so it is
+        // consistent regardless of sweep position). Measuring the parent window's
+        // post-transform rect is safe — the bowl's own x never feeds back into it.
+        for (let i = 0; i < windows.length; i++) {
+          const rect = windows[i].getBoundingClientRect();
+          const offset = rect.left + rect.width / 2 - vw / 2;
+          setBowlX[i](-offset * PARALLAX_STRENGTH);
+        }
+      };
+
+      measure();
+
+      const st = ScrollTrigger.create({
+        trigger: trackRef.current,
+        start: "top bottom", // section top enters from the viewport bottom
+        end: "bottom top", // section bottom exits past the viewport top
+        scrub: SCRUB,
+        onUpdate: (self) => applyProgress(self.progress),
+        onRefresh: (self) => {
+          measure();
+          applyProgress(self.progress);
+        },
       });
 
-      gsap.set(centerBowlRef.current, {
-        xPercent: -50,
-        yPercent: -50,
-        scale: img.initialScale,
-        transformOrigin: img.transformOrigin,
-      });
+      applyProgress(0);
 
-      gsap.set([sideLeftRef.current, sideRightRef.current], {
-        xPercent: -50,
-        yPercent: -50,
-        x: 0,
+      // Title stack: slow, staggered reveal-in as the section approaches
+      // (brand motion: ~1.1s, ease-out, descending hierarchy).
+      const titleTargets = [eyebrowRef.current, headlineRef.current, ctaRef.current];
+      gsap.set(titleTargets, { opacity: 0, y: 18 });
+      gsap.to(titleTargets, {
+        opacity: 1,
         y: 0,
-        scale: img.finalScale,
-        transformOrigin: img.transformOrigin,
-        opacity: 0,
+        duration: 1.1,
+        stagger: 0.14,
+        ease: "power3.out",
+        scrollTrigger: { trigger: trackRef.current, start: "top 85%", once: true },
       });
 
-      const tl = gsap.timeline({
-        defaults: { ease: "none" },
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: "top top",
-          end: () => `+=${window.innerHeight * CONFIG.pinDurationVh}`,
-          pin: true,
-          pinSpacing: true,
-          scrub: CONFIG.scrub,
-          invalidateOnRefresh: true,
-        },
-      });
-
-      tl.to(
-        titleWrapRef.current,
-        {
-          y: () => -window.innerHeight * CONFIG.title.travelVh,
-          ease: CONFIG.title.ease,
-          duration: p.titleEnd,
-        },
-        0
-      );
-
-      tl.to(
-        titleScaleRef.current,
-        {
-          scale: CONFIG.title.finalScale,
-          ease: CONFIG.title.ease,
-          duration: p.titleEnd,
-        },
-        0
-      );
-
-      tl.fromTo(
-        bowlStageRef.current,
-        { y: () => window.innerHeight * img.initialOffsetVh },
-        {
-          y: () => window.innerHeight * img.finalOffsetVh,
-          ease: img.ease,
-          duration: p.imageEnd,
-        },
-        0
-      );
-
-      tl.fromTo(
-        centerBowlRef.current,
-        {
-          xPercent: -50,
-          yPercent: -50,
-          scale: img.initialScale,
-          transformOrigin: img.transformOrigin,
-        },
-        {
-          xPercent: -50,
-          yPercent: -50,
-          scale: img.finalScale,
-          transformOrigin: img.transformOrigin,
-          ease: img.ease,
-          duration: p.imageEnd,
-        },
-        0
-      );
-
-      tl.fromTo(
-        sideLeftRef.current,
-        {
-          x: 0,
-          y: 0,
-          scale: img.finalScale,
-          transformOrigin: img.transformOrigin,
-          opacity: 0,
-        },
-        {
-          x: () => -spreadMagnitude(),
-          y: spreadY,
-          scale: img.finalScale,
-          transformOrigin: img.transformOrigin,
-          opacity: 1,
-          ease: spread.ease,
-          duration: spreadDuration,
-        },
-        spread.start
-      );
-
-      tl.fromTo(
-        sideRightRef.current,
-        {
-          x: 0,
-          y: 0,
-          scale: img.finalScale,
-          transformOrigin: img.transformOrigin,
-          opacity: 0,
-        },
-        {
-          x: spreadMagnitude,
-          y: spreadY,
-          scale: img.finalScale,
-          transformOrigin: img.transformOrigin,
-          opacity: 1,
-          ease: spread.ease,
-          duration: spreadDuration,
-        },
-        spread.start
-      );
-
-      tl.to(eyebrowRef.current, { opacity: 1, duration: 0.08 }, p.eyebrowStart);
-      tl.to(ctaRef.current, { opacity: 1, duration: p.ctaEnd - p.ctaStart }, p.ctaStart);
-
-      // This section swaps from a short static layout into a ~3.2-viewport-tall
-      // pinned one on mount (see the layoutMode effect below), well after
-      // sections further down the page have already measured their own
-      // ScrollTriggers against the shorter layout. Without this, every trigger
-      // below (e.g. OurStorySection's reveal) fires against stale coordinates.
+      // This section swaps from a short static layout into a tall (TRACK_VH)
+      // sticky one on mount, after sections below have already measured their
+      // ScrollTriggers against the shorter layout. Refresh so they re-measure.
       requestAnimationFrame(() => ScrollTrigger.refresh());
+
+      return () => st.kill();
     },
     { scope: sectionRef, dependencies: [useScrollAnimation] }
   );
@@ -332,8 +243,8 @@ export function BuildSection() {
             style={{ maxWidth: "min(72vw, 18rem)", aspectRatio: "1 / 1", ...revealHiddenStyle }}
           >
             <Image
-              src={BOWLS.center.src}
-              alt={BOWLS.center.alt}
+              src={STATIC_BOWL.src}
+              alt={STATIC_BOWL.alt}
               width={BOWL_SIZE}
               height={BOWL_SIZE}
               style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
@@ -353,168 +264,130 @@ export function BuildSection() {
 
   // ── Animated layout (desktop / tablet) ────────────────────────────────────
   return (
-    <section
-      ref={sectionRef}
-      id="st-section"
-      className="bg-cream"
-      style={{ position: "relative", height: "100vh", overflow: "hidden" }}
-      aria-label="Build A Bowl"
-    >
-      <div style={{ position: "relative", height: "100%", width: "100%" }}>
+    <section ref={sectionRef} id="st-section" className="bg-cream" aria-label="Build A Bowl">
+      <div ref={trackRef} style={{ position: "relative", height: `${TRACK_VH}vh` }}>
         <div
-          ref={titleWrapRef}
-          style={{
-            position: "absolute",
-            inset: 0,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 10,
-            pointerEvents: "none",
-            willChange: "transform",
-          }}
+          ref={stageRef}
+          className="bg-cream"
+          style={{ position: "sticky", top: 0, height: "100vh", overflow: "hidden" }}
         >
+          {/* Title stack — pinned to the top while the stage is stuck */}
           <div
-            ref={titleScaleRef}
             style={{
-              position: "relative",
-              willChange: "transform",
-              maxWidth: "100%",
+              position: "absolute",
+              top: "10vh",
+              left: 0,
+              right: 0,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              textAlign: "center",
+              zIndex: 10,
+              pointerEvents: "none",
               padding: "0 1.5rem",
-              overflow: "hidden",
             }}
           >
             <p
               ref={eyebrowRef}
               className="font-body-caps text-midnight/50"
-              style={{
-                position: "absolute",
-                top: "-1.75rem",
-                left: "50%",
-                transform: "translateX(-50%)",
-                whiteSpace: "nowrap",
-                fontSize: "0.7rem",
-                letterSpacing: "0.30em",
-                willChange: "opacity",
-              }}
+              style={{ fontSize: "0.7rem", letterSpacing: "0.30em", marginBottom: "0.9rem", willChange: "transform, opacity" }}
             >
               Build A Bowl
             </p>
             <h2
+              ref={headlineRef}
               className="font-headline text-midnight"
               style={{
-                fontSize: "clamp(1.5rem, 4.75vw, 5.5rem)",
+                fontSize: "clamp(1.75rem, 4.75vw, 4.25rem)",
                 lineHeight: 1.1,
                 whiteSpace: "nowrap",
-                textAlign: "center",
                 WebkitFontSmoothing: "antialiased",
                 MozOsxFontSmoothing: "grayscale",
+                willChange: "transform, opacity",
               }}
             >
               CREATE YOUR PERFECT BOWL.
             </h2>
+            <div
+              ref={ctaRef}
+              style={{ marginTop: "1.75rem", pointerEvents: "auto", willChange: "transform, opacity" }}
+            >
+              <CTAButton href="/build" variant="dark">
+                Build Your Custom Bowl
+              </CTAButton>
+            </div>
           </div>
 
+          {/* Sweeping row of soft-blue clipping windows */}
           <div
-            ref={ctaRef}
-            style={{ marginTop: "1.75rem", pointerEvents: "auto", willChange: "opacity" }}
-          >
-            <CTAButton href="/build" variant="dark">
-              Build Your Custom Bowl
-            </CTAButton>
-          </div>
-        </div>
-
-        <div
-          ref={bowlStageRef}
-          style={{
-            position: "absolute",
-            top: "34vh",
-            bottom: "5vh",
-            left: 0,
-            right: 0,
-            willChange: "transform",
-          }}
-        >
-          <div
+            aria-hidden
             style={{
-              position: "relative",
-              width: "100%",
-              height: "100%",
-              maxWidth: "min(92vw, 56rem)",
-              margin: "0 auto",
+              position: "absolute",
+              left: 0,
+              right: 0,
+              top: "34vh",
+              bottom: "4vh",
+              display: "flex",
+              alignItems: "center",
             }}
           >
-            {/* Side bowls — underneath center, translate only */}
             <div
-              ref={sideLeftRef}
-              aria-hidden
+              ref={rowRef}
               style={{
-                position: "absolute",
-                left: "50%",
-                top: "42%",
-                width: "58%",
-                aspectRatio: "1 / 1",
-                zIndex: 1,
+                display: "flex",
+                gap: "6vw",
+                width: "max-content",
+                paddingLeft: "6vw",
+                paddingRight: "6vw",
                 willChange: "transform",
               }}
             >
-              <Image
-                src={BOWLS.left.src}
-                alt={BOWLS.left.alt}
-                width={BOWL_SIZE}
-                height={BOWL_SIZE}
-                loading="eager"
-                style={bowlImageStyle}
-              />
-            </div>
-
-            <div
-              ref={sideRightRef}
-              aria-hidden
-              style={{
-                position: "absolute",
-                left: "50%",
-                top: "42%",
-                width: "58%",
-                aspectRatio: "1 / 1",
-                zIndex: 1,
-                willChange: "transform",
-              }}
-            >
-              <Image
-                src={BOWLS.right.src}
-                alt={BOWLS.right.alt}
-                width={BOWL_SIZE}
-                height={BOWL_SIZE}
-                loading="eager"
-                style={bowlImageStyle}
-              />
-            </div>
-
-            {/* Center bowl — on top, scale + shared stage rise */}
-            <div
-              ref={centerBowlRef}
-              style={{
-                position: "absolute",
-                left: "50%",
-                top: "38%",
-                width: "58%",
-                aspectRatio: "1 / 1",
-                zIndex: 2,
-                willChange: "transform",
-              }}
-            >
-              <Image
-                src={BOWLS.center.src}
-                alt={BOWLS.center.alt}
-                width={BOWL_SIZE}
-                height={BOWL_SIZE}
-                loading="eager"
-                priority
-                style={bowlImageStyle}
-              />
+              {WINDOWS.map((w, i) => (
+                <div
+                  key={w.src}
+                  ref={(el) => {
+                    windowRefs.current[i] = el;
+                  }}
+                  style={{
+                    flex: "none",
+                    height: CARD_HEIGHT,
+                    width: "auto",
+                    aspectRatio: `${WINDOW.aspectW} / ${WINDOW.aspectH}`,
+                    position: "relative",
+                    overflow: "hidden",
+                    backgroundColor: "var(--color-blue)",
+                  }}
+                >
+                  <div
+                    ref={(el) => {
+                      bowlRefs.current[i] = el;
+                    }}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      bottom: 0,
+                      left: "50%",
+                      width: `${BOWL_OVERFLOW * 100}%`,
+                      willChange: "transform",
+                    }}
+                  >
+                    <Image
+                      src={w.src}
+                      alt={w.alt}
+                      width={BOWL_SIZE}
+                      height={BOWL_SIZE}
+                      loading="eager"
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "contain",
+                        objectPosition: "center",
+                        display: "block",
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>

@@ -56,7 +56,7 @@ export function OurStorySection() {
 
   return (
     <section
-      className="relative w-full overflow-hidden bg-midnight text-cream min-h-[70svh] md:min-h-[100svh]"
+      className="relative w-full overflow-hidden bg-cream text-midnight min-h-[70svh] md:min-h-[100svh]"
     >
       {/* ── Content ────────────────────────────────────────────────────── */}
       <div className="flex flex-col min-h-[70svh] md:min-h-[100svh] px-section-x py-16 md:py-24">
@@ -64,7 +64,7 @@ export function OurStorySection() {
         {/* Eyebrow */}
         <div className="mb-auto">
           <motion.span
-            className="font-body-caps text-cream/50 text-[10px] tracking-[0.30em]"
+            className="font-body-caps text-midnight/50 text-[10px] tracking-[0.30em]"
             initial={prefersReducedMotion ? false : { opacity: 0, x: -12 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={ENTER_VIEWPORT}
@@ -76,7 +76,7 @@ export function OurStorySection() {
 
         {/* Headline — line by line */}
         <motion.h2
-          className="font-headline text-cream leading-[1.0] mt-auto mb-auto text-[clamp(2.4rem,10.5vw,3.2rem)] md:text-[clamp(3.8rem,8.5vw,9.5rem)]"
+          className="font-headline text-midnight leading-[1.0] mt-auto mb-auto text-[clamp(2.4rem,10.5vw,3.2rem)] md:text-[clamp(3.8rem,8.5vw,9.5rem)]"
           variants={container}
           initial={prefersReducedMotion ? false : "hidden"}
           whileInView="show"
@@ -97,7 +97,7 @@ export function OurStorySection() {
         {/* Bottom strip: divider + pillars */}
         <div className="mt-auto pt-16">
           <motion.div
-            className="w-full bg-cream/20"
+            className="w-full bg-midnight/20"
             style={{ height: "0.5px", transformOrigin: "left center" }}
             initial={prefersReducedMotion ? false : { scaleX: 0 }}
             whileInView={{ scaleX: 1 }}
@@ -115,19 +115,19 @@ export function OurStorySection() {
             {PILLARS.map((p, i) => (
               <motion.div
                 key={p.index}
-                className={`pr-12 ${i < PILLARS.length - 1 ? "md:border-r md:border-cream/15" : ""} ${i > 0 ? "md:pl-12 md:pr-0" : ""}`}
+                className={`pr-12 ${i < PILLARS.length - 1 ? "md:border-r md:border-midnight/15" : ""} ${i > 0 ? "md:pl-12 md:pr-0" : ""}`}
                 variants={lineReveal}
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <span className="font-body-caps text-cream/35 text-[9px] tracking-[0.25em]">
+                  <span className="font-body-caps text-midnight/35 text-[9px] tracking-[0.25em]">
                     {p.index}
                   </span>
-                  <div className="h-px flex-1 bg-cream/20" style={{ maxWidth: 32 }} />
-                  <span className="font-body-caps text-cream text-[10px] tracking-[0.20em]">
+                  <div className="h-px flex-1 bg-midnight/20" style={{ maxWidth: 32 }} />
+                  <span className="font-body-caps text-midnight text-[10px] tracking-[0.20em]">
                     {p.label}
                   </span>
                 </div>
-                <p className="font-body-mixed text-cream/55 text-sm leading-relaxed">
+                <p className="font-body-mixed text-midnight/55 text-sm leading-relaxed">
                   {p.body}
                 </p>
               </motion.div>

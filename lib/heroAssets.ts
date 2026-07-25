@@ -4,7 +4,7 @@
 
 // Right-half portrait (desktop) / full-bleed background (mobile). Pick a frame
 // with a light, low-detail top so the layered title stays legible over it.
-export const HERO_RIGHT_IMAGE_SRC = "/images-web/Gallery/Gallery-4.jpg";
+export const HERO_RIGHT_IMAGE_SRC = "/images-web/Hero/Gallery-8-hero.jpg";
 
 // Combined "MEROS" + "House of Yogurt" lockup, Montage Serif baked in.
 // Dark ink reads on the cream desktop canvas; light reads on the mobile scrim.
