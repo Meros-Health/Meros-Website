@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useTransitionRouter } from "@/components/transition/TransitionProvider";
 import { BUILD_STEPS } from "@/lib/menu/buildCatalog";
 import { useBowlBuilderStore } from "@/store/bowlBuilderStore";
 import { useCartStore } from "@/store/cartStore";
@@ -12,7 +12,7 @@ interface EditBuildFooterProps {
 }
 
 export function EditBuildFooter({ lineId }: EditBuildFooterProps) {
-  const router = useRouter();
+  const transitionRouter = useTransitionRouter();
   const activeStep = useBowlBuilderStore((s) => s.activeStep);
   const selection = useBowlBuilderStore((s) => s.selection);
   const nutrition = useBowlBuilderStore((s) => s.nutrition);
@@ -45,10 +45,12 @@ export function EditBuildFooter({ lineId }: EditBuildFooterProps) {
       price
     );
 
+    // Keep the 500ms "Saved" confirmation beat, then hand the actual route
+    // swap to the coordinated transition.
     setSaved(true);
     setTimeout(() => {
       openCart();
-      router.push("/order");
+      transitionRouter.push("/order");
     }, 500);
   };
 

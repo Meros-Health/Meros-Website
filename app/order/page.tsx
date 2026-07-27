@@ -6,6 +6,7 @@ import { useCartStore } from "@/store/cartStore";
 import { EMPTY_NUTRITION } from "@/lib/menu/nutrition";
 import { AddToCartButton } from "@/components/cart/AddToCartButton";
 import { getSignaturePrice } from "@/lib/menu/pricing";
+import { EntranceReveal } from "@/components/transition/EntranceReveal";
 
 // ── Menu data ──────────────────────────────────────────────────────────────────
 
@@ -266,15 +267,19 @@ export default function OrderPage() {
     <main>
       {/* ── Page title — top of the page every fresh load lands on ── */}
       <section className="px-[7vw] pt-36 pb-4">
-        <h1
-          className="font-headline text-midnight leading-[0.9] uppercase"
-          style={{ fontSize: "clamp(3rem, 7vw, 6rem)" }}
-        >
-          Our Menu
-        </h1>
-        <p className="font-body-mixed text-sm text-juniper mt-4 max-w-md">
-          Signature bowls and smoothies, strained and built in-house.
-        </p>
+        <EntranceReveal index={0}>
+          <h1
+            className="font-headline text-midnight leading-[0.9] uppercase"
+            style={{ fontSize: "clamp(3rem, 7vw, 6rem)" }}
+          >
+            Our Menu
+          </h1>
+        </EntranceReveal>
+        <EntranceReveal index={1}>
+          <p className="font-body-mixed text-sm text-juniper mt-4 max-w-md">
+            Signature bowls and smoothies, strained and built in-house.
+          </p>
+        </EntranceReveal>
       </section>
 
       {/* ── Signature Bowls ── */}

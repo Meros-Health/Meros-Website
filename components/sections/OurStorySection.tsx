@@ -1,23 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { motion, type Variants } from "framer-motion";
 
 const PILLARS = [
   {
     index: "01",
     label: "Strained In-House",
-    body: "Our yogurt is slow-strained daily — thick, clean, and never from a tub.",
+    body: "Our yogurt is finely strained in-house for a higher protein content and creamy, rich texture that’s perfect for bowls and smoothies.",
   },
   {
     index: "02",
-    label: "Island Sourced",
-    body: "Berries, granola, and seasonal toppings direct from Vancouver Island growers.",
+    label: "Locally Sourced",
+    body: "All ingredients are sourced from the lower mainland, supporting local businesses and ensuring the freshest produce possible.",
   },
   {
     index: "03",
-    label: "A Full Meal",
-    body: "Every bowl and smoothie is built with macros in mind. Real fuel, nothing missing.",
+    label: "Health Food",
+    body: "We maximize the nutritional value of our products, making them especially rich in nutrients, probiotics, and antioxidants to support your fitness goals.",
   },
 ];
 
@@ -31,6 +32,15 @@ const ENTER_VIEWPORT = { once: true, margin: "-100px" } as const;
 // keep ENTER_VIEWPORT — their timing was already right.
 const HEADLINE_VIEWPORT = { once: true, margin: "-30%" } as const;
 const REVEAL_EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
+
+// ── Our Story smoothie slide-in (tweak these) ──────────────────────────────
+const STORY_IMAGE = "/images-web/Transparent/Crave.png"; // which smoothie
+const STORY_IMAGE_SLIDE_FROM = 140;   // px: starting offset to the RIGHT (moves left into place)
+const STORY_IMAGE_DELAY = 0.15;       // s before the slide begins
+const STORY_IMAGE_DURATION = 3;     // s the slide takes (uses REVEAL_EASE quint-out)
+// Viewport-relative trigger: fires when the image is this far into the viewport.
+// Percentage margin scales with screen size, so timing holds on all viewports.
+const STORY_IMAGE_VIEWPORT = { once: true, margin: "-20%" } as const;
 
 // Stagger parent — children reveal in sequence (headline lines, then pillars).
 const container: Variants = {
@@ -74,25 +84,48 @@ export function OurStorySection() {
           </motion.span>
         </div>
 
-        {/* Headline — line by line */}
-        <motion.h2
-          className="font-headline text-midnight leading-[1.0] mt-auto mb-auto text-[clamp(2.4rem,10.5vw,3.2rem)] md:text-[clamp(3.8rem,8.5vw,9.5rem)]"
-          variants={container}
-          initial={prefersReducedMotion ? false : "hidden"}
-          whileInView="show"
-          viewport={HEADLINE_VIEWPORT}
-        >
-          {HEADLINE_WORDS.map((word) => (
-            <motion.span
-              key={word}
-              className="block"
-              style={{ paddingBottom: "0.06em" }}
-              variants={lineReveal}
+        {/* Middle: headline (left) + smoothie slide-in (right) */}
+        <div className="mt-auto mb-auto grid grid-cols-1 md:grid-cols-2 items-center gap-10 md:gap-8">
+          {/* Left — headline, line by line (reveal unchanged) */}
+          <motion.h2
+            className="font-headline text-midnight leading-[1.0] text-[clamp(2.4rem,10.5vw,3.2rem)] md:text-[clamp(3rem,6vw,6.5rem)]"
+            variants={container}
+            initial={prefersReducedMotion ? false : "hidden"}
+            whileInView="show"
+            viewport={HEADLINE_VIEWPORT}
+          >
+            {HEADLINE_WORDS.map((word) => (
+              <motion.span
+                key={word}
+                className="block"
+                style={{ paddingBottom: "0.06em" }}
+                variants={lineReveal}
+              >
+                {word}
+              </motion.span>
+            ))}
+          </motion.h2>
+
+          {/* Right — smoothie slides in from the right, then stays */}
+          <div className="flex justify-center md:justify-end">
+            <motion.div
+              className="w-[68%] sm:w-[55%] md:w-[88%] max-w-[520px]"
+              initial={prefersReducedMotion ? false : { opacity: 0, x: STORY_IMAGE_SLIDE_FROM }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={STORY_IMAGE_VIEWPORT}
+              transition={{ delay: STORY_IMAGE_DELAY, duration: STORY_IMAGE_DURATION, ease: REVEAL_EASE }}
             >
-              {word}
-            </motion.span>
-          ))}
-        </motion.h2>
+              <Image
+                src={STORY_IMAGE}
+                alt="Meros smoothie"
+                width={1080}
+                height={1080}
+                sizes="(min-width: 768px) 40vw, 70vw"
+                style={{ width: "100%", height: "auto" }}
+              />
+            </motion.div>
+          </div>
+        </div>
 
         {/* Bottom strip: divider + pillars */}
         <div className="mt-auto pt-16">

@@ -256,7 +256,8 @@ export function NavMenuOverlay({
             right: 0,
             overflow: "hidden",
             display: "flex",
-            alignItems: "flex-end",
+            // Vertically centered to match the left panel's nav-link column.
+            alignItems: "center",
             justifyContent: "flex-end",
             ...panelBg,
           }}
@@ -267,10 +268,9 @@ export function NavMenuOverlay({
               flexShrink: 0,
               width: halfW,
               display: "flex",
-              alignItems: "flex-end",
+              alignItems: "center",
               justifyContent: "flex-end",
               paddingRight: "var(--nav-padding-x)",
-              paddingBottom: "3rem",
             }}
           >
             {rightContent}

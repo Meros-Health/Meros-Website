@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
+import { useTransitionRouter } from "@/components/transition/TransitionProvider";
 import { useCartStore } from "@/store/cartStore";
 import { CartLineItem } from "@/components/cart/CartLineItem";
 import { CHECKOUT_ENABLED } from "@/lib/config";
@@ -12,16 +12,18 @@ const PANEL_DURATION = 0.5;
 const PANEL_EASE = [0.16, 1, 0.3, 1] as const;
 
 export function CartDrawer() {
-  const router = useRouter();
+  const transitionRouter = useTransitionRouter();
   const isOpen = useCartStore((s) => s.isOpen);
   const closeCart = useCartStore((s) => s.closeCart);
   const items = useCartStore((s) => s.items);
   const subtotal = useCartStore((s) => s.subtotal());
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
+  // The transition cover sits above the drawer, so its slide-out plays hidden
+  // instead of over the already-swapped page.
   const handleCheckout = () => {
     closeCart();
-    router.push("/checkout");
+    transitionRouter.push("/checkout");
   };
 
   useEffect(() => {

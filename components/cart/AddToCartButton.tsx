@@ -6,6 +6,7 @@ interface AddToCartButtonProps {
   addedLabel?: string;
   added?: boolean;
   className?: string;
+  style?: React.CSSProperties;
 }
 
 export function AddToCartButton({
@@ -14,6 +15,7 @@ export function AddToCartButton({
   addedLabel = "Added",
   added = false,
   className = "",
+  style,
 }: AddToCartButtonProps) {
   return (
     <button
@@ -33,6 +35,7 @@ export function AddToCartButton({
         background: added ? "transparent" : "var(--color-grapefruit)",
         color: added ? "var(--color-grapefruit)" : "var(--color-cream)",
         border: added ? "0.5px solid var(--color-grapefruit)" : "0.5px solid var(--color-grapefruit)",
+        ...style,
       }}
     >
       {added ? addedLabel : label}

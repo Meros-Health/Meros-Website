@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { motion } from "framer-motion";
+import { TransitionLink } from "@/components/transition/TransitionLink";
 
-const MotionLink = motion.create(Link);
+const MotionLink = motion.create(TransitionLink);
 
 type CTAVariant = "light" | "dark";
 
@@ -14,6 +14,8 @@ interface CTAButtonProps {
   href?: string;
   onClick?: () => void;
   className?: string;
+  style?: React.CSSProperties;
+  textStyle?: React.CSSProperties;
 }
 
 const THEME = {
@@ -58,6 +60,8 @@ export function CTAButton({
   href,
   onClick,
   className = "",
+  style,
+  textStyle,
 }: CTAButtonProps) {
   const theme = THEME[variant];
   const base = [
@@ -76,7 +80,8 @@ export function CTAButton({
 
   const inner = (
     <span
-      className={`relative z-10 font-body tracking-body-caps text-xs uppercase ${theme.text}`}
+      className={`relative z-10 font-body tracking-body-caps uppercase ${theme.text}`}
+      style={{ fontSize: "0.75rem", ...textStyle }}
     >
       {children}
     </span>
@@ -86,14 +91,14 @@ export function CTAButton({
 
   if (href) {
     return (
-      <MotionLink href={href} className={base} {...motionProps}>
+      <MotionLink href={href} className={base} style={style} {...motionProps}>
         {inner}
       </MotionLink>
     );
   }
 
   return (
-    <motion.button type="button" onClick={onClick} className={base} {...motionProps}>
+    <motion.button type="button" onClick={onClick} className={base} style={style} {...motionProps}>
       {inner}
     </motion.button>
   );

@@ -1,16 +1,18 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useState, useRef } from "react";
+import { TransitionLink } from "@/components/transition/TransitionLink";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { submitContactForm, type ContactFormState } from "@/app/actions/contact";
 import { INSTAGRAM_POSTS, INSTAGRAM_URL, INSTAGRAM_HANDLE } from "@/lib/instagramFeed";
 
-// Yaletown, Vancouver — copy from Google Maps > Share > Embed a map
-const MAPS_EMBED_URL =
-  "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2602.571!2d-123.12076!3d49.27423!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x5486717d03c8fc6b%3A0xf7d24c85a5d4efdc!2sYaletown%2C%20Vancouver%2C%20BC!5e0!3m2!1sen!2sca!4v1720000000000";
+// Query the live Google Maps listing instead of storing a brittle, generic
+// neighbourhood embed. The query resolves to Meros once the listing is live.
+const MAPS_QUERY = "Meros, 1207 Hamilton Street, Vancouver, BC";
+const MAPS_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(MAPS_QUERY)}`;
+const MAPS_EMBED_URL = `https://www.google.com/maps?q=${encodeURIComponent(MAPS_QUERY)}&output=embed`;
 
 // Prefix-matched so dynamic routes (e.g. /cart/edit/[lineId]) are covered too.
 const HIDDEN_ON = ["/order", "/build", "/checkout", "/cart"];
@@ -38,16 +40,45 @@ export function Footer() {
   return (
     <footer className="w-full bg-midnight text-cream" style={{ borderTop: "0.5px solid rgba(255,247,240,0.10)" }}>
 
+      {/* ── Brand mark ───────────────────────────────────────────────────── */}
+      <div
+        className="flex justify-center px-section-x py-10"
+        style={{ borderBottom: "0.5px solid rgba(255,247,240,0.08)" }}
+      >
+        <Image
+          src="/logos/name-light.png"
+          alt="MEROS"
+          width={160}
+          height={48}
+          className="opacity-80"
+          priority={false}
+        />
+      </div>
+
       {/* ── Row 1: 3-column grid ────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8 px-section-x py-14 md:py-16">
 
         {/* ── LEFT: Google Maps ─────────────────────────────────────────── */}
         <div className="flex flex-col gap-4">
-          <span className="font-body-caps text-cream/40 text-[9px] tracking-[0.30em]">Find Us</span>
-          <address className="not-italic flex flex-col gap-0.5">
-            <span className="font-body-mixed text-cream text-xs leading-relaxed">1207 Hamilton Street</span>
-            <span className="font-body-mixed text-cream/55 text-xs leading-relaxed">Yaletown, Vancouver, BC V6B 2R5</span>
-          </address>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col gap-2">
+              <span className="font-body-caps text-cream/40 text-[9px] tracking-[0.30em]">Find Us</span>
+              <address className="not-italic flex flex-col gap-0.5">
+                <span className="font-body-mixed text-cream text-xs leading-relaxed">1207 Hamilton Street</span>
+                <span className="font-body-mixed text-cream/55 text-xs leading-relaxed">Yaletown, Vancouver, BC V6B 2R5</span>
+              </address>
+            </div>
+            <a
+              href={MAPS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group mt-0.5 flex shrink-0 items-center gap-1.5 font-body-caps text-[8px] tracking-[0.18em] text-cream/55 transition-colors duration-200 hover:text-grapefruit"
+              aria-label="Open Meros in Google Maps"
+            >
+              <MapPinIcon />
+              <span>Open map</span>
+            </a>
+          </div>
           <div className="w-full overflow-hidden" style={{ aspectRatio: "1/1" }}>
             <iframe
               src={MAPS_EMBED_URL}
@@ -57,7 +88,7 @@ export function Footer() {
               allowFullScreen
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
-              title="Meros location — Yaletown, Vancouver"
+              title="Meros on Google Maps"
             />
           </div>
         </div>
@@ -213,15 +244,15 @@ export function Footer() {
         </div>
       </div>
 
-      {/* ── Row 2: Name logo centered ────────────────────────────────────── */}
+      {/* ── Icon mark ────────────────────────────────────────────────────── */}
       <div
-        className="flex justify-center px-section-x py-10"
+        className="flex justify-center px-section-x py-8"
         style={{ borderTop: "0.5px solid rgba(255,247,240,0.08)" }}
       >
         <Image
-          src="/logos/name-light.png"
-          alt="MEROS"
-          width={160}
+          src="/logos/logo-light.png"
+          alt="Meros"
+          width={48}
           height={48}
           className="opacity-80"
           priority={false}
@@ -237,18 +268,18 @@ export function Footer() {
           © {new Date().getFullYear()} Meros. All rights reserved.
         </span>
         <div className="flex items-center gap-5">
-          <Link
+          <TransitionLink
             href="/privacy"
             className="font-body-mixed text-cream/30 text-[10px] hover:text-cream/70 transition-colors duration-200"
           >
             Privacy Policy
-          </Link>
-          <Link
+          </TransitionLink>
+          <TransitionLink
             href="/terms"
             className="font-body-mixed text-cream/30 text-[10px] hover:text-cream/70 transition-colors duration-200"
           >
             Terms of Service
-          </Link>
+          </TransitionLink>
           <span className="font-body-mixed text-cream/30 text-[10px]">
             Yaletown, Vancouver
           </span>
@@ -266,6 +297,15 @@ function InstagramIcon() {
       <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
       <circle cx="12" cy="12" r="4" />
       <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function MapPinIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#59605b" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" />
+      <circle cx="12" cy="10" r="2.5" fill="#59605b" stroke="none" />
     </svg>
   );
 }

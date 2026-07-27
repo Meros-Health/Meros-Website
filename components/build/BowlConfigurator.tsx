@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { EntranceReveal } from "@/components/transition/EntranceReveal";
 import { StepNav } from "./StepNav";
 import { StepPanel } from "./StepPanel";
 import { BuildFooter } from "./BuildFooter";
@@ -23,16 +24,23 @@ export function BowlConfigurator({ mode, editLineId, header }: BowlConfiguratorP
   return (
     <div className="px-[7vw] pt-28 pb-24">
       <header className="mb-10 md:mb-14">
-        <span className="font-body-caps text-midnight/50 text-[10px] tracking-[0.30em]">
-          {header.eyebrow}
-        </span>
-        <h1
-          className="font-headline text-midnight leading-[0.9] uppercase mt-2"
-          style={{ fontSize: "clamp(2.5rem, 6vw, 5rem)" }}
-        >
-          {header.title}
-        </h1>
-        <p className="font-body-mixed text-sm text-juniper mt-4 max-w-lg">{header.description}</p>
+        {/* Reveal order follows visual hierarchy (title first), not DOM order. */}
+        <EntranceReveal index={1}>
+          <span className="font-body-caps text-midnight/50 text-[10px] tracking-[0.30em]">
+            {header.eyebrow}
+          </span>
+        </EntranceReveal>
+        <EntranceReveal index={0}>
+          <h1
+            className="font-headline text-midnight leading-[0.9] uppercase mt-2"
+            style={{ fontSize: "clamp(2.5rem, 6vw, 5rem)" }}
+          >
+            {header.title}
+          </h1>
+        </EntranceReveal>
+        <EntranceReveal index={2}>
+          <p className="font-body-mixed text-sm text-juniper mt-4 max-w-lg">{header.description}</p>
+        </EntranceReveal>
       </header>
 
       <div className="xl:hidden mb-6">

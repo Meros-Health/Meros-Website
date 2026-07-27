@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { motion, type Variants } from "framer-motion";
-import { usePreloadReady } from "@/components/ui/Preloader";
+import { usePageReady } from "@/components/transition/TransitionProvider";
 import { useIsMobile } from "@/lib/useIsMobile";
 import { HeroCarousel } from "@/components/ui/HeroCarousel";
 import {
@@ -20,6 +20,7 @@ import {
 const TIMING = {
   ease: [0.16, 1, 0.3, 1] as number[],
   leftColumn: { delay: 0.5, duration: 3.0 }, // step 1 — title
+  tagline: { delay: 1.3, duration: 2.5 }, // step 1b — tagline under the title
   image: { delay: 0.75, duration: 2.25 }, // step 2 — right image
   carousel: { delay: 1.5, duration: 2.0 }, // step 3 — carousel cover slide-off
 } as const;
@@ -46,7 +47,9 @@ const HERO_GAP = "clamp(0.85rem, 1.4vw, 1.4rem)";
 const CAROUSEL_TILE = "clamp(150px, 20vh, 260px)";
 
 export function HeroSection() {
-  const ready = usePreloadReady();
+  // Gated on both the first-load preloader and any in-flight page transition,
+  // so the entrance cascade also replays when navigating back to "/".
+  const ready = usePageReady();
   const isMobile = useIsMobile(1023); // < 1024px → simplified layout
   const animate = ready ? "visible" : "hidden";
   // One-shot cover panel over the carousel — slides off once, then is
@@ -101,6 +104,19 @@ export function HeroSection() {
               priority
               style={{ width: "100%", height: "auto" }}
             />
+            <motion.p
+              initial="hidden"
+              animate={animate}
+              variants={fadeIn}
+              transition={{ duration: TIMING.tagline.duration, delay: TIMING.tagline.delay, ease: TIMING.ease }}
+              className="font-body-caps text-cream text-center tracking-[0.28em]"
+              style={{
+                marginTop: "clamp(1rem, 3vh, 1.75rem)",
+                fontSize: "clamp(0.7rem, 2.6vw, 0.875rem)",
+              }}
+            >
+              {"1207 HAMILTON STREET, YALETOWN, VANCOUVER, BC"}
+            </motion.p>
           </motion.div>
         </div>
       </section>
@@ -168,6 +184,25 @@ export function HeroSection() {
               style={{ width: "100%", height: "auto" }}
             />
           </motion.div>
+
+          {/* Tagline — bottom of the left half, bottom-aligned with the right image */}
+          <motion.p
+            initial="hidden"
+            animate={animate}
+            variants={fadeIn}
+            transition={{ duration: TIMING.tagline.duration, delay: TIMING.tagline.delay, ease: TIMING.ease }}
+            className="font-body-caps text-midnight text-center tracking-[0.28em]"
+            style={{
+              position: "absolute",
+              left: "50%",
+              bottom: 0,
+              transform: "translateX(-50%)",
+              whiteSpace: "nowrap",
+              fontSize: "clamp(0.7rem, 0.95vw, 0.875rem)",
+            }}
+          >
+            {"1207 HAMILTON STREET, YALETOWN, VANCOUVER, BC"}
+          </motion.p>
         </div>
       </div>
 

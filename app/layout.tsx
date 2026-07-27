@@ -7,6 +7,7 @@ import { RouteScroll } from "@/components/ui/RouteScroll";
 import { Footer } from "@/components/ui/Footer";
 import { Preloader } from "@/components/ui/Preloader";
 import { CartDrawer } from "@/components/ui/CartDrawer";
+import { TransitionProvider } from "@/components/transition/TransitionProvider";
 
 export const metadata: Metadata = {
   title: "Meros — House of Yogurt",
@@ -25,10 +26,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <LenisProvider>
           <RouteScroll />
           <Preloader>
-            <Navbar />
-            {children}
-            <Footer />
-            <CartDrawer />
+            <TransitionProvider>
+              <Navbar />
+              {children}
+              <Footer />
+              <CartDrawer />
+            </TransitionProvider>
           </Preloader>
         </LenisProvider>
       </body>
