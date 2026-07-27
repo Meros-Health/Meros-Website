@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useTransitionRouter } from "@/components/transition/TransitionProvider";
 import { useCartStore } from "@/store/cartStore";
 
 interface CartLineActionsProps {
@@ -10,7 +10,7 @@ interface CartLineActionsProps {
 }
 
 export function CartLineActions({ lineId, kind, quantity }: CartLineActionsProps) {
-  const router = useRouter();
+  const transitionRouter = useTransitionRouter();
   const incrementItem = useCartStore((s) => s.incrementItem);
   const decrementItem = useCartStore((s) => s.decrementItem);
   const removeItem = useCartStore((s) => s.removeItem);
@@ -18,7 +18,7 @@ export function CartLineActions({ lineId, kind, quantity }: CartLineActionsProps
 
   const handleEdit = () => {
     closeCart();
-    router.push(`/cart/edit/${lineId}`);
+    transitionRouter.push(`/cart/edit/${lineId}`);
   };
 
   const stepBtn =

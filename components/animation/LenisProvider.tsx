@@ -16,12 +16,12 @@ export function useLenis() {
 // Site-wide scroll feel — single place to tune calmness.
 // lerp replaces duration/easing for wheel smoothing (per Lenis docs).
 const SCROLL_CONFIG = {
-  lerp: 0.065,
-  wheelMultiplier: 0.72,
-  touchMultiplier: 0.82,
+  lerp: 0.12,
+  wheelMultiplier: 1.0,
+  touchMultiplier: 1.0,
   smoothWheel: true,
   /** Cap aggressive trackpad/wheel spikes per event */
-  maxWheelDelta: 90,
+  maxWheelDelta: 240,
 } as const;
 
 interface LenisProviderProps {

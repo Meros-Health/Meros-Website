@@ -16,7 +16,7 @@
     --nav-accent:         var(--color-grapefruit);
     --nav-hole-width:     32vw;
     --nav-hole-height:    62vh;
-    --nav-padding-x:      7vw;
+    --nav-padding-x:      3vw;
     --nav-frame-duration: 0.7s;
     --nav-frame-ease:     cubic-bezier(0.76, 0, 0.24, 1);
 

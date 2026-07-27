@@ -11,79 +11,51 @@ gsap.registerPlugin(ScrollTrigger);
 
 const BOWL_SIZE = 1080;
 
-// ─── Scroll choreography config ───────────────────────────────────────────────
-// Load-bearing "feel" values — do not tune without reading the scaling-title prompt.
-const CONFIG = {
-  pinDurationVh: 3.2,
-  scrub: 0.8,
+// ─── Carousel config ──────────────────────────────────────────────────────────
+// Load-bearing "feel" values. The row is NOT scroll-pinned; it runs as a
+// continuous carousel driven by a single gsap.ticker loop. That loop advances the
+// row rightward at a constant speed AND applies the per-window parallax (bowl lag)
+// every frame. Because the parallax reads each window's live rect, it is identical
+// in mechanism to the old scroll-driven version — only the row driver changed.
+const CAROUSEL_SPEED_PX_PER_SEC = 48; // slower = more premium (brand motion guidance)
+const PARALLAX_STRENGTH = 0.16; // bowl lag depth; higher = slower bowl, more drama
+const BOWL_OVERFLOW = 1.6; // bowl box width as a fraction of window width (room to lag)
+const WINDOW = { aspectW: 1, aspectH: 1 }; // square frames
+const CARD_HEIGHT = "clamp(320px, 51vh, 540px)"; // taller cards; width derives from aspect
+const CARD_GAP = "clamp(0.85rem, 1.4vw, 1.4rem)"; // matches HeroCarousel's gap (HERO_GAP) for consistency; uniform trailing margin makes the doubled row loop exactly
 
-  phases: {
-    titleEnd: 0.46,
-    imageEnd: 0.74,
-    eyebrowStart: 0.42,
-    ctaStart: 0.38,
-    ctaEnd: 0.52,
-  },
+const WINDOWS: { src: string; alt: string }[] = [
+  { src: "/images-web/Transparent/Plain.png", alt: "The Plain bowl" },
+  { src: "/images-web/Transparent/Bounty.png", alt: "" },
+  { src: "/images-web/Transparent/Tropic.png", alt: "" },
+  { src: "/images-web/Transparent/Moment.png", alt: "" },
+  { src: "/images-web/Transparent/Silk.png", alt: "" },
+  { src: "/images-web/Transparent/Bloom.png", alt: "" },
+  { src: "/images-web/Transparent/Crunch.png", alt: "" },
+];
 
-  title: {
-    travelVh: 0.3,
-    finalScale: 0.55,
-    ease: "power2.out",
-  },
+// Doubled so one full set can scroll off-screen while the identical second set
+// fills the viewport — seamless loop at translateX(-setWidth) (same technique as
+// HeroCarousel / the gallery-marquee CSS). 7 large square cards (up to 540px each)
+// exceed the viewport width, so a single doubling is enough to never show the end.
+const REPEATED_WINDOWS = [...WINDOWS, ...WINDOWS];
 
-  image: {
-    initialOffsetVh: 0.8,
-    finalOffsetVh: -0.03,
-    initialScale: 3.0,
-    finalScale: 1.0,
-    ease: "power3.out",
-    transformOrigin: "top center",
-  },
-
-  spread: {
-    start: 0.45,
-    end: 0.74,
-    ease: "power3.out",
-    xVw: { desktop: 0.14, tablet: 0.11 },
-    left: { yVh: 0.06 },
-    right: { yVh: 0.06 },
-  },
-};
-
-const BOWLS = {
-  center: {
-    src: "/images-web/Transparent/Bounty.png",
-    alt: "The Bounty bowl",
-  },
-  left: {
-    src: "/images-web/Transparent/Moment.png",
-    alt: "",
-  },
-  right: {
-    src: "/images-web/Transparent/Tropic.png",
-    alt: "",
-  },
-} as const;
-
-const bowlImageStyle = {
-  width: "100%",
-  height: "100%",
-  objectFit: "contain" as const,
-  objectPosition: "center",
-  display: "block",
+const STATIC_BOWL = {
+  src: "/images-web/Transparent/Bounty.png",
+  alt: "The Bounty bowl",
 };
 
 export function BuildSection() {
+  // ── Carousel (desktop/tablet) refs ────────────────────────────────────────
   const sectionRef = useRef<HTMLElement>(null);
-  const titleWrapRef = useRef<HTMLDivElement>(null);
-  const titleScaleRef = useRef<HTMLDivElement>(null);
   const eyebrowRef = useRef<HTMLParagraphElement>(null);
+  const headlineRef = useRef<HTMLHeadingElement>(null);
   const ctaRef = useRef<HTMLDivElement>(null);
-  const bowlStageRef = useRef<HTMLDivElement>(null);
-  const centerBowlRef = useRef<HTMLDivElement>(null);
-  const sideLeftRef = useRef<HTMLDivElement>(null);
-  const sideRightRef = useRef<HTMLDivElement>(null);
+  const rowRef = useRef<HTMLDivElement>(null);
+  const windowRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const bowlRefs = useRef<(HTMLDivElement | null)[]>([]);
 
+  // ── Static (mobile / reduced-motion) refs ─────────────────────────────────
   const staticSectionRef = useRef<HTMLElement>(null);
   const staticEyebrowRef = useRef<HTMLParagraphElement>(null);
   const staticTitleRef = useRef<HTMLHeadingElement>(null);
@@ -115,159 +87,90 @@ export function BuildSection() {
   const useMobileReveal = layoutMode === "static" && !prefersReducedMotion;
   const revealHiddenStyle = useMobileReveal ? { opacity: 0 } : undefined;
 
-  // ── Desktop / tablet: pinned scroll scaling ───────────────────────────────
+  // ── Desktop / tablet: continuous carousel + per-window parallax ───────────
   useGSAP(
     () => {
-      if (!useScrollAnimation || !sectionRef.current) return;
+      if (!useScrollAnimation || !rowRef.current) return;
 
-      const p = CONFIG.phases;
-      const img = CONFIG.image;
-      const spread = CONFIG.spread;
-      const spreadDuration = spread.end - spread.start;
+      const row = rowRef.current;
+      const windows = windowRefs.current.filter(Boolean) as HTMLDivElement[];
+      const bowls = bowlRefs.current.filter(Boolean) as HTMLDivElement[];
 
-      const spreadMagnitude = () =>
-        window.innerWidth *
-        (window.innerWidth < 900 ? spread.xVw.tablet : spread.xVw.desktop);
-      const spreadY = () => window.innerHeight * spread.left.yVh;
+      // Center each bowl on its own axis; parallax x is composed on top of this.
+      gsap.set(bowls, { xPercent: -50 });
 
-      gsap.set(eyebrowRef.current, { opacity: 0 });
-      gsap.set(ctaRef.current, { opacity: 0 });
+      const setRowX = gsap.quickSetter(row, "x", "px") as (v: number) => void;
+      const setBowlX = bowls.map(
+        (b) => gsap.quickSetter(b, "x", "px") as (v: number) => void
+      );
 
-      gsap.set(bowlStageRef.current, {
-        y: () => window.innerHeight * img.initialOffsetVh,
-      });
+      let vw = window.innerWidth;
+      let setWidth = 0; // width of one full set of cards (row is doubled → scrollWidth / 2)
+      // Row starts shifted left by one set so the second (identical) copy fills
+      // the viewport; it glides rightward and wraps by exactly one set width.
+      let rowX = 0;
 
-      gsap.set(centerBowlRef.current, {
-        xPercent: -50,
-        yPercent: -50,
-        scale: img.initialScale,
-        transformOrigin: img.transformOrigin,
-      });
+      const measure = () => {
+        vw = window.innerWidth;
+        setWidth = row.scrollWidth / 2;
+        // Keep rowX within one set after a resize so the wrap stays seamless.
+        if (setWidth > 0) rowX = -setWidth + (((rowX % setWidth) + setWidth) % setWidth);
+      };
 
-      gsap.set([sideLeftRef.current, sideRightRef.current], {
-        xPercent: -50,
-        yPercent: -50,
-        x: 0,
+      const applyParallax = () => {
+        // Per-window parallax: the bowl lags its frame based on where that frame
+        // currently sits relative to viewport center (locomotive-style). Measuring
+        // the parent window's post-transform rect is safe — the bowl's own x never
+        // feeds back into it. Identical to the previous scroll-driven version.
+        for (let i = 0; i < windows.length; i++) {
+          const rect = windows[i].getBoundingClientRect();
+          const offset = rect.left + rect.width / 2 - vw / 2;
+          setBowlX[i](-offset * PARALLAX_STRENGTH);
+        }
+      };
+
+      measure();
+      rowX = -setWidth;
+      setRowX(rowX);
+      applyParallax();
+
+      // Single continuous loop: advance the row rightward, wrap at the set
+      // boundary, then re-apply parallax against the freshly-moved windows.
+      const tick = (_time: number, deltaMs: number) => {
+        if (setWidth <= 0) return;
+        rowX += CAROUSEL_SPEED_PX_PER_SEC * (deltaMs / 1000);
+        if (rowX >= 0) rowX -= setWidth; // seamless wrap (content is doubled)
+        setRowX(rowX);
+        applyParallax();
+      };
+      gsap.ticker.add(tick);
+
+      const onResize = () => measure();
+      window.addEventListener("resize", onResize);
+
+      // Title stack: slow, staggered reveal-in as the section approaches
+      // (brand motion: ~1.1s, ease-out, descending hierarchy).
+      const titleTargets = [eyebrowRef.current, headlineRef.current, ctaRef.current];
+      gsap.set(titleTargets, { opacity: 0, y: 18 });
+      gsap.to(titleTargets, {
+        opacity: 1,
         y: 0,
-        scale: img.finalScale,
-        transformOrigin: img.transformOrigin,
-        opacity: 0,
+        duration: 1.1,
+        stagger: 0.14,
+        ease: "power3.out",
+        scrollTrigger: { trigger: sectionRef.current, start: "top 85%", once: true },
       });
 
-      const tl = gsap.timeline({
-        defaults: { ease: "none" },
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: "top top",
-          end: () => `+=${window.innerHeight * CONFIG.pinDurationVh}`,
-          pin: true,
-          pinSpacing: true,
-          scrub: CONFIG.scrub,
-          invalidateOnRefresh: true,
-        },
-      });
-
-      tl.to(
-        titleWrapRef.current,
-        {
-          y: () => -window.innerHeight * CONFIG.title.travelVh,
-          ease: CONFIG.title.ease,
-          duration: p.titleEnd,
-        },
-        0
-      );
-
-      tl.to(
-        titleScaleRef.current,
-        {
-          scale: CONFIG.title.finalScale,
-          ease: CONFIG.title.ease,
-          duration: p.titleEnd,
-        },
-        0
-      );
-
-      tl.fromTo(
-        bowlStageRef.current,
-        { y: () => window.innerHeight * img.initialOffsetVh },
-        {
-          y: () => window.innerHeight * img.finalOffsetVh,
-          ease: img.ease,
-          duration: p.imageEnd,
-        },
-        0
-      );
-
-      tl.fromTo(
-        centerBowlRef.current,
-        {
-          xPercent: -50,
-          yPercent: -50,
-          scale: img.initialScale,
-          transformOrigin: img.transformOrigin,
-        },
-        {
-          xPercent: -50,
-          yPercent: -50,
-          scale: img.finalScale,
-          transformOrigin: img.transformOrigin,
-          ease: img.ease,
-          duration: p.imageEnd,
-        },
-        0
-      );
-
-      tl.fromTo(
-        sideLeftRef.current,
-        {
-          x: 0,
-          y: 0,
-          scale: img.finalScale,
-          transformOrigin: img.transformOrigin,
-          opacity: 0,
-        },
-        {
-          x: () => -spreadMagnitude(),
-          y: spreadY,
-          scale: img.finalScale,
-          transformOrigin: img.transformOrigin,
-          opacity: 1,
-          ease: spread.ease,
-          duration: spreadDuration,
-        },
-        spread.start
-      );
-
-      tl.fromTo(
-        sideRightRef.current,
-        {
-          x: 0,
-          y: 0,
-          scale: img.finalScale,
-          transformOrigin: img.transformOrigin,
-          opacity: 0,
-        },
-        {
-          x: spreadMagnitude,
-          y: spreadY,
-          scale: img.finalScale,
-          transformOrigin: img.transformOrigin,
-          opacity: 1,
-          ease: spread.ease,
-          duration: spreadDuration,
-        },
-        spread.start
-      );
-
-      tl.to(eyebrowRef.current, { opacity: 1, duration: 0.08 }, p.eyebrowStart);
-      tl.to(ctaRef.current, { opacity: 1, duration: p.ctaEnd - p.ctaStart }, p.ctaStart);
-
-      // This section swaps from a short static layout into a ~3.2-viewport-tall
-      // pinned one on mount (see the layoutMode effect below), well after
-      // sections further down the page have already measured their own
-      // ScrollTriggers against the shorter layout. Without this, every trigger
-      // below (e.g. OurStorySection's reveal) fires against stale coordinates.
+      // This section swaps from the short static layout into the taller
+      // carousel one on mount, after sections below have already measured
+      // their ScrollTriggers against the shorter layout. Refresh so they
+      // re-measure.
       requestAnimationFrame(() => ScrollTrigger.refresh());
+
+      return () => {
+        gsap.ticker.remove(tick);
+        window.removeEventListener("resize", onResize);
+      };
     },
     { scope: sectionRef, dependencies: [useScrollAnimation] }
   );
@@ -332,8 +235,8 @@ export function BuildSection() {
             style={{ maxWidth: "min(72vw, 18rem)", aspectRatio: "1 / 1", ...revealHiddenStyle }}
           >
             <Image
-              src={BOWLS.center.src}
-              alt={BOWLS.center.alt}
+              src={STATIC_BOWL.src}
+              alt={STATIC_BOWL.alt}
               width={BOWL_SIZE}
               height={BOWL_SIZE}
               style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
@@ -356,69 +259,54 @@ export function BuildSection() {
     <section
       ref={sectionRef}
       id="st-section"
-      className="bg-cream"
-      style={{ position: "relative", height: "100vh", overflow: "hidden" }}
+      className="relative w-full bg-cream overflow-x-clip pt-20 pb-8"
       aria-label="Build A Bowl"
     >
-      <div style={{ position: "relative", height: "100%", width: "100%" }}>
+      {/* Normal document flow: section height derives from its content
+          (title stack + gap + card height + paddings), so spacing edits move
+          the whole section as one block. overflow-x-clip contains the
+          wider-than-viewport marquee row without hiding vertical overflow. */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
+        {/* Title stack — static block above the carousel */}
         <div
-          ref={titleWrapRef}
           style={{
-            position: "absolute",
-            inset: 0,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            justifyContent: "center",
-            zIndex: 10,
-            pointerEvents: "none",
-            willChange: "transform",
+            textAlign: "center",
+            padding: "0 1.5rem",
           }}
         >
-          <div
-            ref={titleScaleRef}
+          <p
+            ref={eyebrowRef}
+            className="font-body-caps text-midnight/50"
+            style={{ fontSize: "0.7rem", letterSpacing: "0.30em", marginBottom: "0.9rem", willChange: "transform, opacity" }}
+          >
+            Build A Bowl
+          </p>
+          <h2
+            ref={headlineRef}
+            className="font-headline text-midnight"
             style={{
-              position: "relative",
-              willChange: "transform",
-              maxWidth: "100%",
-              padding: "0 1.5rem",
-              overflow: "hidden",
+              fontSize: "clamp(1.75rem, 4.75vw, 4.25rem)",
+              lineHeight: 1.1,
+              whiteSpace: "nowrap",
+              WebkitFontSmoothing: "antialiased",
+              MozOsxFontSmoothing: "grayscale",
+              willChange: "transform, opacity",
             }}
           >
-            <p
-              ref={eyebrowRef}
-              className="font-body-caps text-midnight/50"
-              style={{
-                position: "absolute",
-                top: "-1.75rem",
-                left: "50%",
-                transform: "translateX(-50%)",
-                whiteSpace: "nowrap",
-                fontSize: "0.7rem",
-                letterSpacing: "0.30em",
-                willChange: "opacity",
-              }}
-            >
-              Build A Bowl
-            </p>
-            <h2
-              className="font-headline text-midnight"
-              style={{
-                fontSize: "clamp(1.5rem, 4.75vw, 5.5rem)",
-                lineHeight: 1.1,
-                whiteSpace: "nowrap",
-                textAlign: "center",
-                WebkitFontSmoothing: "antialiased",
-                MozOsxFontSmoothing: "grayscale",
-              }}
-            >
-              CREATE YOUR PERFECT BOWL.
-            </h2>
-          </div>
-
+            CREATE YOUR PERFECT BOWL
+          </h2>
           <div
             ref={ctaRef}
-            style={{ marginTop: "1.75rem", pointerEvents: "auto", willChange: "opacity" }}
+            style={{ marginTop: "1.75rem", willChange: "transform, opacity" }}
           >
             <CTAButton href="/build" variant="dark">
               Build Your Custom Bowl
@@ -426,96 +314,74 @@ export function BuildSection() {
           </div>
         </div>
 
+        {/* Continuously looping row of soft-blue clipping windows. Fixed
+            margin-top guarantees breathing room below the button regardless
+            of headline/viewport size; the cards' own height then sets the
+            rest of the section's height. */}
         <div
-          ref={bowlStageRef}
+          aria-hidden
           style={{
-            position: "absolute",
-            top: "34vh",
-            bottom: "5vh",
-            left: 0,
-            right: 0,
-            willChange: "transform",
+            width: "100%",
+            marginTop: "clamp(2.5rem, 6vh, 4.5rem)",
           }}
         >
           <div
-            style={{
-              position: "relative",
-              width: "100%",
-              height: "100%",
-              maxWidth: "min(92vw, 56rem)",
-              margin: "0 auto",
-            }}
-          >
-            {/* Side bowls — underneath center, translate only */}
+          ref={rowRef}
+          style={{
+            display: "flex",
+            width: "max-content",
+            willChange: "transform",
+          }}
+        >
+          {REPEATED_WINDOWS.map((w, i) => (
             <div
-              ref={sideLeftRef}
-              aria-hidden
+              key={i}
+              ref={(el) => {
+                windowRefs.current[i] = el;
+              }}
               style={{
-                position: "absolute",
-                left: "50%",
-                top: "42%",
-                width: "58%",
-                aspectRatio: "1 / 1",
-                zIndex: 1,
-                willChange: "transform",
+                flex: "none",
+                height: CARD_HEIGHT,
+                width: "auto",
+                aspectRatio: `${WINDOW.aspectW} / ${WINDOW.aspectH}`,
+                position: "relative",
+                overflow: "hidden",
+                backgroundColor: "var(--color-blue)",
+                // Uniform trailing margin on EVERY card (incl. the last) so the
+                // doubled row is exactly 2× one set → scrollWidth / 2 loops seamlessly.
+                marginRight: CARD_GAP,
               }}
             >
-              <Image
-                src={BOWLS.left.src}
-                alt={BOWLS.left.alt}
-                width={BOWL_SIZE}
-                height={BOWL_SIZE}
-                loading="eager"
-                style={bowlImageStyle}
-              />
+              <div
+                ref={(el) => {
+                  bowlRefs.current[i] = el;
+                }}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  bottom: 0,
+                  left: "50%",
+                  width: `${BOWL_OVERFLOW * 100}%`,
+                  willChange: "transform",
+                }}
+              >
+                <Image
+                  src={w.src}
+                  alt={w.alt}
+                  width={BOWL_SIZE}
+                  height={BOWL_SIZE}
+                  loading="eager"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "contain",
+                    objectPosition: "center",
+                    display: "block",
+                  }}
+                />
+              </div>
             </div>
-
-            <div
-              ref={sideRightRef}
-              aria-hidden
-              style={{
-                position: "absolute",
-                left: "50%",
-                top: "42%",
-                width: "58%",
-                aspectRatio: "1 / 1",
-                zIndex: 1,
-                willChange: "transform",
-              }}
-            >
-              <Image
-                src={BOWLS.right.src}
-                alt={BOWLS.right.alt}
-                width={BOWL_SIZE}
-                height={BOWL_SIZE}
-                loading="eager"
-                style={bowlImageStyle}
-              />
-            </div>
-
-            {/* Center bowl — on top, scale + shared stage rise */}
-            <div
-              ref={centerBowlRef}
-              style={{
-                position: "absolute",
-                left: "50%",
-                top: "38%",
-                width: "58%",
-                aspectRatio: "1 / 1",
-                zIndex: 2,
-                willChange: "transform",
-              }}
-            >
-              <Image
-                src={BOWLS.center.src}
-                alt={BOWLS.center.alt}
-                width={BOWL_SIZE}
-                height={BOWL_SIZE}
-                loading="eager"
-                priority
-                style={bowlImageStyle}
-              />
-            </div>
+          ))}
           </div>
         </div>
       </div>
