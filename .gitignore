@@ -60,6 +60,9 @@ next-env.d.ts
 # Internal brand documents — sensitive, never commit to public repo.
 /documents/
 
+# Internal store operations, SOPs, and compliance records. Never commit to public repo.
+/MEROS-resources/
+
 # Catch-all for any .env variant not covered above
 .env*
 

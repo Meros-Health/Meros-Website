@@ -2,7 +2,7 @@
 
 import { getItemById } from "@/lib/menu/buildCatalog";
 import { calcBowlPrice } from "@/lib/menu/calcBowlPrice";
-import { getSignaturePrice } from "@/lib/menu/pricing";
+import { getSignatureItem, getSignaturePrice, getSizeLabel } from "@/lib/menu/signatures";
 
 export type CheckoutFormState = {
   status: "idle" | "success" | "error";
@@ -25,6 +25,7 @@ type IncomingLine = {
   kind?: unknown;
   productId?: unknown;
   quantity?: unknown;
+  size?: { id?: unknown };
   selection?: IncomingSelection;
 };
 
@@ -57,9 +58,14 @@ function priceLine(line: IncomingLine): PricedLine | null {
 
   if (line.kind === "signature") {
     if (typeof line.productId !== "string") return null;
-    const unitPrice = getSignaturePrice(line.productId);
-    if (unitPrice <= 0) return null;
-    return { name: line.productId, quantity, unitPrice };
+    const sizeId = line.size?.id;
+    if (typeof sizeId !== "string") return null;
+    const item = getSignatureItem(line.productId);
+    if (!item) return null;
+    // Unknown size for this item (e.g. "large" on a smoothie) is rejected, not priced.
+    const unitPrice = getSignaturePrice(item.id, sizeId);
+    if (unitPrice === undefined) return null;
+    return { name: `${item.name} · ${getSizeLabel(item.category, sizeId)}`, quantity, unitPrice };
   }
 
   if (line.kind === "custom") {
@@ -133,7 +139,7 @@ export async function submitCheckout(
   }
 
   const total = items.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
-  const orderRef = `MEROS-${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+  const orderRef = `MERŌS-${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 
   // TODO(payment): integrate a payment processor here (e.g. Stripe PaymentIntent)
   // before marking the order placed. Prices above are recomputed server-side

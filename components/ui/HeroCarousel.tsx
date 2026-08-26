@@ -13,17 +13,17 @@ const CAROUSEL_IMAGES = [
   { src: "/images-web/Smoothies/crave-1.jpg", alt: "The Crave smoothie" },
   { src: "/images-web/Gallery/Gallery-2.jpg", alt: "Seasonal toppings" },
   { src: "/images-web/Bowls/Tropic-1.jpg", alt: "The Tropic bowl" },
-  { src: "/images-web/Smoothies/essence-1.jpg", alt: "The Essence smoothie" },
-  { src: "/images-web/Gallery/Gallery-3.jpg", alt: "Meros storefront" },
+  { src: "/images-web/Smoothies/recovery-2.jpg", alt: "The Recovery smoothie" },
+  { src: "/images-web/Gallery/Gallery-3.jpg", alt: "MERŌS storefront" },
   { src: "/images-web/Bowls/Bloom-1.jpg", alt: "The Bloom bowl" },
   { src: "/images-web/Smoothies/cabana-1.jpg", alt: "The Cabana smoothie" },
   { src: "/images-web/Gallery/Gallery-5.jpg", alt: "Granola and berries" },
   { src: "/images-web/Bowls/Crunch-1.jpg", alt: "The Crunch bowl" },
-  { src: "/images-web/Smoothies/nutty-1.jpg", alt: "The Nutty smoothie" },
+  { src: "/images-web/Smoothies/focus-1.jpg", alt: "The Focus smoothie" },
   { src: "/images-web/Gallery/Gallery-7.jpg", alt: "Menu item close-up" },
-  { src: "/images-web/Bowls/Bounty-1.jpg", alt: "The Bounty bowl" },
+  { src: "/images-web/Bowls/Crunch-2.jpg", alt: "The Crunch bowl" },
   { src: "/images-web/Smoothies/recovery-1.jpg", alt: "The Recovery smoothie" },
-  { src: "/images-web/Gallery/Gallery-8.jpg", alt: "Meros bowl detail" },
+  { src: "/images-web/Gallery/Gallery-8.jpg", alt: "MERŌS bowl detail" },
 ];
 
 const DOUBLED = [...CAROUSEL_IMAGES, ...CAROUSEL_IMAGES];

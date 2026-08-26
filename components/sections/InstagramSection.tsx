@@ -18,7 +18,7 @@ export function InstagramSection() {
             href={INSTAGRAM_URL}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="Visit Meros on Instagram"
+              aria-label="Visit MERŌS on Instagram"
           >
             <div
               className="allow-round p-[4px] overflow-hidden"
@@ -30,7 +30,7 @@ export function InstagramSection() {
                 <div className="relative w-[88%] h-[88%]">
                   <Image
                     src="/logos/logo-terracotta.png"
-                    alt="Meros logo"
+                    alt="MERŌS logo"
                     fill
                     className="object-contain"
                     sizes="110px"

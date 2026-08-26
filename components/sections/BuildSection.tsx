@@ -26,7 +26,6 @@ const CARD_GAP = "clamp(0.85rem, 1.4vw, 1.4rem)"; // matches HeroCarousel's gap 
 
 const WINDOWS: { src: string; alt: string }[] = [
   { src: "/images-web/Transparent/Plain.png", alt: "The Plain bowl" },
-  { src: "/images-web/Transparent/Bounty.png", alt: "" },
   { src: "/images-web/Transparent/Tropic.png", alt: "" },
   { src: "/images-web/Transparent/Moment.png", alt: "" },
   { src: "/images-web/Transparent/Silk.png", alt: "" },
@@ -36,13 +35,13 @@ const WINDOWS: { src: string; alt: string }[] = [
 
 // Doubled so one full set can scroll off-screen while the identical second set
 // fills the viewport — seamless loop at translateX(-setWidth) (same technique as
-// HeroCarousel / the gallery-marquee CSS). 7 large square cards (up to 540px each)
+// HeroCarousel / the gallery-marquee CSS). 6 large square cards (up to 540px each)
 // exceed the viewport width, so a single doubling is enough to never show the end.
 const REPEATED_WINDOWS = [...WINDOWS, ...WINDOWS];
 
 const STATIC_BOWL = {
-  src: "/images-web/Transparent/Bounty.png",
-  alt: "The Bounty bowl",
+  src: "/images-web/Transparent/Moment.png",
+  alt: "The Moment bowl",
 };
 
 export function BuildSection() {

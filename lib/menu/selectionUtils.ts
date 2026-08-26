@@ -85,11 +85,13 @@ export function selectionsMatch(a: BowlSelectionSnapshot, b: BowlSelectionSnapsh
   return getSelectionKey(a) === getSelectionKey(b);
 }
 
-export function findMatchingSignatureLine<T extends { kind: string; productId: string }>(
-  items: T[],
-  productId: string
-): T | undefined {
-  return items.find((i) => i.kind === "signature" && i.productId === productId);
+/** Same product at a different size is a separate line, so both must match. */
+export function findMatchingSignatureLine<
+  T extends { kind: string; productId: string; size?: { id: string } },
+>(items: T[], productId: string, sizeId: string | undefined): T | undefined {
+  return items.find(
+    (i) => i.kind === "signature" && i.productId === productId && i.size?.id === sizeId
+  );
 }
 
 export function findMatchingCustomLine<

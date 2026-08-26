@@ -6,6 +6,7 @@ import { motion, type Variants } from "framer-motion";
 import { usePageReady } from "@/components/transition/TransitionProvider";
 import { useIsMobile } from "@/lib/useIsMobile";
 import { HeroCarousel } from "@/components/ui/HeroCarousel";
+import { CTAButton } from "@/components/ui/CTAButton";
 import {
   HERO_RIGHT_IMAGE_SRC,
   HERO_LOGO_DARK_SRC,
@@ -20,7 +21,7 @@ import {
 const TIMING = {
   ease: [0.16, 1, 0.3, 1] as number[],
   leftColumn: { delay: 0.5, duration: 3.0 }, // step 1 — title
-  tagline: { delay: 1.3, duration: 2.5 }, // step 1b — tagline under the title
+  ctas: { delay: 1.3, duration: 2.5 }, // step 1b — actions under the title
   image: { delay: 0.75, duration: 2.25 }, // step 2 — right image
   carousel: { delay: 1.5, duration: 2.0 }, // step 3 — carousel cover slide-off
 } as const;
@@ -60,7 +61,7 @@ export function HeroSection() {
   if (isMobile) {
     return (
       <section
-        aria-label="Meros — House of Yogurt"
+        aria-label="MERŌS — House of Yogurt"
         style={{ position: "relative", width: "100%", height: "100svh", overflow: "hidden" }}
       >
         <motion.div
@@ -98,27 +99,34 @@ export function HeroSection() {
           >
             <Image
               src={HERO_LOGO_LIGHT_SRC}
-              alt="Meros — House of Yogurt"
+              alt="MERŌS — House of Yogurt"
               width={2038}
               height={820}
               priority
               style={{ width: "100%", height: "auto" }}
             />
-            <motion.p
-              initial="hidden"
-              animate={animate}
-              variants={fadeIn}
-              transition={{ duration: TIMING.tagline.duration, delay: TIMING.tagline.delay, ease: TIMING.ease }}
-              className="font-body-caps text-cream text-center tracking-[0.28em]"
-              style={{
-                marginTop: "clamp(1rem, 3vh, 1.75rem)",
-                fontSize: "clamp(0.7rem, 2.6vw, 0.875rem)",
-              }}
-            >
-              {"1207 HAMILTON STREET, YALETOWN, VANCOUVER, BC"}
-            </motion.p>
           </motion.div>
         </div>
+
+        {/* CTAs — pinned to the bottom edge of the hero image, not under the logo */}
+        <motion.div
+          initial="hidden"
+          animate={animate}
+          variants={fadeIn}
+          transition={{ duration: TIMING.ctas.duration, delay: TIMING.ctas.delay, ease: TIMING.ease }}
+          className="flex flex-wrap justify-center gap-3"
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: "clamp(1.5rem, 5vh, 2.5rem)",
+            zIndex: 1,
+            padding: "0 1.5rem",
+          }}
+        >
+          <CTAButton variant="light" href="#footer">Visit MERŌS</CTAButton>
+          <CTAButton variant="light" href="/order">Order Now</CTAButton>
+        </motion.div>
       </section>
     );
   }
@@ -126,7 +134,7 @@ export function HeroSection() {
   // ── Desktop: editorial split on a cream canvas ─────────────────────────
   return (
     <section
-      aria-label="Meros — House of Yogurt"
+      aria-label="MERŌS — House of Yogurt"
       style={{
         position: "relative",
         width: "100%",
@@ -150,7 +158,7 @@ export function HeroSection() {
         >
           <Image
             src={HERO_RIGHT_IMAGE_SRC}
-            alt="Meros smoothie, freshly made"
+            alt="MERŌS smoothie, freshly made"
             fill
             priority
             className="object-cover"
@@ -159,7 +167,7 @@ export function HeroSection() {
           />
         </motion.div>
 
-        {/* Left half: MEROS logo centered, CTAs centered at the bottom */}
+          {/* Left half: MERŌS logo centered, CTAs centered at the bottom */}
         <div style={{ position: "absolute", left: 0, top: 0, width: "50%", height: "100%" }}>
           {/* Logo — centered in the left half, within the nav → carousel band */}
           <motion.div
@@ -177,7 +185,7 @@ export function HeroSection() {
           >
             <Image
               src={HERO_LOGO_DARK_SRC}
-              alt="Meros — House of Yogurt"
+              alt="MERŌS — House of Yogurt"
               width={2038}
               height={820}
               priority
@@ -185,24 +193,26 @@ export function HeroSection() {
             />
           </motion.div>
 
-          {/* Tagline — bottom of the left half, bottom-aligned with the right image */}
-          <motion.p
+          {/* CTAs — bottom of the left half, bottom-aligned with the right image */}
+          <motion.div
             initial="hidden"
             animate={animate}
             variants={fadeIn}
-            transition={{ duration: TIMING.tagline.duration, delay: TIMING.tagline.delay, ease: TIMING.ease }}
-            className="font-body-caps text-midnight text-center tracking-[0.28em]"
+            transition={{ duration: TIMING.ctas.duration, delay: TIMING.ctas.delay, ease: TIMING.ease }}
             style={{
               position: "absolute",
               left: "50%",
               bottom: 0,
               transform: "translateX(-50%)",
-              whiteSpace: "nowrap",
-              fontSize: "clamp(0.7rem, 0.95vw, 0.875rem)",
+              display: "flex",
+              flexWrap: "wrap",
+              justifyContent: "center",
+              gap: "0.75rem",
             }}
           >
-            {"1207 HAMILTON STREET, YALETOWN, VANCOUVER, BC"}
-          </motion.p>
+            <CTAButton variant="dark" href="#footer">Visit MERŌS</CTAButton>
+            <CTAButton variant="dark" href="/order">Order Now</CTAButton>
+          </motion.div>
         </div>
       </div>
 

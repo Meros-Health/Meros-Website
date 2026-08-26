@@ -10,8 +10,8 @@ import { LegalShell, LegalSection, LegalList } from "@/components/legal/LegalPag
 const EFFECTIVE_DATE = "July 7, 2026";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — Meros",
-  description: "The terms that govern your use of the Meros website and ordering.",
+  title: "Terms of Service — MERŌS",
+  description: "The terms that govern your use of the MERŌS website and ordering.",
 };
 
 export default function TermsPage() {
@@ -19,8 +19,8 @@ export default function TermsPage() {
     <LegalShell title="Terms of Service" effectiveDate={EFFECTIVE_DATE}>
       <LegalSection heading="Agreement">
         <p>
-          These Terms of Service (&ldquo;Terms&rdquo;) govern your use of the Meros website
-          and any orders you place through it. Meros (&ldquo;we&rdquo;, &ldquo;us&rdquo;,
+          These Terms of Service (&ldquo;Terms&rdquo;) govern your use of the MERŌS website
+          and any orders you place through it. MERŌS (&ldquo;we&rdquo;, &ldquo;us&rdquo;,
           &ldquo;our&rdquo;) operates from 1207 Hamilton Street, Yaletown, Vancouver,
           British Columbia. By using this website or placing an order, you agree to these
           Terms. If you do not agree, please do not use the website.
@@ -100,7 +100,7 @@ export default function TermsPage() {
 
       <LegalSection heading="Our Content">
         <p>
-          Everything on this website &mdash; the Meros name and logo, text, photography,
+          Everything on this website &mdash; the MERŌS name and logo, text, photography,
           design, and code &mdash; belongs to us or our licensors. You may not copy,
           reproduce, or use it commercially without our written permission.
         </p>
@@ -112,7 +112,7 @@ export default function TermsPage() {
           not guarantee that it will always be available, error-free, or uninterrupted.
         </p>
         <p>
-          To the maximum extent permitted by law, Meros will not be liable for indirect,
+          To the maximum extent permitted by law, MERŌS will not be liable for indirect,
           incidental, or consequential damages arising from your use of the website, and
           our total liability for any claim related to an order is limited to the amount
           you paid for that order. Nothing in these Terms limits rights that cannot be
@@ -123,7 +123,7 @@ export default function TermsPage() {
 
       <LegalSection heading="Indemnification">
         <p>
-          You agree to indemnify and hold Meros, its owners, and its staff harmless from
+          You agree to indemnify and hold MERŌS, its owners, and its staff harmless from
           any claims, damages, or expenses (including reasonable legal fees) arising from
           your violation of these Terms or your misuse of the website. This does not apply
           to claims arising from our own negligence.
@@ -166,7 +166,7 @@ export default function TermsPage() {
           our right to enforce it later. You may not assign your rights under these Terms;
           we may assign ours in connection with a sale or reorganization of the business.
           These Terms, together with the Privacy Policy, are the entire agreement between
-          you and Meros regarding the website.
+          you and MERŌS regarding the website.
         </p>
       </LegalSection>
 

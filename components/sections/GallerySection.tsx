@@ -11,7 +11,7 @@ import { CTAButton } from "@/components/ui/CTAButton";
 const PANELS = [
   {
     src: "/images-web/Smoothies/Hand-Smoothie-5.jpg",
-    alt: "Signature Meros bowl",
+    alt: "Signature MERŌS bowl",
     eyebrow: "Order",
     cta: "Order Now →",
     href: "/order",
@@ -107,7 +107,7 @@ function GalleryPanel({ panel }: { panel: (typeof PANELS)[number] }) {
 export function GallerySection() {
   return (
     <section
-      aria-label="Explore Meros"
+              aria-label="Explore MERŌS"
       className="flex flex-col sm:flex-row"
       style={
         {

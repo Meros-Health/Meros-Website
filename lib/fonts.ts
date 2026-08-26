@@ -2,7 +2,7 @@ import localFont from "next/font/local";
 import { DM_Sans } from "next/font/google";
 
 // ── Primary: Montage Serif ────────────────────────────────────────────────────
-// Headlines, "MEROS" wordmark (always all-caps). Only Regular weight supplied.
+// Headlines, "MERŌS" wordmark (always all-caps). Only Regular weight supplied.
 export const montageSerif = localFont({
   src: [
     {

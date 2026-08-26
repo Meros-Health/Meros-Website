@@ -151,8 +151,9 @@ export function Navbar() {
     const update = (scrollY: number) => {
       const heroHeight = heroHeightRef.current;
       const fadeStart = heroHeight * HERO_FADE_START_FRACTION;
+      // Mobile keeps a flat, always-opaque band; the runway fade is desktop only.
       const opacity =
-        heroHeight === 0
+        isMobile || heroHeight === 0
           ? 1
           : Math.min(1, Math.max(0, (scrollY - fadeStart) / HERO_FADE_RUNWAY_PX));
       scrollOpacityRef.current = opacity;
@@ -168,7 +169,7 @@ export function Navbar() {
     }
 
     return lenis.on("scroll", (instance) => update(instance.scroll));
-  }, [lenis, pathname, applyBandOpacity]);
+  }, [lenis, pathname, applyBandOpacity, isMobile]);
 
   // Icon/logo color: dark (t=1) by default always; menu open forces it
   // fully light (t=0), closing eases back to dark. The background is
@@ -257,7 +258,7 @@ export function Navbar() {
     openCart();
   };
 
-  // MEROS wordmark: always returns to the top of the landing-page hero,
+  // MERŌS wordmark: always returns to the top of the landing-page hero,
   // regardless of the current route. On "/" we smooth-scroll to the top; on
   // any other page we navigate home (which lands at the top of the hero).
   const handleTitleClick = (e: React.MouseEvent) => {
@@ -362,12 +363,12 @@ export function Navbar() {
             </button>
           </div>
 
-          {/* MEROS wordmark — center */}
+          {/* MERŌS wordmark — center */}
           <div style={{ flex: 1, minWidth: 0, display: "flex", justifyContent: "center" }}>
             <Link
               href="/"
               onClick={handleTitleClick}
-              aria-label="Meros home"
+                aria-label="MERŌS home"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -392,7 +393,7 @@ export function Navbar() {
                 <Image
                   ref={logoDarkRef}
                   src="/logos/logo-dark.png"
-                  alt="Meros"
+                  alt="MERŌS"
                   width={1376}
                   height={1376}
                   priority

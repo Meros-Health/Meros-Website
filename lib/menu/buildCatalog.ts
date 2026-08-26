@@ -124,14 +124,6 @@ export const BUILD_CATALOG: BuildItem[] = [
     tags: ["vegan", "gf"],
   },
   {
-    id: "top-papaya",
-    name: "Papaya",
-    category: "fruit-berry",
-    servingLabel: "1/2 cup",
-    nutrition: n({ calories: 27, protein: 0, carbs: 7, fat: 0, fiber: 1, potassium: 144 }),
-    tags: ["vegan", "gf"],
-  },
-  {
     id: "top-goji",
     name: "Goji Berries",
     category: "fruit-berry",
@@ -141,7 +133,7 @@ export const BUILD_CATALOG: BuildItem[] = [
   },
   {
     id: "top-passionfruit",
-    name: "Passionfruit Preserve",
+    name: "Passionfruit Mousse",
     category: "fruit-berry",
     servingLabel: "1 tbsp",
     nutrition: n({ calories: 40, protein: 0, carbs: 10, fat: 0, fiber: 1, potassium: 50 }),

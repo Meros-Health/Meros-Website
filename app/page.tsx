@@ -1,4 +1,5 @@
 import { HeroSection } from "@/components/sections/HeroSection";
+import { SignatureMenuSection } from "@/components/sections/SignatureMenuSection";
 import { OurStorySection } from "@/components/sections/OurStorySection";
 import { PairingsSection } from "@/components/sections/PairingsSection";
 import { GallerySection } from "@/components/sections/GallerySection";
@@ -14,22 +15,25 @@ export default function HomePage() {
 
       <SectionBand>{"A DAY'S FUEL, DEFINED BY YOU"}</SectionBand>
 
-      <div id="gallery">
-        <GallerySection />
-      </div>
-
-      <div id="pairs">
-        <PairingsSection />
+      <div id="menu">
+        <SignatureMenuSection />
       </div>
 
       <div id="build">
         <BuildSection />
       </div>
 
+      <div id="pairs">
+        <PairingsSection />
+      </div>
+
       <div id="about">
         <OurStorySection />
       </div>
 
+      <div id="gallery">
+        <GallerySection />
+      </div>
     </main>
   );
 }

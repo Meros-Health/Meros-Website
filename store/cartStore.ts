@@ -8,6 +8,12 @@ import {
   type BowlSelectionSnapshot,
   type LegacyBowlSelectionSnapshot,
 } from "@/lib/menu/selectionUtils";
+import {
+  getDefaultSizeId,
+  getSignatureItem,
+  getSignaturePrice,
+  getSizeLabel,
+} from "@/lib/menu/signatures";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -15,12 +21,16 @@ import {
 
 export type CustomBowlSelection = BowlSelectionSnapshot;
 
+export type CartItemSize = { id: string; label: string };
+
 export type CartItem = {
   lineId: string;
   kind: "signature" | "custom";
   productId: string;
   name: string;
   selection?: CustomBowlSelection;
+  /** Signature lines only. Bowls are Medium or Large; smoothies have one size. */
+  size?: CartItemSize;
   nutrition: NutritionFacts;
   quantity: number;
   unitPrice: number;
@@ -61,14 +71,39 @@ function makeLineId(): string {
   return `line-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+function signatureLineName(name: string, size: CartItemSize | undefined): string {
+  return size ? `${name} · ${size.label}` : name;
+}
+
 function migrateCartItem(item: CartItem): CartItem {
-  if (item.kind !== "custom" || !item.selection) return item;
-  const selection = migrateLegacySelection(item.selection as LegacyBowlSelectionSnapshot);
-  return {
-    ...item,
-    selection,
-    name: `Custom Bowl · ${selection.base.name}`,
-  };
+  if (item.kind === "custom" && item.selection) {
+    const selection = migrateLegacySelection(item.selection as LegacyBowlSelectionSnapshot);
+    return {
+      ...item,
+      selection,
+      name: `Custom Bowl · ${selection.base.name}`,
+    };
+  }
+
+  // Signature lines persisted before sizes existed carry a stale per-item
+  // price. Re-price them at the category's default size. A productId that no
+  // longer exists on the menu throws, and onRehydrateStorage drops the line.
+  if (item.kind === "signature" && !item.size) {
+    const catalogItem = getSignatureItem(item.productId);
+    if (!catalogItem) throw new Error(`Unknown signature product "${item.productId}"`);
+    const sizeId = getDefaultSizeId(catalogItem.category);
+    const size = { id: sizeId, label: getSizeLabel(catalogItem.category, sizeId) };
+    const unitPrice = getSignaturePrice(catalogItem.id, sizeId);
+    if (unitPrice === undefined) throw new Error(`No price for "${item.productId}" at "${sizeId}"`);
+    return {
+      ...item,
+      size,
+      unitPrice,
+      name: signatureLineName(catalogItem.name, size),
+    };
+  }
+
+  return item;
 }
 
 export const useCartStore = create<CartState>()(
@@ -81,7 +116,7 @@ export const useCartStore = create<CartState>()(
         const { items } = get();
 
         if (item.kind === "signature") {
-          const existing = findMatchingSignatureLine(items, item.productId);
+          const existing = findMatchingSignatureLine(items, item.productId, item.size?.id);
           if (existing) {
             get().updateQuantity(existing.lineId, existing.quantity + item.quantity);
             return;
@@ -105,7 +140,7 @@ export const useCartStore = create<CartState>()(
         const name =
           item.kind === "custom" && selection
             ? `Custom Bowl · ${selection.base.name}`
-            : item.name;
+            : signatureLineName(item.name, item.size);
 
         set((state) => ({
           items: [...state.items, { ...item, lineId, name, selection }],
@@ -217,6 +252,7 @@ export const useCartStore = create<CartState>()(
 );
 
 export function getCartItemDisplayName(item: CartItem): string {
-  // `name` is kept in sync everywhere a custom line is created or updated.
+  // `name` is kept in sync everywhere a line is created, updated, or migrated,
+  // and already carries the size suffix for signature lines.
   return item.name;
 }

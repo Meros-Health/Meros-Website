@@ -22,7 +22,7 @@
 
     /* ── Font aliases (for components using CSS vars directly, e.g. nav) ─
        Three-font palette:
-         --font-display    → Montage Serif  (primary, headlines, MEROS wordmark)
+         --font-display    → Montage Serif  (primary, headlines, MERŌS wordmark)
          --font-secondary  → Aetheria       (accent, pull quotes, editorial)
          --font-body       → DM Sans        (tertiary, subtext, labels, UI)     */
     --font-display:   var(--font-montage-serif), Georgia, serif;
@@ -168,7 +168,7 @@
 
 @layer utilities {
   /* ── Montage Serif utilities ──────────────────────────────────── */
-  /* "MEROS" and all primary display text. Always pair with uppercase. */
+  /* "MERŌS" and all primary display text. Always pair with uppercase. */
   .font-headline {
     font-family: var(--font-montage-serif), Georgia, serif;
     font-weight: 400;

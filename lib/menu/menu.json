@@ -1,0 +1,151 @@
+{
+  "$comment": "Canonical signature menu. The website (lib/menu/signatures.ts) and the in-store Menu TV (menu-tv/sync-menu.sh -> menu-data.js) both render from this file. Edit here, nowhere else. Names, tags and ingredient strings are the exact board copy; calories/protein are per size.",
+  "sizeTiers": {
+    "bowl": [
+      { "id": "medium", "label": "Medium" },
+      { "id": "large", "label": "Large" }
+    ],
+    "smoothie": [
+      { "id": "standard", "label": "24 oz" }
+    ]
+  },
+  "bowls": [
+    {
+      "id": "moment",
+      "name": "The Moment",
+      "tags": ["Energy", "Antioxidants"],
+      "ingredients": "Plain Greek Yogurt, Blueberries, Strawberries, Banana, Passionfruit Mousse, Toasted Almonds, Chia Seeds, Toasted Coconut, House Granola",
+      "sizes": {
+        "medium": { "price": 12, "calories": 581, "protein": 17 },
+        "large": { "price": 15, "calories": 680, "protein": 22 }
+      },
+      "images": {
+        "photo": "/images-web/Bowls/Moment-1.jpg",
+        "transparent": "/images-web/Transparent/Moment.png"
+      }
+    },
+    {
+      "id": "silk",
+      "name": "The Silk",
+      "tags": ["Recovery", "Indulgence"],
+      "ingredients": "Vanilla Greek Yogurt, Banana, Strawberries, Hemp Hearts, Flax Meal, Raw Cocoa Powder, Peanut Butter Mousse, Cacao Nibs, Maple Syrup",
+      "sizes": {
+        "medium": { "price": 12, "calories": 481, "protein": 16 },
+        "large": { "price": 15, "calories": 552, "protein": 19 }
+      },
+      "images": {
+        "photo": "/images-web/Bowls/Silk-1.jpg",
+        "transparent": "/images-web/Transparent/Silk.png"
+      }
+    },
+    {
+      "id": "crunch",
+      "name": "The Crunch",
+      "tags": ["Sustained Fuel", "Cognition"],
+      "ingredients": "Vanilla Greek Yogurt, Banana, Almonds, Pistachios, Walnuts, Hemp Hearts, Pumpkin Seeds, Chia Seeds, House Granola, Raw Honey Drizzle",
+      "sizes": {
+        "medium": { "price": 12, "calories": 682, "protein": 22 },
+        "large": { "price": 15, "calories": 753, "protein": 24 }
+      },
+      "images": {
+        "photo": "/images-web/Bowls/Crunch-1.jpg",
+        "transparent": "/images-web/Transparent/Crunch.png"
+      }
+    },
+    {
+      "id": "bloom",
+      "name": "The Bloom",
+      "tags": ["Immune Support", "Antioxidants"],
+      "ingredients": "Vanilla Greek Yogurt, Mango, Pineapple, Goji Berries, Toasted Coconut, Sunflower Seeds, Raw Honey Drizzle, Bee Pollen",
+      "sizes": {
+        "medium": { "price": 12, "calories": 371, "protein": 10 },
+        "large": { "price": 15, "calories": 442, "protein": 13 }
+      },
+      "images": {
+        "photo": "/images-web/Bowls/Bloom-1.jpg",
+        "transparent": "/images-web/Transparent/Bloom.png"
+      }
+    },
+    {
+      "id": "tropic",
+      "name": "The Tropic",
+      "tags": ["Digestion", "Anti-Inflammatory"],
+      "ingredients": "Vanilla Greek Yogurt, Mango, Pineapple, Passionfruit Mousse, Toasted Coconut, Cashews, Chia Seeds",
+      "sizes": {
+        "medium": { "price": 12, "calories": 357, "protein": 9 },
+        "large": { "price": 15, "calories": 428, "protein": 12 }
+      },
+      "images": {
+        "photo": "/images-web/Bowls/Tropic-1.jpg",
+        "transparent": "/images-web/Transparent/Tropic.png"
+      }
+    }
+  ],
+  "smoothies": [
+    {
+      "id": "rise",
+      "name": "The Rise",
+      "tags": ["Energy", "Antioxidants"],
+      "ingredients": "Vanilla Greek Yogurt, Blueberries, Strawberries, Banana, Almond Butter, Chia Seeds",
+      "sizes": {
+        "standard": { "price": 15, "calories": 493, "protein": 16 }
+      },
+      "images": {
+        "photo": "/images-web/Smoothies/rise-1.jpg",
+        "transparent": "/images-web/Transparent/Rise.png"
+      }
+    },
+    {
+      "id": "crave",
+      "name": "The Crave",
+      "tags": ["Satiate", "Mood Boost"],
+      "ingredients": "Vanilla Greek Yogurt, Banana, Peanut Butter, Flax Meal, Chocolate, Cacao Nibs, Flaky Salt, Raw Honey",
+      "sizes": {
+        "standard": { "price": 15, "calories": 677, "protein": 20 }
+      },
+      "images": {
+        "photo": "/images-web/Smoothies/crave-1.jpg",
+        "transparent": "/images-web/Transparent/Crave.png"
+      }
+    },
+    {
+      "id": "focus",
+      "name": "The Focus",
+      "tags": ["Brain Fuel", "Healthy Fats"],
+      "ingredients": "Vanilla Greek Yogurt, Banana, Almond Butter, Walnuts, Cacao Nibs, Raw Honey",
+      "sizes": {
+        "standard": { "price": 15, "calories": 589, "protein": 17 }
+      },
+      "images": {
+        "photo": "/images-web/Smoothies/focus-1.jpg",
+        "transparent": "/images-web/Transparent/Focus.png"
+      }
+    },
+    {
+      "id": "cabana",
+      "name": "The Cabana",
+      "tags": ["Digestion", "Hydration"],
+      "ingredients": "Vanilla Greek Yogurt, Coconut Milk, Banana, Mango, Pineapple, Chia Seeds, Raw Honey",
+      "sizes": {
+        "standard": { "price": 15, "calories": 597, "protein": 12 }
+      },
+      "images": {
+        "photo": "/images-web/Smoothies/cabana-1.jpg",
+        "transparent": "/images-web/Transparent/Cabana.png"
+      }
+    },
+    {
+      "id": "recovery",
+      "name": "The Recovery",
+      "tags": ["Post-Workout Rebuild"],
+      "ingredients": "Plain Greek Yogurt, Banana, Blueberries, Peanut Butter, Hemp Hearts, Pumpkin Seeds, Whey Protein Isolate",
+      "sizes": {
+        "standard": { "price": 15, "calories": 726, "protein": 53 }
+      },
+      "images": {
+        "photo": "/images-web/Smoothies/recovery-1.jpg",
+        "transparent": "/images-web/Transparent/Recovery.png"
+      }
+    }
+  ]
+}

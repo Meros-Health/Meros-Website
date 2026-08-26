@@ -7,9 +7,10 @@ import { CTAButton } from "@/components/ui/CTAButton";
 import { AddToCartButton } from "@/components/cart/AddToCartButton";
 import { useCartStore } from "@/store/cartStore";
 import { EMPTY_NUTRITION } from "@/lib/menu/nutrition";
-import { formatPrice, getSignaturePrice } from "@/lib/menu/pricing";
+import { formatPrice } from "@/lib/menu/pricing";
+import { getSignaturePrice, getSizeLabel, listBowls, listSmoothies } from "@/lib/menu/signatures";
 
-// ─── Carousel data — ids must match PRICING.signatureBowls/Smoothies keys ─────
+// ─── Carousel data — from lib/menu/menu.json via signatures.ts ────────────────
 
 interface CarouselItem {
   id: string;
@@ -17,23 +18,13 @@ interface CarouselItem {
   src: string;
 }
 
-const BOWLS: CarouselItem[] = [
-  { id: "moment", name: "The Moment", src: "/images-web/Transparent/Moment.png" },
-  { id: "silk",   name: "The Silk",   src: "/images-web/Transparent/Silk.png" },
-  { id: "crunch", name: "The Crunch", src: "/images-web/Transparent/Crunch.png" },
-  { id: "tropic", name: "The Tropic", src: "/images-web/Transparent/Tropic.png" },
-  { id: "bloom",  name: "The Bloom",  src: "/images-web/Transparent/Bloom.png" },
-  { id: "bounty", name: "The Bounty", src: "/images-web/Transparent/Bounty.png" },
-];
+const BOWLS: CarouselItem[] = listBowls().map((b) => ({ id: b.id, name: b.name, src: b.images.transparent }));
+const SMOOTHIES: CarouselItem[] = listSmoothies().map((s) => ({ id: s.id, name: s.name, src: s.images.transparent }));
 
-const SMOOTHIES: CarouselItem[] = [
-  { id: "rise",     name: "The Rise",     src: "/images-web/Transparent/Rise.png" },
-  { id: "crave",    name: "The Crave",    src: "/images-web/Transparent/Crave.png" },
-  { id: "essence",  name: "The Essence",  src: "/images-web/Transparent/Essence.png" },
-  { id: "recovery", name: "The Recovery", src: "/images-web/Transparent/Recovery.png" },
-  { id: "cabana",   name: "The Cabana",   src: "/images-web/Transparent/Cabana.png" },
-  { id: "nutty",    name: "The Nutty",    src: "/images-web/Transparent/Nutty.png" },
-];
+// A pair is always the Large bowl plus the single-size smoothie.
+const PAIR_BOWL_SIZE = "large";
+const PAIR_SMOOTHIE_SIZE = "standard";
+const PAIR_CAPTION = `${getSizeLabel("bowl", PAIR_BOWL_SIZE)} bowl + ${getSizeLabel("smoothie", PAIR_SMOOTHIE_SIZE)} smoothie`;
 
 // Shared per-role widths so the positioned slot never resizes on swap
 const BOWL_WIDTH = 400;
@@ -503,24 +494,29 @@ export function PairingsSection() {
 
   const bowl = BOWLS[bowlIndex];
   const smoothie = SMOOTHIES[smoothieIndex];
-  const pairPrice = getSignaturePrice(bowl.id) + getSignaturePrice(smoothie.id);
+  // Every id here comes from menu.json, so the lookups cannot miss.
+  const bowlPrice = getSignaturePrice(bowl.id, PAIR_BOWL_SIZE) ?? 0;
+  const smoothiePrice = getSignaturePrice(smoothie.id, PAIR_SMOOTHIE_SIZE) ?? 0;
+  const pairPrice = bowlPrice + smoothiePrice;
 
   const handleAddPair = () => {
     addItem({
       kind: "signature",
       productId: bowl.id,
       name: bowl.name,
+      size: { id: PAIR_BOWL_SIZE, label: getSizeLabel("bowl", PAIR_BOWL_SIZE) },
       nutrition: { ...EMPTY_NUTRITION },
       quantity: 1,
-      unitPrice: getSignaturePrice(bowl.id),
+      unitPrice: bowlPrice,
     });
     addItem({
       kind: "signature",
       productId: smoothie.id,
       name: smoothie.name,
+      size: { id: PAIR_SMOOTHIE_SIZE, label: getSizeLabel("smoothie", PAIR_SMOOTHIE_SIZE) },
       nutrition: { ...EMPTY_NUTRITION },
       quantity: 1,
-      unitPrice: getSignaturePrice(smoothie.id),
+      unitPrice: smoothiePrice,
     });
     setAdded(true);
     if (addedTimeout.current) clearTimeout(addedTimeout.current);
@@ -692,6 +688,9 @@ export function PairingsSection() {
                         {formatPrice(pairPrice)}
                       </motion.span>
                     </AnimatePresence>
+                    <span className="font-body-caps text-midnight/40 text-[9px] tracking-[0.22em] whitespace-nowrap">
+                      {PAIR_CAPTION}
+                    </span>
                   </motion.div>
                   </div>
 
@@ -791,6 +790,9 @@ export function PairingsSection() {
                 {formatPrice(pairPrice)}
               </motion.span>
             </AnimatePresence>
+            <span className="font-body-caps text-midnight/40 text-[9px] tracking-[0.22em]">
+              {PAIR_CAPTION}
+            </span>
           </div>
 
           <div className="w-56 sm:w-60">

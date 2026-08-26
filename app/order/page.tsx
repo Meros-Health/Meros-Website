@@ -5,116 +5,76 @@ import { useEffect, useRef, useState } from "react";
 import { useCartStore } from "@/store/cartStore";
 import { EMPTY_NUTRITION } from "@/lib/menu/nutrition";
 import { AddToCartButton } from "@/components/cart/AddToCartButton";
-import { getSignaturePrice } from "@/lib/menu/pricing";
+import {
+  getDefaultSizeId,
+  getSizeLabel,
+  getSizeTiers,
+  listBowls,
+  listSmoothies,
+  shortName,
+  type SignatureCategory,
+  type SignatureItem,
+} from "@/lib/menu/signatures";
 import { EntranceReveal } from "@/components/transition/EntranceReveal";
 
-// ── Menu data ──────────────────────────────────────────────────────────────────
+// Menu data comes from lib/menu/menu.json via lib/menu/signatures.ts, the
+// same file the in-store Menu TV renders from.
 
-type MenuItem = {
-  id: string;
-  name: string;
-  tag: string;
-  ingredients: string[];
-  image: string;
-};
+// ── Size toggle ────────────────────────────────────────────────────────────────
+// Squared segmented control. Renders nothing for single-size categories
+// (smoothies), so the card layout only gains a row where there is a choice.
 
-const SIGNATURE_BOWLS: MenuItem[] = [
-  {
-    id: "moment",
-    name: "Moment",
-    tag: "Seasonal & Light",
-    ingredients: ["Greek yogurt", "seasonal berries", "wildflower honey", "toasted coconut", "chia"],
-    image: "/images-web/Bowls/Moment-1.jpg",
-  },
-  {
-    id: "silk",
-    name: "Silk",
-    tag: "Tropical & Smooth",
-    ingredients: ["Greek yogurt", "mango", "passion fruit", "lychee", "lime zest"],
-    image: "/images-web/Bowls/Silk-1.jpg",
-  },
-  {
-    id: "crunch",
-    name: "Crunch",
-    tag: "Granola & Nut Butter",
-    ingredients: ["Greek yogurt", "housemade granola", "almond butter", "banana", "cacao nibs", "maple"],
-    image: "/images-web/Bowls/Crunch-1.jpg",
-  },
-  {
-    id: "tropic",
-    name: "Tropic",
-    tag: "Island Fruit",
-    ingredients: ["Greek yogurt", "pineapple", "mango", "coconut flakes", "passion fruit"],
-    image: "/images-web/Bowls/Tropic-1.jpg",
-  },
-  {
-    id: "bloom",
-    name: "Bloom",
-    tag: "Berry & Honey",
-    ingredients: ["Greek yogurt", "fresh strawberries", "blueberries", "rose granola", "wildflower honey"],
-    image: "/images-web/Bowls/Bloom-1.jpg",
-  },
-  {
-    id: "bounty",
-    name: "Bounty",
-    tag: "Rich & Layered",
-    ingredients: ["Greek yogurt", "mixed berries", "house granola", "hemp seeds", "raw honey"],
-    image: "/images-web/Bowls/Bounty-1.jpg",
-  },
-];
+function SizeToggle({
+  category,
+  value,
+  onChange,
+}: {
+  category: SignatureCategory;
+  value: string;
+  onChange: (sizeId: string) => void;
+}) {
+  const tiers = getSizeTiers(category);
+  if (tiers.length < 2) return null;
 
-const SIGNATURE_SMOOTHIES: MenuItem[] = [
-  {
-    id: "rise",
-    name: "Rise",
-    tag: "Bright & Energizing",
-    ingredients: ["orange", "mango", "banana", "turmeric", "fresh ginger"],
-    image: "/images-web/Smoothies/rise-1.jpg",
-  },
-  {
-    id: "crave",
-    name: "Crave",
-    tag: "Cacao & Indulgent",
-    ingredients: ["raw cacao", "banana", "peanut butter", "oat milk", "medjool dates"],
-    image: "/images-web/Smoothies/crave-1.jpg",
-  },
-  {
-    id: "essence",
-    name: "Essence",
-    tag: "Green & Cleansing",
-    ingredients: ["spinach", "kale", "green apple", "cucumber", "lime", "mint"],
-    image: "/images-web/Smoothies/essence-1.jpg",
-  },
-  {
-    id: "recovery",
-    name: "Recovery",
-    tag: "Protein & Restorative",
-    ingredients: ["banana", "blueberry", "vanilla protein", "almond milk", "cinnamon"],
-    image: "/images-web/Smoothies/recovery-1.jpg",
-  },
-  {
-    id: "cabana",
-    name: "Cabana",
-    tag: "Tropical & Coconut",
-    ingredients: ["pineapple", "coconut milk", "mango", "passion fruit", "lime"],
-    image: "/images-web/Smoothies/cabana-1.jpg",
-  },
-  {
-    id: "nutty",
-    name: "Nutty",
-    tag: "Almond & Creamy",
-    ingredients: ["almond butter", "banana", "oat milk", "wildflower honey", "flax"],
-    image: "/images-web/Smoothies/nutty-1.jpg",
-  },
-];
+  return (
+    <div className="flex" role="group" aria-label="Size">
+      {tiers.map((tier, i) => {
+        const selected = tier.id === value;
+        return (
+          <button
+            key={tier.id}
+            type="button"
+            aria-pressed={selected}
+            onClick={() => onChange(tier.id)}
+            className="flex-1 font-body-caps tracking-widest transition-colors duration-200"
+            style={{
+              fontSize: "clamp(0.5rem, 3.4cqw, 0.625rem)",
+              padding: "clamp(0.35rem, 2.6cqw, 0.5rem) 0",
+              border: selected
+                ? "0.5px solid var(--color-grapefruit)"
+                : "0.5px solid rgba(41,45,42,0.25)",
+              // Hairline borders would double up where the two buttons meet
+              marginLeft: i === 0 ? 0 : "-0.5px",
+              background: selected ? "var(--color-grapefruit)" : "transparent",
+              color: selected ? "var(--color-cream)" : "var(--color-midnight)",
+            }}
+          >
+            {tier.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 // ── Menu card ──────────────────────────────────────────────────────────────────
 
-function MenuCard({ item, priority = false }: { item: MenuItem; priority?: boolean }) {
+function MenuCard({ item, priority = false }: { item: SignatureItem; priority?: boolean }) {
   const addItem = useCartStore((s) => s.addItem);
+  const [sizeId, setSizeId] = useState(() => getDefaultSizeId(item.category));
   const [added, setAdded] = useState(false);
   const addedTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const price = getSignaturePrice(item.id);
+  const price = item.sizes[sizeId].price;
 
   useEffect(() => {
     return () => {
@@ -127,6 +87,7 @@ function MenuCard({ item, priority = false }: { item: MenuItem; priority?: boole
       kind: "signature",
       productId: item.id,
       name: item.name,
+      size: { id: sizeId, label: getSizeLabel(item.category, sizeId) },
       nutrition: { ...EMPTY_NUTRITION },
       quantity: 1,
       unitPrice: price,
@@ -144,7 +105,7 @@ function MenuCard({ item, priority = false }: { item: MenuItem; priority?: boole
       {/* Square-cropped image — always rendered at ~half a 2-column grid, at every breakpoint */}
       <div className="relative w-full aspect-square overflow-hidden">
         <Image
-          src={item.image}
+          src={item.images.photo}
           alt={item.name}
           fill
           sizes="(max-width: 1024px) 42vw, 22vw"
@@ -165,7 +126,7 @@ function MenuCard({ item, priority = false }: { item: MenuItem; priority?: boole
             className="font-headline text-midnight leading-none min-w-0"
             style={{ fontSize: "clamp(0.85rem, 9cqw, 1.5rem)" }}
           >
-            {item.name}
+            {shortName(item)}
           </h3>
           <span
             className="font-body-caps text-juniper shrink-0"
@@ -175,12 +136,12 @@ function MenuCard({ item, priority = false }: { item: MenuItem; priority?: boole
           </span>
         </div>
 
-        {/* Tag */}
+        {/* Tags */}
         <p
           className="font-body-caps text-grapefruit tracking-widest -mt-0.5"
           style={{ fontSize: "clamp(0.48rem, 3.4cqw, 0.625rem)" }}
         >
-          {item.tag}
+          {item.tags.join(" · ")}
         </p>
 
         {/* Ingredients */}
@@ -188,11 +149,12 @@ function MenuCard({ item, priority = false }: { item: MenuItem; priority?: boole
           className="font-body-mixed text-juniper leading-relaxed"
           style={{ fontSize: "clamp(0.62rem, 4.6cqw, 0.875rem)" }}
         >
-          {item.ingredients.join(", ")}
+          {item.ingredients}
         </p>
 
-        {/* Add to cart */}
-        <div className="mt-auto">
+        {/* Size + add to cart */}
+        <div className="mt-auto flex flex-col" style={{ gap: "clamp(0.35rem, 3cqw, 0.625rem)" }}>
+          <SizeToggle category={item.category} value={sizeId} onChange={setSizeId} />
           <AddToCartButton onClick={handleAdd} added={added} />
         </div>
       </div>
@@ -218,7 +180,7 @@ function MenuSection({
   id?: string;
   titleTop: string;
   titleBottom: string;
-  items: MenuItem[];
+  items: SignatureItem[];
   heading?: "h1" | "h2";
   /** Marks the first card's image as the LCP candidate (above the fold). */
   priorityFirstImage?: boolean;
@@ -287,12 +249,12 @@ export default function OrderPage() {
         id="bowls"
         titleTop="Signature"
         titleBottom="Bowls"
-        items={SIGNATURE_BOWLS}
+        items={listBowls()}
         priorityFirstImage
       />
 
       {/* ── Signature Smoothies ── */}
-      <MenuSection id="smoothies" titleTop="Signature" titleBottom="Smoothies" items={SIGNATURE_SMOOTHIES} />
+      <MenuSection id="smoothies" titleTop="Signature" titleBottom="Smoothies" items={listSmoothies()} />
     </main>
   );
 }

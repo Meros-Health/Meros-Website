@@ -13,8 +13,8 @@ import { LegalShell, LegalSection, LegalList } from "@/components/legal/LegalPag
 const EFFECTIVE_DATE = "July 7, 2026";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — Meros",
-  description: "How Meros collects, uses, and protects your personal information.",
+  title: "Privacy Policy — MERŌS",
+  description: "How MERŌS collects, uses, and protects your personal information.",
 };
 
 export default function PrivacyPage() {
@@ -22,7 +22,7 @@ export default function PrivacyPage() {
     <LegalShell title="Privacy Policy" effectiveDate={EFFECTIVE_DATE}>
       <LegalSection heading="Who We Are">
         <p>
-          Meros (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;) operates a yogurt bar
+          MERŌS (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;) operates a yogurt bar
           located at 1207 Hamilton Street, Yaletown, Vancouver, British Columbia, and this
           website. This policy explains what personal information we collect through the
           website, why we collect it, and how we handle it. We comply with the Personal

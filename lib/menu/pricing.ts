@@ -1,4 +1,7 @@
-/** Single source of truth for all menu pricing. */
+/**
+ * Custom-bowl pricing. Signature bowl and smoothie prices live in
+ * lib/menu/menu.json and are read through lib/menu/signatures.ts.
+ */
 export const PRICING = {
   bases: {
     "base-plain": 12.0,
@@ -13,22 +16,6 @@ export const PRICING = {
   extraItemSurcharge: 3,
   finishPrice: 3,
   enhancerPrice: 3,
-  signatureBowls: {
-    moment: 15.0,
-    silk: 15.5,
-    crunch: 14.5,
-    tropic: 14.5,
-    bloom: 14.5,
-    bounty: 14.5,
-  },
-  signatureSmoothies: {
-    rise: 12.0,
-    crave: 12.5,
-    essence: 12.5,
-    recovery: 13.0,
-    cabana: 12.5,
-    nutty: 12.0,
-  },
 } as const;
 
 export function formatPrice(amount: number): string {
@@ -41,17 +28,4 @@ export function formatSurcharge(amount: number): string {
 
 export function getBasePrice(id: string): number {
   return PRICING.bases[id as keyof typeof PRICING.bases] ?? 0;
-}
-
-export function getSignaturePrice(id: string): number {
-  const price =
-    PRICING.signatureBowls[id as keyof typeof PRICING.signatureBowls] ??
-    PRICING.signatureSmoothies[id as keyof typeof PRICING.signatureSmoothies];
-  if (price === undefined) {
-    if (process.env.NODE_ENV !== "production") {
-      console.warn(`[pricing] Unknown signature item id "${id}" — falling back to $0.`);
-    }
-    return 0;
-  }
-  return price;
 }

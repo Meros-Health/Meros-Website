@@ -63,26 +63,14 @@ export const INSTAGRAM_POSTS: InstagramPost[] = [
   },
   {
     id: "7",
-    imageUrl: "/images-web/Instagram/bowls/nutty.png",
+    imageUrl: "/images-web/Instagram/bowls/focus.png",
     caption: "Recovery starts here.",
-    permalink: INSTAGRAM_URL,
-  },
-  {
-    id: "8",
-    imageUrl: "/images-web/Instagram/smoothies/bounty.png",
-    caption: "Cold pressed. Full send.",
     permalink: INSTAGRAM_URL,
   },
   {
     id: "9",
     imageUrl: "/images-web/Instagram/bowls/moment.png",
     caption: "Your morning, upgraded.",
-    permalink: INSTAGRAM_URL,
-  },
-  {
-    id: "10",
-    imageUrl: "/images-web/Instagram/smoothies/essence.png",
-    caption: "Clean. Cold. Crafted.",
     permalink: INSTAGRAM_URL,
   },
   {

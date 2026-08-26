@@ -10,7 +10,7 @@ import { CartDrawer } from "@/components/ui/CartDrawer";
 import { TransitionProvider } from "@/components/transition/TransitionProvider";
 
 export const metadata: Metadata = {
-  title: "Meros — House of Yogurt",
+  title: "MERŌS — House of Yogurt",
   description: "Build your bowl. Yaletown, Vancouver.",
   icons: {
     icon: "/logos/logo-terracotta.png",

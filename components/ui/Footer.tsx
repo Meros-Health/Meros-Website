@@ -9,7 +9,7 @@ import { submitContactForm, type ContactFormState } from "@/app/actions/contact"
 import { INSTAGRAM_POSTS, INSTAGRAM_URL, INSTAGRAM_HANDLE } from "@/lib/instagramFeed";
 
 // Query the live Google Maps listing instead of storing a brittle, generic
-// neighbourhood embed. The query resolves to Meros once the listing is live.
+// neighbourhood embed. The query resolves to MERŌS once the listing is live.
 const MAPS_QUERY = "Meros, 1207 Hamilton Street, Vancouver, BC";
 const MAPS_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(MAPS_QUERY)}`;
 const MAPS_EMBED_URL = `https://www.google.com/maps?q=${encodeURIComponent(MAPS_QUERY)}&output=embed`;
@@ -38,7 +38,7 @@ export function Footer() {
   }
 
   return (
-    <footer className="w-full bg-midnight text-cream" style={{ borderTop: "0.5px solid rgba(255,247,240,0.10)" }}>
+    <footer id="footer" className="w-full bg-midnight text-cream" style={{ borderTop: "0.5px solid rgba(255,247,240,0.10)" }}>
 
       {/* ── Brand mark ───────────────────────────────────────────────────── */}
       <div
@@ -47,7 +47,7 @@ export function Footer() {
       >
         <Image
           src="/logos/name-light.png"
-          alt="MEROS"
+          alt="MERŌS"
           width={160}
           height={48}
           className="opacity-80"
@@ -67,13 +67,16 @@ export function Footer() {
                 <span className="font-body-mixed text-cream text-xs leading-relaxed">1207 Hamilton Street</span>
                 <span className="font-body-mixed text-cream/55 text-xs leading-relaxed">Yaletown, Vancouver, BC V6B 2R5</span>
               </address>
+              <span className="font-body-caps text-cream/55 text-[9px] tracking-[0.20em] mt-2">
+                Open 8 AM – 10 PM Daily
+              </span>
             </div>
             <a
               href={MAPS_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="group mt-0.5 flex shrink-0 items-center gap-1.5 font-body-caps text-[8px] tracking-[0.18em] text-cream/55 transition-colors duration-200 hover:text-grapefruit"
-              aria-label="Open Meros in Google Maps"
+              aria-label="Open MERŌS in Google Maps"
             >
               <MapPinIcon />
               <span>Open map</span>
@@ -88,7 +91,7 @@ export function Footer() {
               allowFullScreen
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
-              title="Meros on Google Maps"
+            title="MERŌS on Google Maps"
             />
           </div>
         </div>
@@ -102,7 +105,7 @@ export function Footer() {
               href={INSTAGRAM_URL}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="Visit Meros on Instagram"
+            aria-label="Visit MERŌS on Instagram"
               className="flex-shrink-0"
             >
               <div
@@ -113,7 +116,7 @@ export function Footer() {
                   <div className="relative w-[78%] h-[78%]">
                     <Image
                       src="/logos/logo-terracotta.png"
-                      alt="Meros"
+                      alt="MERŌS"
                       fill
                       className="object-contain"
                       sizes="44px"
@@ -163,16 +166,16 @@ export function Footer() {
           <div className="flex flex-col gap-3">
             <span className="font-body-caps text-cream/40 text-[9px] tracking-[0.30em]">Get In Touch</span>
             <a
-              href="mailto:hello@meros.ca"
+              href="mailto:info@merosyogurt.com"
               className="font-body-mixed text-cream/70 text-xs hover:text-grapefruit transition-colors duration-200"
             >
-              hello@meros.ca
+              info@merosyogurt.com
             </a>
             <a
-              href="tel:+16041234567"
+              href="tel:+17783453023"
               className="font-body-mixed text-cream/70 text-xs hover:text-grapefruit transition-colors duration-200"
             >
-              +1 (604) 123-4567
+              (778) 345-3023
             </a>
           </div>
 
@@ -251,7 +254,7 @@ export function Footer() {
       >
         <Image
           src="/logos/logo-light.png"
-          alt="Meros"
+          alt="MERŌS"
           width={48}
           height={48}
           className="opacity-80"
@@ -264,8 +267,8 @@ export function Footer() {
         className="flex items-center justify-between px-section-x py-4"
         style={{ borderTop: "0.5px solid rgba(255,247,240,0.08)" }}
       >
-        <span className="font-body-mixed text-cream/30 text-[10px]">
-          © {new Date().getFullYear()} Meros. All rights reserved.
+      <span className="font-body-mixed text-cream/30 text-[10px]">
+          © {new Date().getFullYear()} MERŌS. All rights reserved.
         </span>
         <div className="flex items-center gap-5">
           <TransitionLink

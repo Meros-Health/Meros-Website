@@ -39,7 +39,7 @@ export type NutritionSegmentConfig = {
   id: NutritionSegmentId;
   label: string;
   group: NutritionSegmentGroup;
-  /** Meros palette token or rgba derived from brand colors. */
+  /** MERŌS palette token or rgba derived from brand colors. */
   color: string;
   unit: "g" | "mg";
   /** Daily reference intake for normalizing slice size. */
