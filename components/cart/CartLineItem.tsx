@@ -16,16 +16,23 @@ export function formatCustomBowlIngredients(item: CartItem): string {
 interface CartLineItemProps {
   item: CartItem;
   showActions?: boolean;
+  /** Checkout rejected this line; shown under it so the customer knows which one to fix. */
+  error?: string;
 }
 
-export function CartLineItem({ item, showActions = true }: CartLineItemProps) {
+export function CartLineItem({ item, showActions = true, error }: CartLineItemProps) {
   const isCustom = item.kind === "custom" && item.selection;
 
   return (
     <li
+      data-line-id={item.lineId}
+      data-line-error={error ? "true" : undefined}
       style={{
         borderBottom: "0.5px solid rgba(41,45,42,0.12)",
         paddingBottom: "0.75rem",
+        ...(error
+          ? { borderLeft: "2px solid var(--color-grapefruit)", paddingLeft: "0.75rem" }
+          : undefined),
       }}
     >
       <div className="flex justify-between gap-4">
@@ -49,6 +56,11 @@ export function CartLineItem({ item, showActions = true }: CartLineItemProps) {
           ${(item.unitPrice * item.quantity).toFixed(2)}
         </span>
       </div>
+      {error && (
+        <p role="alert" className="font-body-mixed text-grapefruit text-[11px] mt-1.5 leading-relaxed">
+          {error}
+        </p>
+      )}
       {showActions && (
         <CartLineActions lineId={item.lineId} kind={item.kind} quantity={item.quantity} />
       )}

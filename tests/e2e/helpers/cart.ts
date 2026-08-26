@@ -2,23 +2,26 @@ import type { Page } from "@playwright/test";
 
 export const CART_KEY = "meros-cart";
 
-/** Seeds localStorage before any script on the page runs. */
-export async function seedCart(page: Page, items: unknown, version = 0): Promise<void> {
+const SEEDED_MARK = "meros-e2e-seeded";
+
+/**
+ * Seeds localStorage before any script on the page runs. Init scripts re-run
+ * on every navigation (reloads included), so the seed is applied once per
+ * tab and the app's own writes win after that.
+ */
+export async function seedRawCart(page: Page, raw: string): Promise<void> {
   await page.addInitScript(
-    ({ key, value }) => {
+    ({ key, value, mark }) => {
+      if (window.sessionStorage.getItem(mark)) return;
+      window.sessionStorage.setItem(mark, "1");
       window.localStorage.setItem(key, value);
     },
-    { key: CART_KEY, value: JSON.stringify({ state: { items }, version }) }
+    { key: CART_KEY, value: raw, mark: SEEDED_MARK }
   );
 }
 
-export async function seedRawCart(page: Page, raw: string): Promise<void> {
-  await page.addInitScript(
-    ({ key, value }) => {
-      window.localStorage.setItem(key, value);
-    },
-    { key: CART_KEY, value: raw }
-  );
+export async function seedCart(page: Page, items: unknown, version = 0): Promise<void> {
+  await seedRawCart(page, JSON.stringify({ state: { items }, version }));
 }
 
 export async function readCart(page: Page): Promise<unknown[]> {

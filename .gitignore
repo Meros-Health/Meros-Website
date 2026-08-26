@@ -75,3 +75,6 @@ next-env.d.ts
 # test output
 /test-results/
 /playwright-report/
+
+# Committed template, no secrets
+!.env.example

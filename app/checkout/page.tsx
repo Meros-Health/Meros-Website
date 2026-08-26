@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { useCartStore } from "@/store/cartStore";
 import { CartLineItem } from "@/components/cart/CartLineItem";
 import { submitCheckout, type CheckoutFormState } from "@/app/actions/checkout";
+import { makeIdempotencyKey } from "@/lib/checkout/idempotency";
+import { toCheckoutLines } from "@/lib/checkout/lines";
 import { CHECKOUT_ENABLED } from "@/lib/config";
 
 const LAST_ORDER_KEY = "meros-last-order";
@@ -26,9 +28,17 @@ export default function CheckoutPage() {
   const items = useCartStore((s) => s.items);
   const subtotal = useCartStore((s) => s.subtotal());
   const clearCart = useCartStore((s) => s.clearCart);
+  const openCart = useCartStore((s) => s.openCart);
 
   const [state, setState] = useState<CheckoutFormState>({ status: "idle", message: "" });
   const [pending, setPending] = useState(false);
+  // In-flight guard: the disabled attribute only applies after the next
+  // render, so a second submit dispatched in the same tick needs the ref.
+  const submittingRef = useRef(false);
+  // One key per attempt. It survives a failed attempt so a retry after a
+  // network error dedupes against an order that may already exist, and is
+  // discarded once the order is confirmed.
+  const idempotencyKeyRef = useRef<string | null>(null);
   // Wait for the persisted cart to rehydrate before deciding anything —
   // otherwise a fresh page load always sees an empty cart and redirects.
   const [hydrated, setHydrated] = useState(false);
@@ -62,21 +72,38 @@ export default function CheckoutPage() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setPending(true);
+
     const formData = new FormData(e.currentTarget);
-    const result = await submitCheckout(JSON.stringify(items), state, formData);
-    setState(result);
-    setPending(false);
-    if (result.status === "success") {
-      formRef.current?.reset();
-      clearCart();
-      try {
-        sessionStorage.setItem(LAST_ORDER_KEY, JSON.stringify(result));
-      } catch {
-        // Confirmation persistence is best-effort only.
+    idempotencyKeyRef.current ??= makeIdempotencyKey();
+    formData.set("idempotencyKey", idempotencyKeyRef.current);
+
+    try {
+      const result = await submitCheckout(JSON.stringify(toCheckoutLines(items)), state, formData);
+      setState(result);
+      if (result.status === "success") {
+        idempotencyKeyRef.current = null;
+        formRef.current?.reset();
+        clearCart();
+        try {
+          sessionStorage.setItem(LAST_ORDER_KEY, JSON.stringify(result));
+        } catch {
+          // Confirmation persistence is best-effort only.
+        }
       }
+    } catch {
+      // A thrown action (network failure, a POS or payment call that fails
+      // once those exist) must never leave the button on "Placing Order...".
+      setState({ status: "error", code: "unknown", message: "Something went wrong. Please try again." });
+    } finally {
+      submittingRef.current = false;
+      setPending(false);
     }
   }
+
+  const lineError = state.status === "error" && state.lineId ? state : null;
 
   if (!CHECKOUT_ENABLED || !hydrated) {
     return null;
@@ -123,7 +150,12 @@ export default function CheckoutPage() {
             </h2>
             <ul className="space-y-3">
               {items.map((item) => (
-                <CartLineItem key={item.lineId} item={item} showActions={false} />
+                <CartLineItem
+                  key={item.lineId}
+                  item={item}
+                  showActions={false}
+                  error={lineError?.lineId === item.lineId ? lineError.message : undefined}
+                />
               ))}
             </ul>
             <div className="flex justify-between pt-4">
@@ -186,7 +218,21 @@ export default function CheckoutPage() {
             </div>
 
             {state.status === "error" && (
-              <p className="font-body-mixed text-grapefruit text-[11px]">{state.message}</p>
+              <div className="flex flex-col items-start gap-2">
+                <p className="font-body-mixed text-grapefruit text-[11px]">
+                  {lineError ? "Update the marked item, then place your order again." : state.message}
+                </p>
+                {lineError && (
+                  <button
+                    type="button"
+                    onClick={openCart}
+                    className="font-body-caps text-[10px] tracking-widest text-midnight px-4 py-2 transition-opacity hover:opacity-70"
+                    style={{ border: "0.5px solid rgba(41,45,42,0.28)" }}
+                  >
+                    Edit cart
+                  </button>
+                )}
+              </div>
             )}
 
             <button

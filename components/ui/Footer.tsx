@@ -23,14 +23,26 @@ export function Footer() {
   const [pending, setPending] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
+  const submittingRef = useRef(false);
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    // The disabled attribute only applies after the next render; the ref
+    // stops a second submit dispatched in the same tick.
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setPending(true);
     const formData = new FormData(e.currentTarget);
-    const result = await submitContactForm(state, formData);
-    setState(result);
-    setPending(false);
-    if (result.status === "success") formRef.current?.reset();
+    try {
+      const result = await submitContactForm(state, formData);
+      setState(result);
+      if (result.status === "success") formRef.current?.reset();
+    } catch {
+      setState({ status: "error", message: "Something went wrong. Please try again." });
+    } finally {
+      submittingRef.current = false;
+      setPending(false);
+    }
   }
 
   if (HIDDEN_ON.some((route) => pathname === route || pathname.startsWith(`${route}/`))) {

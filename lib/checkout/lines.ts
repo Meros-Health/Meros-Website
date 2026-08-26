@@ -1,0 +1,30 @@
+import type { BowlSelection } from "@/lib/menu/calcBowlPrice";
+import type { CartItem } from "@/store/cartStore";
+
+/**
+ * What the checkout page sends per cart line: ids, quantity, and the price
+ * the customer saw. The action never prices from `unitPrice`; it recomputes
+ * from the menu and rejects the line when the two disagree, so a stale
+ * client cannot be charged a price it did not show.
+ */
+export type CheckoutLine = {
+  lineId: string;
+  kind: "signature" | "custom";
+  productId: string;
+  size?: { id: string };
+  selection?: BowlSelection;
+  quantity: number;
+  unitPrice: number;
+};
+
+export function toCheckoutLines(items: CartItem[]): CheckoutLine[] {
+  return items.map((item) => ({
+    lineId: item.lineId,
+    kind: item.kind,
+    productId: item.productId,
+    size: item.size ? { id: item.size.id } : undefined,
+    selection: item.selection,
+    quantity: item.quantity,
+    unitPrice: item.unitPrice,
+  }));
+}
