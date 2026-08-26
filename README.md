@@ -6,14 +6,14 @@ Marketing and build-your-own-bowl ordering site. Opening Yaletown, Vancouver —
 
 | Layer | Choice | Why |
 |---|---|---|
-| Framework | Next.js 14 (App Router) | RSC + streaming, Vercel-native |
+| Framework | Next.js 14 (App Router) | RSC + streaming |
 | Language | TypeScript (strict) | |
 | Styling | Tailwind CSS | Design token–driven, brand config in `tailwind.config.ts` |
 | Primary scroll animation | GSAP + ScrollTrigger + `@gsap/react` | Scroll-locked pinned sections, frame-sequence scrubbing |
 | Smooth scroll | Lenis (studio-freight) | Virtualised scroll, bridged to GSAP ticker (see below) |
 | Micro-interactions | Framer Motion | Secondary only — not used for primary scroll sequences |
 | Cart state | Zustand + persist | localStorage-backed, auth-ready via `partialize` |
-| Deploy | Vercel | |
+| Deploy | Cloudflare Workers via OpenNext (`@opennextjs/cloudflare`) | `npm run deploy`; config in `wrangler.jsonc` |
 
 ## Routes
 

@@ -10,7 +10,7 @@
 - Customers order Meros bowls (signature + custom builds) online for pickup, pay, and staff reliably see the order in time to make it.
 - Store runs **Toast** for in-store payments (assumed, ~90% confident — **confirm first, everything downstream depends on it**).
 - **Code lives in this repo** — Track A is a CTA link; Track B is server actions/route handlers beside the cart/catalog code they reuse. No separate repo unless the venture productizes it later.
-- **Deployment:** site moves Vercel → **Cloudflare** (OpenNext adapter) on `merosyogurt.com` (GoDaddy-registered — confirm exact spelling; DNS → Cloudflare). Hosting cost is a rounding error at this traffic (free tier / $5 Workers Paid); replatform before or after opening weekend, not during it. Track A doesn't depend on it.
+- **Deployment:** site runs on **Cloudflare** Workers (OpenNext adapter) on `merosyogurt.com` (GoDaddy-registered — confirm exact spelling; DNS → Cloudflare). Hosting cost is a rounding error at this traffic (free tier / $5 Workers Paid); replatform before or after opening weekend, not during it. Track A doesn't depend on it.
 - ~2-week runway. Store staff currently take orders fully verbally (named bowl, or Subway-style custom build); there is **no existing ticket/expo habit** — the staff-side flow must be designed, not just wired.
 - Access to credentials/admin is easy (Kim/Paul in person), but **Toast's own process timelines are not under our control**.
 
@@ -85,7 +85,7 @@ Architecture once Custom Integration access is granted:
 ```mermaid
 sequenceDiagram
   participant C as Customer (site)
-  participant S as Next.js server (Vercel)
+  participant S as Next.js server (Cloudflare Workers)
   participant St as Stripe
   participant T as Toast APIs
   participant K as POS / kitchen printer
