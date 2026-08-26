@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCartStore } from "@/store/cartStore";
+import { useCartHydrated } from "@/store/useCartHydrated";
 import { CartLineItem } from "@/components/cart/CartLineItem";
 import { submitCheckout, type CheckoutFormState } from "@/app/actions/checkout";
 import { makeIdempotencyKey } from "@/lib/checkout/idempotency";
@@ -39,18 +40,10 @@ export default function CheckoutPage() {
   // network error dedupes against an order that may already exist, and is
   // discarded once the order is confirmed.
   const idempotencyKeyRef = useRef<string | null>(null);
-  // Wait for the persisted cart to rehydrate before deciding anything —
+  // Wait for the persisted cart to rehydrate before deciding anything,
   // otherwise a fresh page load always sees an empty cart and redirects.
-  const [hydrated, setHydrated] = useState(false);
+  const hydrated = useCartHydrated();
   const formRef = useRef<HTMLFormElement>(null);
-
-  useEffect(() => {
-    if (useCartStore.persist.hasHydrated()) {
-      setHydrated(true);
-      return;
-    }
-    return useCartStore.persist.onFinishHydration(() => setHydrated(true));
-  }, []);
 
   useEffect(() => {
     if (!CHECKOUT_ENABLED) {

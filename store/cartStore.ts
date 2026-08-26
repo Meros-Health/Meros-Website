@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { getBuildSize } from "@/lib/menu/buildConfig";
 import { calcBowlPrice, getSelectedIngredients, type BowlSelection } from "@/lib/menu/calcBowlPrice";
-import { sumNutrition, type NutritionFacts } from "@/lib/menu/nutrition";
+import { EMPTY_NUTRITION, sumNutrition, type NutritionFacts } from "@/lib/menu/nutrition";
 import {
   findMatchingCustomLine,
   findMatchingSignatureLine,
@@ -15,6 +15,7 @@ import {
   getSignaturePrice,
   getSizeLabel,
 } from "@/lib/menu/signatures";
+import { safeJsonStorage } from "@/lib/storage/safeJsonStorage";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -38,6 +39,8 @@ export type CartItem = {
   unitPrice: number;
 };
 
+export type UpdateCustomBowlResult = "updated" | "merged" | "missing";
+
 // ---------------------------------------------------------------------------
 // Store
 // ---------------------------------------------------------------------------
@@ -50,7 +53,7 @@ interface CartState {
   updateQuantity: (lineId: string, quantity: number) => void;
   incrementItem: (lineId: string) => void;
   decrementItem: (lineId: string) => void;
-  updateCustomBowl: (lineId: string, selection: CustomBowlSelection) => void;
+  updateCustomBowl: (lineId: string, selection: CustomBowlSelection) => UpdateCustomBowlResult;
   getItem: (lineId: string) => CartItem | undefined;
   clearCart: () => void;
   subtotal: () => number;
@@ -60,12 +63,20 @@ interface CartState {
 
 const MAX_QUANTITY = 99;
 
+// Bump only together with a `migrate` branch below. A bump without one makes
+// zustand discard the persisted cart with a console warning (E9).
+const CART_VERSION = 1;
+
 function makeLineId(): string {
   // crypto.randomUUID requires a secure context (throws on plain-HTTP LAN access).
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
   }
   return `line-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function clampQuantity(quantity: number): number {
+  return Math.min(quantity, MAX_QUANTITY);
 }
 
 function signatureLineName(name: string, size: CartItemSize | undefined): string {
@@ -91,31 +102,95 @@ function customLineFields(selection: BowlSelection) {
   };
 }
 
-function migrateCartItem(item: CartItem): CartItem {
-  if (item.kind === "custom") {
-    // Any pre-v2 payload, or a v2 payload referencing ingredients that have
-    // since left the menu. A bowl whose required step no longer resolves
-    // throws, and onRehydrateStorage drops the line.
-    const selection = normalizeSelection(item.selection);
-    if (!selection) throw new Error("Custom bowl no longer matches the menu");
-    return { ...item, ...customLineFields(selection) };
+// ---------------------------------------------------------------------------
+// Rehydration
+// ---------------------------------------------------------------------------
+
+type UnknownRecord = Record<string, unknown>;
+
+function isRecord(value: unknown): value is UnknownRecord {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Integer 1..99 or nothing. A line whose quantity cannot be trusted is not
+ * clamped to some guess; it is dropped, so it can never reach checkout.
+ */
+function readQuantity(value: unknown): number | null {
+  if (typeof value !== "number" || !Number.isInteger(value)) return null;
+  if (value < 1) return null;
+  return clampQuantity(value);
+}
+
+function readLineId(value: unknown, used: Set<string>): string {
+  const id = typeof value === "string" && value.length > 0 && !used.has(value) ? value : makeLineId();
+  used.add(id);
+  return id;
+}
+
+/**
+ * Turns one persisted line (any older shape, tampered, or referencing a menu
+ * that has since changed) into a valid CartItem, or null when nothing
+ * trustworthy is left. Every field is rebuilt from the menu; unknown fields
+ * are not carried along.
+ */
+function readCartItem(raw: unknown, usedIds: Set<string>): CartItem | null {
+  if (!isRecord(raw)) return null;
+
+  const quantity = readQuantity(raw.quantity);
+  if (quantity === null) return null;
+
+  if (raw.kind === "custom") {
+    // A bowl whose required step no longer resolves has nothing to show.
+    const selection = normalizeSelection(raw.selection);
+    if (!selection) return null;
+    return {
+      lineId: readLineId(raw.lineId, usedIds),
+      kind: "custom",
+      productId: "custom-bowl",
+      quantity,
+      ...customLineFields(selection),
+    };
   }
 
-  // Signature lines persisted before sizes existed carry a stale per-item
-  // price. Re-price them at the category's default size. A productId that no
-  // longer exists on the menu throws, and onRehydrateStorage drops the line.
-  const catalogItem = getSignatureItem(item.productId);
-  if (!catalogItem) throw new Error(`Unknown signature product "${item.productId}"`);
-  const sizeId = item.size?.id ?? getDefaultSizeId(catalogItem.category);
-  const unitPrice = getSignaturePrice(catalogItem.id, sizeId);
-  if (unitPrice === undefined) throw new Error(`No price for "${item.productId}" at "${sizeId}"`);
-  const size = { id: sizeId, label: getSizeLabel(catalogItem.category, sizeId) };
-  return {
-    ...item,
-    size,
-    unitPrice,
-    name: signatureLineName(catalogItem.name, size),
-  };
+  if (raw.kind === "signature") {
+    if (typeof raw.productId !== "string") return null;
+    const catalogItem = getSignatureItem(raw.productId);
+    if (!catalogItem) return null;
+    const rawSizeId = isRecord(raw.size) && typeof raw.size.id === "string" ? raw.size.id : undefined;
+    const sizeId = rawSizeId ?? getDefaultSizeId(catalogItem.category);
+    const unitPrice = getSignaturePrice(catalogItem.id, sizeId);
+    if (unitPrice === undefined) return null;
+    const size = { id: sizeId, label: getSizeLabel(catalogItem.category, sizeId) };
+    return {
+      lineId: readLineId(raw.lineId, usedIds),
+      kind: "signature",
+      productId: catalogItem.id,
+      name: signatureLineName(catalogItem.name, size),
+      size,
+      nutrition: { ...EMPTY_NUTRITION },
+      quantity,
+      unitPrice,
+    };
+  }
+
+  return null;
+}
+
+/** Every persisted line that can still be trusted, rebuilt against the current menu. */
+export function migrateCart(rawItems: unknown): CartItem[] {
+  if (!Array.isArray(rawItems)) return [];
+  const usedIds = new Set<string>();
+  const items: CartItem[] = [];
+  for (const raw of rawItems) {
+    try {
+      const item = readCartItem(raw, usedIds);
+      if (item) items.push(item);
+    } catch {
+      // One unreadable line must not take the whole cart down.
+    }
+  }
+  return items;
 }
 
 export const useCartStore = create<CartState>()(
@@ -163,11 +238,13 @@ export const useCartStore = create<CartState>()(
       },
 
       updateQuantity: (lineId, quantity) => {
+        // NaN and fractions must never persist; they render as money.
+        if (!Number.isInteger(quantity)) return;
         if (quantity <= 0) {
           get().removeItem(lineId);
           return;
         }
-        const clamped = Math.min(quantity, MAX_QUANTITY);
+        const clamped = clampQuantity(quantity);
         set((state) => ({
           items: state.items.map((i) => (i.lineId === lineId ? { ...i, quantity: clamped } : i)),
         }));
@@ -188,10 +265,10 @@ export const useCartStore = create<CartState>()(
       updateCustomBowl: (lineId, rawSelection) => {
         const { items } = get();
         const current = items.find((i) => i.lineId === lineId);
-        if (!current || current.kind !== "custom") return;
+        if (!current || current.kind !== "custom") return "missing";
 
         const selection = normalizeSelection(rawSelection);
-        if (!selection) return;
+        if (!selection) return "missing";
 
         const duplicate = findMatchingCustomLine(
           items.filter((i) => i.lineId !== lineId),
@@ -203,17 +280,18 @@ export const useCartStore = create<CartState>()(
             items: items
               .map((i) =>
                 i.lineId === duplicate.lineId
-                  ? { ...i, quantity: i.quantity + current.quantity }
+                  ? { ...i, quantity: clampQuantity(i.quantity + current.quantity) }
                   : i
               )
               .filter((i) => i.lineId !== lineId),
           });
-          return;
+          return "merged";
         }
 
         set({
           items: items.map((i) => (i.lineId === lineId ? { ...i, ...customLineFields(selection) } : i)),
         });
+        return "updated";
       },
 
       // Items are normalized on add, on update, and on rehydration, so no
@@ -231,24 +309,19 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: "meros-cart",
+      version: CART_VERSION,
+      storage: safeJsonStorage(),
       partialize: (state) => ({ items: state.items }),
-      onRehydrateStorage: () => (state) => {
-        if (!state) return;
-        if (!Array.isArray(state.items)) {
-          state.items = [];
-          return;
-        }
-        // A single unreadable line (older shape, corrupted write, tampering,
-        // or an ingredient that left the menu) must not crash store creation
-        // and take the whole app down: drop it.
-        state.items = state.items.flatMap((item) => {
-          try {
-            return [migrateCartItem(item)];
-          } catch {
-            return [];
-          }
-        });
-      },
+      // Per-line migration happens in `merge`, so older envelopes (version 0,
+      // or any future version this build does not know) are passed through
+      // unchanged and read line by line.
+      migrate: (persisted) => persisted as { items: CartItem[] },
+      // Runs before `set`, so subscribers only ever see migrated items and the
+      // persisted array is never mutated in place.
+      merge: (persisted, current) => ({
+        ...current,
+        items: migrateCart(isRecord(persisted) ? persisted.items : undefined),
+      }),
     }
   )
 );

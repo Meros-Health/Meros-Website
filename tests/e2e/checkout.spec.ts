@@ -88,10 +88,21 @@ test("F4: a failed action call re-enables the button with a message", async ({ p
 });
 
 test("F5ui: a rejected line is marked and the cart can be edited", async ({ page }) => {
-  await seedCart(page, [moment("good"), moment("bad", 500)]);
+  await seedCart(page, [moment("good"), moment("bad")]);
   await page.goto("/checkout");
   await waitForPageReady(page);
   await fillCustomer(page);
+
+  // Rehydration repairs tampered storage, so the bad quantity is injected
+  // into the request itself: the server must still reject it by line.
+  await page.route("**/checkout", (route) => {
+    const req = route.request();
+    if (req.method() !== "POST") return route.continue();
+    const body = req.postData() ?? "";
+    const tampered = body.replace(/(\\?"lineId\\?":\\?"bad\\?"[\s\S]*?\\?"quantity\\?":)1/, "$1500");
+    return route.continue({ postData: tampered });
+  });
+
   await placeOrder(page).click();
 
   const marked = page.locator("[data-line-error]");

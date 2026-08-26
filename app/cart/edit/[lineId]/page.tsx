@@ -1,38 +1,38 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { BowlConfigurator } from "@/components/build/BowlConfigurator";
+import { useTransitionRouter } from "@/components/transition/TransitionProvider";
 import { normalizeSelection } from "@/lib/menu/selectionUtils";
 import { useBowlBuilderStore } from "@/store/bowlBuilderStore";
 import { useCartStore } from "@/store/cartStore";
+import { useCartHydrated } from "@/store/useCartHydrated";
 
 export default function EditBowlPage() {
   const params = useParams();
   const router = useRouter();
+  const transitionRouter = useTransitionRouter();
   const lineId = params.lineId as string;
-  const getItem = useCartStore((s) => s.getItem);
+  const hydrated = useCartHydrated();
+  // Subscribed, not read once: the footer needs to know the moment this line
+  // leaves the cart (removed from the drawer, or from another tab).
+  const cartItem = useCartStore((s) => s.items.find((i) => i.lineId === lineId));
   const loadSelection = useBowlBuilderStore((s) => s.loadSelection);
   const reset = useBowlBuilderStore((s) => s.reset);
-  const initialized = useRef(false);
-  const [hydrated, setHydrated] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    if (useCartStore.persist.hasHydrated()) {
-      setHydrated(true);
-      return;
-    }
-    return useCartStore.persist.onFinishHydration(() => setHydrated(true));
-  }, []);
+    if (!hydrated || loaded) return;
 
-  const cartItem = hydrated ? getItem(lineId) : undefined;
-
-  useEffect(() => {
-    if (!hydrated || initialized.current) return;
+    const leave = () => {
+      // Covered transition on a direct load; plain replace if a transition is
+      // already in flight so the page can never sit blank.
+      if (!transitionRouter.replace("/order")) router.replace("/order");
+    };
 
     if (!cartItem || cartItem.kind !== "custom" || !cartItem.selection) {
-      router.replace("/order");
+      leave();
       return;
     }
 
@@ -40,14 +40,13 @@ export default function EditBowlPage() {
     // bowl's required step no longer resolves, so there is nothing to edit.
     const resolved = normalizeSelection(cartItem.selection);
     if (!resolved) {
-      router.replace("/order");
+      leave();
       return;
     }
 
     loadSelection(resolved);
-    initialized.current = true;
     setLoaded(true);
-  }, [hydrated, cartItem, lineId, loadSelection, router]);
+  }, [hydrated, loaded, cartItem, loadSelection, router, transitionRouter]);
 
   useEffect(() => {
     return () => {
@@ -55,9 +54,9 @@ export default function EditBowlPage() {
     };
   }, [reset]);
 
-  // Once loaded, keep rendering even if the cart line disappears — saving an
-  // edit that merges into a duplicate line removes this lineId, and blanking
-  // the page while the save feedback + redirect play out looks broken.
+  // Once loaded, keep rendering even if the cart line disappears: saving an
+  // edit that merges into a duplicate line removes this lineId, and the
+  // footer handles a removal with its own notice.
   if (!loaded) {
     return null;
   }
@@ -67,6 +66,7 @@ export default function EditBowlPage() {
       <BowlConfigurator
         mode="edit"
         editLineId={lineId}
+        editLineExists={cartItem !== undefined}
         header={{
           eyebrow: "Edit Your Bowl",
           title: "Modify Bowl",
