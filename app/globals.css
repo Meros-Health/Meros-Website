@@ -166,6 +166,17 @@
   }
 }
 
+/* Shared by the desktop overlay (NavMenuOverlay) and the mobile drop panel
+   (MobileNavPanel). !important because both set the link colour inline. */
+.nav-overlay-link {
+  transition: color 200ms ease;
+}
+.nav-overlay-link:hover,
+.nav-overlay-link:focus-visible {
+  color: var(--nav-accent) !important;
+  outline: none;
+}
+
 @layer utilities {
   /* ── Montage Serif utilities ──────────────────────────────────── */
   /* "MERŌS" and all primary display text. Always pair with uppercase. */

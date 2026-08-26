@@ -2,7 +2,9 @@
 
 import { useRef, useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { useIsMobile } from "@/lib/useIsMobile";
+
+// Desktop-only. The mobile menu is MobileNavPanel.tsx (content-height drop
+// panel); Navbar.tsx picks between the two on the 768px breakpoint.
 
 const FRAME_DURATION = 0.7;
 const FRAME_EASE = [0.76, 0, 0.24, 1] as const;
@@ -42,7 +44,6 @@ export function NavMenuOverlay({
   rightContent,
 }: NavMenuOverlayProps) {
   const firstLinkRef = useRef<HTMLAnchorElement>(null);
-  const isMobile = useIsMobile();
 
   // Compute pixel panel sizes — Framer Motion cannot interpolate CSS calc()
   // expressions from 0, which caused the right-panel flash on the previous build.
@@ -84,60 +85,6 @@ export function NavMenuOverlay({
     width: "fit-content",
   };
 
-  // ── Mobile overlay ────────────────────────────────────────────────────────
-  if (isMobile) {
-    return (
-      <>
-        <LinkHoverStyles />
-        <motion.div
-          key="nav-overlay-mobile"
-          initial={{ y: "-100%" }}
-          animate={{ y: 0 }}
-          exit={{ y: "-100%" }}
-          transition={{ duration: FRAME_DURATION, ease: FRAME_EASE }}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: OVERLAY_Z,
-            background: "var(--nav-overlay-bg)",
-            color: "var(--nav-overlay-text)",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            padding: "var(--nav-padding-x)",
-          }}
-        >
-          <nav style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-            {links.map((link, i) => (
-              <motion.a
-                key={link.href}
-                ref={i === 0 ? firstLinkRef : undefined}
-                href={link.href}
-                className="nav-overlay-link"
-                onClick={(e) => handleLinkClick(e, link.href)}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{
-                  delay: LINK_BASE_DELAY + i * LINK_STAGGER,
-                  duration: 0.5,
-                  ease: [0.16, 1, 0.3, 1],
-                }}
-                style={{
-                  ...linkStyle,
-                  fontSize: "clamp(2.5rem, 9vw, 4rem)",
-                  fontWeight: 400,
-                }}
-              >
-                {link.label}
-              </motion.a>
-            ))}
-          </nav>
-        </motion.div>
-      </>
-    );
-  }
-
   // ── Desktop: four panels around a transparent window ─────────────────────
   // Wait for dims before rendering so we always have pixel values ready.
   if (!dims) return null;
@@ -150,7 +97,6 @@ export function NavMenuOverlay({
 
   return (
     <>
-      <LinkHoverStyles />
       <div
         style={{
           position: "fixed",
@@ -312,20 +258,5 @@ export function NavMenuOverlay({
 
       </div>
     </>
-  );
-}
-
-// ── Utilities ─────────────────────────────────────────────────────────────────
-
-function LinkHoverStyles() {
-  return (
-    <style>{`
-      .nav-overlay-link { transition: color 200ms ease; }
-      .nav-overlay-link:hover,
-      .nav-overlay-link:focus-visible {
-        color: var(--nav-accent) !important;
-        outline: none;
-      }
-    `}</style>
   );
 }

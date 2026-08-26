@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { animate, motion, AnimatePresence } from "framer-motion";
 import { NavMenuOverlay } from "./NavMenuOverlay";
+import { MobileNavPanel } from "./MobileNavPanel";
 import { NavKitchenNote } from "./NavKitchenNote";
 import { useLenis } from "@/components/animation/LenisProvider";
 import { scrollToTop } from "@/lib/scroll";
@@ -171,16 +172,24 @@ export function Navbar() {
     return lenis.on("scroll", (instance) => update(instance.scroll));
   }, [lenis, pathname, applyBandOpacity, isMobile]);
 
-  // Icon/logo color: dark (t=1) by default always; menu open forces it
-  // fully light (t=0), closing eases back to dark. The background is
-  // untouched — the overlay's dark panels cover it visually while open.
+  // Icon/logo color: dark (t=1) by default always; the desktop menu forces it
+  // fully light (t=0) because its dark panels sit behind the bar, closing
+  // eases back to dark. The mobile drop panel is cream and hangs below the
+  // bar, so the chrome stays dark there.
   useLayoutEffect(() => {
     if (!mountedRef.current) {
       mountedRef.current = true;
       return;
     }
-    setChromeT(menuOpen ? 0 : 1, true);
-  }, [menuOpen, setChromeT]);
+    setChromeT(menuOpen && !isMobile ? 0 : 1, true);
+  }, [menuOpen, isMobile, setChromeT]);
+
+  // Crossing the breakpoint swaps which menu component renders. Close rather
+  // than strand an open menu in the other branch (phone rotate is enough to
+  // hit this). No-op on mount: menuOpen is already false.
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [isMobile]);
 
   useEffect(() => {
     if (menuOpen) lenis?.stop();
@@ -214,17 +223,17 @@ export function Navbar() {
     requestAnimationFrame(() => menuButtonRef.current?.focus());
   };
 
-  // The menu's own close animation doubles as the transition's exit cover:
-  // menu-composed mode waits out the tuned close window, then navigates with
-  // the cover already opaque underneath the shrinking panels.
-  const menuComposed = {
-    coverMode: "menu-composed",
-    preDelayMs: MENU_EXIT_COVER_MS,
-  } as const;
+  // The desktop menu's own close animation doubles as the transition's exit
+  // cover: menu-composed mode waits out the tuned close window, then navigates
+  // with the cover already opaque underneath the shrinking panels. The mobile
+  // drop panel covers nothing, so it uses the default cover fade instead.
+  const menuNavOptions = isMobile
+    ? undefined
+    : ({ coverMode: "menu-composed", preDelayMs: MENU_EXIT_COVER_MS } as const);
 
   const handleNavigate = (href: string) => {
     closeMenu();
-    transitionRouter.push(href, menuComposed);
+    transitionRouter.push(href, menuNavOptions);
   };
 
   const scrollHeroTop = () => scrollToTop(lenis, false);
@@ -232,7 +241,7 @@ export function Navbar() {
   const goToBuild = () => {
     if (menuOpen) {
       closeMenu();
-      transitionRouter.push("/build", menuComposed);
+      transitionRouter.push("/build", menuNavOptions);
     } else {
       transitionRouter.push("/build");
     }
@@ -246,7 +255,7 @@ export function Navbar() {
       scrollToTop(lenis, false);
     } else if (menuOpen) {
       closeMenu();
-      transitionRouter.push("/order", menuComposed);
+      transitionRouter.push("/order", menuNavOptions);
     } else {
       transitionRouter.push("/order");
     }
@@ -267,7 +276,7 @@ export function Navbar() {
       closeMenu();
       // Already home: no navigation, just wait out the menu close, then scroll.
       if (pathname === "/") setTimeout(scrollHeroTop, MENU_EXIT_COVER_MS);
-      else transitionRouter.push("/", menuComposed);
+      else transitionRouter.push("/", menuNavOptions);
     } else if (pathname === "/") {
       scrollHeroTop();
     } else {
@@ -498,18 +507,30 @@ export function Navbar() {
         </div>
       </motion.header>
 
-      <AnimatePresence>
-        {menuOpen && (
-          <NavMenuOverlay
-            key="nav-overlay"
-            open={menuOpen}
-            onClose={closeMenu}
-            onNavigate={handleNavigate}
-            links={NAV_LINKS}
-            rightContent={<NavKitchenNote />}
-          />
-        )}
-      </AnimatePresence>
+      {/* isMobile is false on the server and first client render, so hydration
+          renders the empty desktop branch; the mobile panel mounts closed once
+          the media query resolves. */}
+      {isMobile ? (
+        <MobileNavPanel
+          open={menuOpen}
+          onClose={closeMenu}
+          onNavigate={handleNavigate}
+          links={NAV_LINKS}
+        />
+      ) : (
+        <AnimatePresence>
+          {menuOpen && (
+            <NavMenuOverlay
+              key="nav-overlay"
+              open={menuOpen}
+              onClose={closeMenu}
+              onNavigate={handleNavigate}
+              links={NAV_LINKS}
+              rightContent={<NavKitchenNote />}
+            />
+          )}
+        </AnimatePresence>
+      )}
     </>
   );
 }
