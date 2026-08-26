@@ -20,7 +20,7 @@ The customer-facing half already exists:
 
 | Piece | Where | Status |
 |---|---|---|
-| Signature bowls + custom bowl builder | `app/order/`, `store/bowlBuilderStore.ts`, `lib/menu/buildCatalog.ts` | Built |
+| Signature bowls + custom bowl builder | `app/order/`, `store/bowlBuilderStore.ts`, `lib/menu/menu.json` | Built |
 | Cart (Zustand, edit lines) | `store/cartStore.ts`, `components/cart/*` | Built |
 | Server-side re-pricing (client never trusted) | `app/actions/checkout.ts` (`priceLine`, `resolveItems`) | Built |
 | Checkout form (name/email/phone) | `app/checkout/page.tsx` → `submitCheckout` | Built |
@@ -29,7 +29,7 @@ The customer-facing half already exists:
 | Tax calculation | — | **Missing** (BC: 5% GST on prepared food; no PST on food) |
 | Legal pages | `app/privacy`, `app/terms` | Built; have `TODO(stripe)` markers to update when a processor lands |
 
-Menu source of truth today is **website code** (`lib/menu/buildCatalog.ts`). Toast will have its own menu config — keeping the two consistent is a standing requirement in every option below.
+Menu source of truth today is **website code** (`lib/menu/menu.json`). Toast will have its own menu config — keeping the two consistent is a standing requirement in every option below.
 
 ## 3. What the research found (2026-07-23)
 
@@ -73,7 +73,7 @@ Cost of this trade: checkout leaves our beautifully built cart/bowl-builder for 
 **Checklist (most of this is a store visit with Paul + one Toast support call):**
 1. Confirm Toast is the POS; get admin access ("Manage Integrations" + menu permissions).
 2. Confirm the Online Ordering module is on the subscription (Customer Care) — **this is the long pole of Track A; do it first.** Ask about Pro tier/custom domain + CAD pricing while on the call.
-3. Build the online menu in Toast Web: signature bowls + "Custom Bowl" item with modifier groups mirroring `buildCatalog.ts` (base / fruits & berries / nuts & seeds / finish / enhancers, with the same surcharge prices).
+3. Build the online menu in Toast Web: signature bowls + "Custom Bowl" item with modifier groups mirroring `menu.json` (base / fruits & berries / nuts & seeds / finish / enhancers, with the same surcharge prices).
 4. Pickup settings: hours, quote-time strategy (start Manual, e.g. 10–15 min), auto-fire device designated (the counter terminal), decide printer vs. screen for the make-line — **buy a kitchen ticket printer if they don't have one; a bowl line needs a durable artifact, not a POS screen glance.**
 5. Train staff: Orders Hub, approval vs auto-fire (recommend auto-fire + throttle permissions for Paul), snooze/delay, marking Order Ready.
 6. Website: swap checkout CTA → Toast page; keep our `/order` menu as the showcase; place a test order end-to-end and watch it hit the make-line.
@@ -103,7 +103,7 @@ sequenceDiagram
 
 Key build items:
 - **Access request to the Toast account rep now** (scopes from the ordering checklist: `orders.orders:write`, `config:read`, `menus.channel:read`, `restaurants:read`, `stock:read`, `digital_schedule:read`, `packaging:read`; skip `credit_cards.authorization:write` — we're not touching cards). Get sandbox credentials in the same conversation.
-- **Menu mapping:** extend `buildCatalog.ts` items with Toast GUIDs (item + modifier group + modifier); nightly/deploy-time validation job diffs our catalog against Menus API v3; poll stock endpoint (or webhook) for 86'd items to disable them in the builder.
+- **Menu mapping:** extend `menu.json` items with Toast GUIDs (item + modifier group + modifier); nightly/deploy-time validation job diffs our catalog against Menus API v3; poll stock endpoint (or webhook) for 86'd items to disable them in the builder.
 - **Payment:** Stripe (PaymentIntents, server-confirmed, amount always from `/prices` — never client input); Toast order submitted only on `payment_intent.succeeded` webhook, idempotency-keyed; refund path = Stripe refund + order void. Update `app/privacy` + `app/terms` per the existing `TODO(stripe)` markers.
 - **Resilience:** if `POST /orders` fails after successful charge → queue + retry, alert (this is the one state that needs ops attention: money taken, no ticket). Store orders in our own DB (Postgres/Neon) as the audit trail regardless of Toast.
 - **Ops parity:** the auto-fire/prep-station/dining-option mapping done in Track A is reused — staff experience is identical tickets, regardless of which channel the order came from.
@@ -133,7 +133,7 @@ Key build items:
 ## 7. Two-week timeline (Track A)
 
 - **Day 1–2:** Confirm POS; Customer Care call (module, tier, CAD pricing); request Custom Integration access (Track B clock starts); get admin access.
-- **Day 3–5:** Build online menu in Toast Web (mirror `buildCatalog.ts`); pickup/hours/quote-time config; auto-fire device + printer sorted.
+- **Day 3–5:** Build online menu in Toast Web (mirror `menu.json`); pickup/hours/quote-time config; auto-fire device + printer sorted.
 - **Day 6–8:** Website CTA integration; end-to-end test orders on-site; fix menu/modifier gaps.
 - **Day 9–10:** Staff training with Paul; rush-hour dry run; throttling drill.
 - **Buffer (~4 days)** before open. Track B proceeds in background as access lands.

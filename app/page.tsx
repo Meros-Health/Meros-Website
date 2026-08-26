@@ -1,7 +1,10 @@
 import { HeroSection } from "@/components/sections/HeroSection";
 import { SignatureMenuSection } from "@/components/sections/SignatureMenuSection";
 import { OurStorySection } from "@/components/sections/OurStorySection";
-import { PairingsSection } from "@/components/sections/PairingsSection";
+// Disabled: the Featured Pairing section is kept in the codebase but not rendered.
+// The import stays commented out so PairingsSection and its assets are excluded
+// from the bundle. Restore this line and the <div id="pairs"> block below to re-enable.
+// import { PairingsSection } from "@/components/sections/PairingsSection";
 import { GallerySection } from "@/components/sections/GallerySection";
 import { BuildSection } from "@/components/sections/BuildSection";
 import { SectionBand } from "@/components/ui/SectionBand";
@@ -23,9 +26,11 @@ export default function HomePage() {
         <BuildSection />
       </div>
 
+      {/* Disabled: Featured Pairing section (see commented import above).
       <div id="pairs">
         <PairingsSection />
       </div>
+      */}
 
       <div id="about">
         <OurStorySection />

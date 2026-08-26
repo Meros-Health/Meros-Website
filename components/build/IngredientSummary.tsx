@@ -1,19 +1,17 @@
 "use client";
 
+import { BUILD_CONFIG } from "@/lib/menu/buildConfig";
+import { resolveIngredients } from "@/lib/menu/ingredients";
 import { useBowlBuilderStore } from "@/store/bowlBuilderStore";
 
 export function IngredientSummary() {
   const selection = useBowlBuilderStore((s) => s.selection);
 
-  if (!selection.base) return null;
+  const groups = BUILD_CONFIG.steps
+    .map((step) => ({ label: step.label, items: resolveIngredients(selection.steps[step.id] ?? []) }))
+    .filter((g) => g.items.length > 0);
 
-  const groups = [
-    { label: "Base", items: [selection.base] },
-    { label: "Fruits & Berries", items: selection.fruitsBerries },
-    { label: "Nuts & Seeds", items: selection.nutsSeeds },
-    { label: "Finish", items: selection.finish ? [selection.finish] : [] },
-    { label: "Enhancers", items: selection.enhancers },
-  ].filter((g) => g.items.length > 0);
+  if (groups.length === 0) return null;
 
   return (
     <div className="flex flex-col gap-3">

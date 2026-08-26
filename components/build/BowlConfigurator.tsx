@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { EntranceReveal } from "@/components/transition/EntranceReveal";
+import { BuildSizeToggle } from "./BuildSizeToggle";
 import { StepNav } from "./StepNav";
 import { StepPanel } from "./StepPanel";
 import { BuildFooter } from "./BuildFooter";
@@ -53,6 +54,7 @@ export function BowlConfigurator({ mode, editLineId, header }: BowlConfiguratorP
 
       <div className="flex flex-col xl:flex-row gap-8 xl:gap-10" style={{ alignItems: "flex-start" }}>
         <div className="w-full xl:w-2/3 min-w-0 flex flex-col gap-6">
+          <BuildSizeToggle />
           <StepNav layout="horizontal" />
           <div>
             <StepPanel />

@@ -3,7 +3,7 @@
 import { useBowlBuilderStore } from "@/store/bowlBuilderStore";
 import { MacroRingChart } from "./MacroRingChart";
 import { IngredientSummary } from "./IngredientSummary";
-import { BUILD_STEPS } from "@/lib/menu/buildCatalog";
+import { BUILD_CONFIG, getBuildSize } from "@/lib/menu/buildConfig";
 
 interface MacroDashboardProps {
   compact?: boolean;
@@ -17,7 +17,9 @@ export function MacroDashboard({ compact = false, expanded = false, onToggleExpa
   const activeStep = useBowlBuilderStore((s) => s.activeStep);
   const selection = useBowlBuilderStore((s) => s.selection);
 
-  const stepIndex = BUILD_STEPS.findIndex((s) => s.id === activeStep);
+  const stepIndex = BUILD_CONFIG.steps.findIndex((s) => s.id === activeStep);
+  const hasSelection = Object.values(selection.steps).some((ids) => ids.length > 0);
+  const sizeLabel = getBuildSize(selection.sizeId)?.label;
 
   if (compact && !expanded) {
     return (
@@ -68,7 +70,7 @@ export function MacroDashboard({ compact = false, expanded = false, onToggleExpa
 
       <p className="font-body-mixed text-[9px] text-juniper/70 mt-4">Estimated nutrition</p>
 
-      {selection.base && (
+      {hasSelection && (
         <div className="mt-4 pt-4" style={{ borderTop: "0.5px solid rgba(41,45,42,0.12)" }}>
           <IngredientSummary />
         </div>
@@ -78,12 +80,14 @@ export function MacroDashboard({ compact = false, expanded = false, onToggleExpa
         className="mt-4 flex items-baseline justify-between pt-3"
         style={{ borderTop: "0.5px solid rgba(41,45,42,0.12)" }}
       >
-        <span className="font-body-caps text-[9px] tracking-widest text-juniper">Total</span>
+        <span className="font-body-caps text-[9px] tracking-widest text-juniper">
+          Total{sizeLabel ? ` · ${sizeLabel}` : ""}
+        </span>
         <span className="font-headline text-midnight text-lg">${price.toFixed(2)}</span>
       </div>
 
       <div className="mt-3 flex gap-1" aria-hidden>
-        {BUILD_STEPS.map((step, i) => (
+        {BUILD_CONFIG.steps.map((step, i) => (
           <span
             key={step.id}
             className="h-[2px] flex-1"

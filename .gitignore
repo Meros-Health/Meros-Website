@@ -68,3 +68,6 @@ next-env.d.ts
 # cloudflare / opennext build artifacts
 /.open-next/
 /.wrangler/
+
+# Internal infra/DNS runbook (account details, third-party vendor relationship). Never commit to public repo.
+/docs/dns-cutover.md

@@ -3,36 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { BowlConfigurator } from "@/components/build/BowlConfigurator";
-import { getItemById } from "@/lib/menu/buildCatalog";
-import {
-  migrateLegacySelection,
-  normalizeSelection,
-  type LegacyBowlSelectionSnapshot,
-} from "@/lib/menu/selectionUtils";
+import { normalizeSelection } from "@/lib/menu/selectionUtils";
 import { useBowlBuilderStore } from "@/store/bowlBuilderStore";
 import { useCartStore } from "@/store/cartStore";
-
-function resolveSelectionFromCatalog(selection: LegacyBowlSelectionSnapshot) {
-  const migrated = migrateLegacySelection(selection);
-  const base = getItemById(migrated.base.id);
-  if (!base) return null;
-
-  const fruitsBerries = migrated.fruitsBerries
-    .map((t) => getItemById(t.id))
-    .filter((t): t is NonNullable<typeof t> => t !== undefined);
-
-  const nutsSeeds = migrated.nutsSeeds
-    .map((t) => getItemById(t.id))
-    .filter((t): t is NonNullable<typeof t> => t !== undefined);
-
-  const finish = migrated.finish ? getItemById(migrated.finish.id) ?? null : null;
-
-  const enhancers = migrated.enhancers
-    .map((s) => getItemById(s.id))
-    .filter((s): s is NonNullable<typeof s> => s !== undefined);
-
-  return { base, fruitsBerries, nutsSeeds, finish, enhancers };
-}
 
 export default function EditBowlPage() {
   const params = useParams();
@@ -63,9 +36,9 @@ export default function EditBowlPage() {
       return;
     }
 
-    const resolved = resolveSelectionFromCatalog(
-      normalizeSelection(cartItem.selection as LegacyBowlSelectionSnapshot)
-    );
+    // Drops any ingredient that has since left the menu; null means the
+    // bowl's required step no longer resolves, so there is nothing to edit.
+    const resolved = normalizeSelection(cartItem.selection);
     if (!resolved) {
       router.replace("/order");
       return;

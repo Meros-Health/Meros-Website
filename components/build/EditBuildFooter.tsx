@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useTransitionRouter } from "@/components/transition/TransitionProvider";
-import { BUILD_STEPS } from "@/lib/menu/buildCatalog";
+import { BUILD_CONFIG } from "@/lib/menu/buildConfig";
+import { isSelectionComplete } from "@/lib/menu/calcBowlPrice";
 import { useBowlBuilderStore } from "@/store/bowlBuilderStore";
 import { useCartStore } from "@/store/cartStore";
 import { AddToCartButton } from "@/components/cart/AddToCartButton";
@@ -15,8 +16,6 @@ export function EditBuildFooter({ lineId }: EditBuildFooterProps) {
   const transitionRouter = useTransitionRouter();
   const activeStep = useBowlBuilderStore((s) => s.activeStep);
   const selection = useBowlBuilderStore((s) => s.selection);
-  const nutrition = useBowlBuilderStore((s) => s.nutrition);
-  const price = useBowlBuilderStore((s) => s.price);
   const nextStep = useBowlBuilderStore((s) => s.nextStep);
   const prevStep = useBowlBuilderStore((s) => s.prevStep);
   const updateCustomBowl = useCartStore((s) => s.updateCustomBowl);
@@ -24,26 +23,16 @@ export function EditBuildFooter({ lineId }: EditBuildFooterProps) {
 
   const [saved, setSaved] = useState(false);
 
-  const stepIndex = BUILD_STEPS.findIndex((s) => s.id === activeStep);
+  const stepIndex = BUILD_CONFIG.steps.findIndex((s) => s.id === activeStep);
   const isFirst = stepIndex === 0;
-  const isLast = stepIndex === BUILD_STEPS.length - 1;
-  const canSave = selection.base !== null;
+  const isLast = stepIndex === BUILD_CONFIG.steps.length - 1;
+  const canSave = isSelectionComplete(selection);
+  const firstRequired = BUILD_CONFIG.steps.find((s) => s.required);
 
   const handleSave = () => {
-    if (!selection.base) return;
+    if (!canSave) return;
 
-    updateCustomBowl(
-      lineId,
-      {
-        base: selection.base,
-        fruitsBerries: selection.fruitsBerries,
-        nutsSeeds: selection.nutsSeeds,
-        finish: selection.finish,
-        enhancers: selection.enhancers,
-      },
-      nutrition,
-      price
-    );
+    updateCustomBowl(lineId, selection);
 
     // Keep the 500ms "Saved" confirmation beat, then hand the actual route
     // swap to the coordinated transition.
@@ -98,7 +87,7 @@ export function EditBuildFooter({ lineId }: EditBuildFooterProps) {
           disabled
           className="font-body-caps text-[10px] tracking-widest px-8 py-3.5 cursor-not-allowed text-midnight/35 bg-midnight/10"
         >
-          Select a Base
+          Select a {firstRequired?.label ?? "Base"}
         </button>
       )}
     </div>

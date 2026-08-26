@@ -4,13 +4,15 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "validate:menu": "node scripts/validate-menu.mjs",
+    "prebuild": "npm run validate:menu",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "format": "prettier --write .",
-    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload"
+    "preview": "npm run validate:menu && opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "npm run validate:menu && opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "upload": "npm run validate:menu && opennextjs-cloudflare build && opennextjs-cloudflare upload"
   },
   "dependencies": {
     "@gsap/react": "^2.1.1",

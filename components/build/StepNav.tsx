@@ -1,28 +1,22 @@
 "use client";
 
-import { BUILD_STEPS, type BuildStepId } from "@/lib/menu/buildCatalog";
+import { BUILD_CONFIG, getStepNumber, type BuildStep } from "@/lib/menu/buildConfig";
+import type { BowlSelection } from "@/lib/menu/calcBowlPrice";
 import { useBowlBuilderStore } from "@/store/bowlBuilderStore";
 import { StepCompletionIcon } from "./StepCompletionIcon";
 
-function isStepComplete(
-  stepId: BuildStepId,
-  selection: ReturnType<typeof useBowlBuilderStore.getState>["selection"],
-  finishSkipped: boolean
-): boolean {
-  switch (stepId) {
-    case "base":
-      return selection.base !== null;
-    case "fruits-berries":
-      return selection.fruitsBerries.length > 0;
-    case "nuts-seeds":
-      return selection.nutsSeeds.length > 0;
-    case "finish":
-      return selection.finish !== null || finishSkipped;
-    case "enhancers":
-      return selection.enhancers.length > 0;
-    default:
-      return false;
+function isStepComplete(step: BuildStep, selection: BowlSelection, skippedSteps: string[]): boolean {
+  const count = selection.steps[step.id]?.length ?? 0;
+  return count > 0 || (!step.required && skippedSteps.includes(step.id));
+}
+
+/** A step is locked while any required step before it is still empty. */
+function isStepLocked(step: BuildStep, selection: BowlSelection): boolean {
+  for (const earlier of BUILD_CONFIG.steps) {
+    if (earlier.id === step.id) return false;
+    if (earlier.required && (selection.steps[earlier.id]?.length ?? 0) === 0) return true;
   }
+  return false;
 }
 
 interface StepNavProps {
@@ -32,13 +26,12 @@ interface StepNavProps {
 export function StepNav({ layout = "horizontal" }: StepNavProps) {
   const activeStep = useBowlBuilderStore((s) => s.activeStep);
   const selection = useBowlBuilderStore((s) => s.selection);
-  const finishSkipped = useBowlBuilderStore((s) => s.finishSkipped);
+  const skippedSteps = useBowlBuilderStore((s) => s.skippedSteps);
   const setActiveStep = useBowlBuilderStore((s) => s.setActiveStep);
-  const hasBase = selection.base !== null;
 
-  const handleStepClick = (stepId: BuildStepId) => {
-    if (stepId !== "base" && !hasBase) return;
-    setActiveStep(stepId);
+  const handleStepClick = (step: BuildStep) => {
+    if (isStepLocked(step, selection)) return;
+    setActiveStep(step.id);
   };
 
   if (layout === "horizontal") {
@@ -47,16 +40,16 @@ export function StepNav({ layout = "horizontal" }: StepNavProps) {
         aria-label="Build steps"
         className="flex flex-wrap gap-2 w-full"
       >
-        {BUILD_STEPS.map((step) => {
+        {BUILD_CONFIG.steps.map((step) => {
           const isActive = activeStep === step.id;
-          const isLocked = step.id !== "base" && !hasBase;
-          const complete = isStepComplete(step.id, selection, finishSkipped);
+          const isLocked = isStepLocked(step, selection);
+          const complete = isStepComplete(step, selection, skippedSteps);
 
           return (
             <button
               key={step.id}
               type="button"
-              onClick={() => handleStepClick(step.id)}
+              onClick={() => handleStepClick(step)}
               disabled={isLocked}
               aria-current={isActive ? "step" : undefined}
               className="flex items-center gap-2 text-left px-3 py-2 transition-opacity disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
@@ -72,7 +65,7 @@ export function StepNav({ layout = "horizontal" }: StepNavProps) {
                 className="font-headline text-[9px] tracking-widest"
                 style={{ color: isActive ? "var(--color-grapefruit)" : "var(--color-juniper)" }}
               >
-                {step.number}
+                {getStepNumber(step.id)}
               </span>
               <span
                 className="font-headline uppercase leading-none whitespace-nowrap"
@@ -92,16 +85,16 @@ export function StepNav({ layout = "horizontal" }: StepNavProps) {
 
   return (
     <nav aria-label="Build steps" className="flex flex-col gap-0">
-      {BUILD_STEPS.map((step) => {
+      {BUILD_CONFIG.steps.map((step) => {
         const isActive = activeStep === step.id;
-        const isLocked = step.id !== "base" && !hasBase;
-        const complete = isStepComplete(step.id, selection, finishSkipped);
+        const isLocked = isStepLocked(step, selection);
+        const complete = isStepComplete(step, selection, skippedSteps);
 
         return (
           <button
             key={step.id}
             type="button"
-            onClick={() => handleStepClick(step.id)}
+            onClick={() => handleStepClick(step)}
             disabled={isLocked}
             aria-current={isActive ? "step" : undefined}
             className="group flex items-center gap-3 text-left py-3 transition-opacity disabled:opacity-30 disabled:cursor-not-allowed"
@@ -112,7 +105,7 @@ export function StepNav({ layout = "horizontal" }: StepNavProps) {
               className="font-headline text-[10px] tracking-widest shrink-0"
               style={{ color: isActive ? "var(--color-grapefruit)" : "var(--color-juniper)" }}
             >
-              {step.number}
+              {getStepNumber(step.id)}
             </span>
             <span
               className="font-headline uppercase leading-none"

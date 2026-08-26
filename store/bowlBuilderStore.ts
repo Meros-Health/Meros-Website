@@ -1,150 +1,134 @@
 import { create } from "zustand";
+import { BUILD_CONFIG, getStep } from "@/lib/menu/buildConfig";
 import {
-  type BuildItem,
-  type BuildStepId,
-  BUILD_STEPS,
-} from "@/lib/menu/buildCatalog";
-import { calcBowlPrice, getSelectedItems } from "@/lib/menu/calcBowlPrice";
+  calcBowlPrice,
+  getSelectedIngredients,
+  isSelectionComplete,
+  type BowlSelection,
+} from "@/lib/menu/calcBowlPrice";
 import { EMPTY_NUTRITION, sumNutrition, type NutritionFacts } from "@/lib/menu/nutrition";
-import type { CustomBowlSelection } from "@/store/cartStore";
-import { migrateLegacySelection, type LegacyBowlSelectionSnapshot } from "@/lib/menu/selectionUtils";
+import { emptySelection } from "@/lib/menu/selectionUtils";
 
-export type BowlSelection = {
-  base: BuildItem | null;
-  fruitsBerries: BuildItem[];
-  nutsSeeds: BuildItem[];
-  finish: BuildItem | null;
-  enhancers: BuildItem[];
-};
-
-const EMPTY_SELECTION: BowlSelection = {
-  base: null,
-  fruitsBerries: [],
-  nutsSeeds: [],
-  finish: null,
-  enhancers: [],
-};
+export type { BowlSelection };
 
 interface BowlBuilderState {
-  activeStep: BuildStepId;
+  activeStep: string;
   selection: BowlSelection;
+  /** Non-required steps the customer explicitly skipped (shown as complete). */
+  skippedSteps: string[];
   nutrition: NutritionFacts;
   price: number;
   addedFeedback: boolean;
-  finishSkipped: boolean;
 
-  setActiveStep: (step: BuildStepId) => void;
-  selectBase: (item: BuildItem) => void;
-  toggleFruitBerry: (item: BuildItem) => void;
-  toggleNutsSeeds: (item: BuildItem) => void;
-  selectFinish: (item: BuildItem | null) => void;
-  skipFinish: () => void;
-  toggleEnhancer: (item: BuildItem) => void;
+  setActiveStep: (stepId: string) => void;
+  setSize: (sizeId: string) => void;
+  /** Replaces on select "one" steps, toggles membership on "multi" steps. */
+  toggleIngredient: (stepId: string, ingredientId: string) => void;
+  skipStep: (stepId: string) => void;
   nextStep: () => void;
   prevStep: () => void;
-  loadSelection: (selection: CustomBowlSelection) => void;
+  loadSelection: (selection: BowlSelection) => void;
   reset: () => void;
   showAddedFeedback: () => void;
   clearAddedFeedback: () => void;
 }
 
 function recompute(selection: BowlSelection) {
-  const items = getSelectedItems(selection);
+  const items = getSelectedIngredients(selection);
   return {
     nutrition: items.length > 0 ? sumNutrition(items) : { ...EMPTY_NUTRITION },
-    price: calcBowlPrice(selection),
+    // No price until every required step is chosen, matching the disabled
+    // "Select a Base" state in the footer.
+    price: isSelectionComplete(selection) ? calcBowlPrice(selection) : 0,
   };
 }
 
-function stepIndex(step: BuildStepId): number {
-  return BUILD_STEPS.findIndex((s) => s.id === step);
+function stepIndex(stepId: string): number {
+  return BUILD_CONFIG.steps.findIndex((s) => s.id === stepId);
 }
 
-function toggleInList(list: BuildItem[], item: BuildItem): BuildItem[] {
-  const exists = list.some((i) => i.id === item.id);
-  return exists ? list.filter((i) => i.id !== item.id) : [...list, item];
-}
+const FIRST_STEP = BUILD_CONFIG.steps[0].id;
 
 export const useBowlBuilderStore = create<BowlBuilderState>((set, get) => ({
-  activeStep: "base",
-  selection: { ...EMPTY_SELECTION },
+  activeStep: FIRST_STEP,
+  selection: emptySelection(),
+  skippedSteps: [],
   nutrition: { ...EMPTY_NUTRITION },
   price: 0,
   addedFeedback: false,
-  finishSkipped: false,
 
-  setActiveStep: (step) => set({ activeStep: step }),
+  setActiveStep: (stepId) => set({ activeStep: stepId }),
 
-  selectBase: (item) => {
-    const selection = { ...get().selection, base: item };
+  setSize: (sizeId) => {
+    const selection = { ...get().selection, sizeId };
     set({ selection, ...recompute(selection) });
   },
 
-  toggleFruitBerry: (item) => {
-    const selection = {
+  toggleIngredient: (stepId, ingredientId) => {
+    const step = getStep(stepId);
+    if (!step) return;
+    const current = get().selection.steps[stepId] ?? [];
+    const has = current.includes(ingredientId);
+
+    let next: string[];
+    if (step.select === "one") {
+      next = has ? [] : [ingredientId];
+    } else if (has) {
+      next = current.filter((id) => id !== ingredientId);
+    } else {
+      if (step.pricing.mode === "hard-cap" && current.length >= step.pricing.max) return;
+      next = [...current, ingredientId];
+    }
+
+    const selection: BowlSelection = {
       ...get().selection,
-      fruitsBerries: toggleInList(get().selection.fruitsBerries, item),
+      steps: { ...get().selection.steps, [stepId]: next },
     };
-    set({ selection, ...recompute(selection) });
+    set({
+      selection,
+      skippedSteps: get().skippedSteps.filter((id) => id !== stepId),
+      ...recompute(selection),
+    });
   },
 
-  toggleNutsSeeds: (item) => {
-    const selection = {
+  skipStep: (stepId) => {
+    const step = getStep(stepId);
+    if (!step || step.required) return;
+    const selection: BowlSelection = {
       ...get().selection,
-      nutsSeeds: toggleInList(get().selection.nutsSeeds, item),
+      steps: { ...get().selection.steps, [stepId]: [] },
     };
-    set({ selection, ...recompute(selection) });
-  },
-
-  // Choosing (or deselecting) a finish item is not a "skip" — only the
-  // explicit "No finish" action marks the step as intentionally skipped.
-  selectFinish: (item) => {
-    const selection = { ...get().selection, finish: item };
-    set({ selection, finishSkipped: false, ...recompute(selection) });
-  },
-
-  skipFinish: () => {
-    const selection = { ...get().selection, finish: null };
-    set({ selection, finishSkipped: true, ...recompute(selection) });
-  },
-
-  toggleEnhancer: (item) => {
-    const selection = {
-      ...get().selection,
-      enhancers: toggleInList(get().selection.enhancers, item),
-    };
-    set({ selection, ...recompute(selection) });
+    set({
+      selection,
+      skippedSteps: [...new Set([...get().skippedSteps, stepId])],
+      ...recompute(selection),
+    });
   },
 
   nextStep: () => {
     const idx = stepIndex(get().activeStep);
-    if (idx < BUILD_STEPS.length - 1) {
-      set({ activeStep: BUILD_STEPS[idx + 1].id });
+    if (idx < BUILD_CONFIG.steps.length - 1) {
+      set({ activeStep: BUILD_CONFIG.steps[idx + 1].id });
     }
   },
 
   prevStep: () => {
     const idx = stepIndex(get().activeStep);
     if (idx > 0) {
-      set({ activeStep: BUILD_STEPS[idx - 1].id });
+      set({ activeStep: BUILD_CONFIG.steps[idx - 1].id });
     }
   },
 
-  loadSelection: (cartSelection) => {
-    const migrated = migrateLegacySelection(cartSelection as LegacyBowlSelectionSnapshot);
-    const selection: BowlSelection = {
-      base: migrated.base,
-      fruitsBerries: [...migrated.fruitsBerries],
-      nutsSeeds: [...migrated.nutsSeeds],
-      finish: migrated.finish,
-      enhancers: [...migrated.enhancers],
-    };
-    // The bowl was already added to the cart, so the finish decision was made:
-    // no finish on the saved bowl means it was skipped deliberately.
+  loadSelection: (selection) => {
+    // The bowl was already in the cart, so every empty optional step was a
+    // deliberate choice: mark them skipped so the step nav reads as complete.
+    const skippedSteps = BUILD_CONFIG.steps
+      .filter((step) => !step.required && (selection.steps[step.id]?.length ?? 0) === 0)
+      .map((step) => step.id);
     set({
-      activeStep: "base",
+      activeStep: FIRST_STEP,
       selection,
-      finishSkipped: migrated.finish === null,
+      skippedSteps,
       addedFeedback: false,
       ...recompute(selection),
     });
@@ -152,12 +136,12 @@ export const useBowlBuilderStore = create<BowlBuilderState>((set, get) => ({
 
   reset: () =>
     set({
-      activeStep: "base",
-      selection: { ...EMPTY_SELECTION },
+      activeStep: FIRST_STEP,
+      selection: emptySelection(),
+      skippedSteps: [],
       nutrition: { ...EMPTY_NUTRITION },
       price: 0,
       addedFeedback: false,
-      finishSkipped: false,
     }),
 
   showAddedFeedback: () => set({ addedFeedback: true }),

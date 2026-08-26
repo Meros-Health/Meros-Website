@@ -1,24 +1,16 @@
 import type { CartItem } from "@/store/cartStore";
 import { getCartItemDisplayName } from "@/store/cartStore";
+import { getSelectedIngredients } from "@/lib/menu/calcBowlPrice";
 import { formatMacroSummary } from "@/lib/menu/nutrition";
-import { migrateLegacySelection, type LegacyBowlSelectionSnapshot } from "@/lib/menu/selectionUtils";
+import { normalizeSelection } from "@/lib/menu/selectionUtils";
 import { CartLineActions } from "./CartLineActions";
 
 export function formatCustomBowlIngredients(item: CartItem): string {
-  if (!item.selection) return "";
-  const selection = migrateLegacySelection(item.selection as LegacyBowlSelectionSnapshot);
-  const parts: string[] = [selection.base.name];
-  if (selection.fruitsBerries.length > 0) {
-    parts.push(...selection.fruitsBerries.map((t) => t.name));
-  }
-  if (selection.nutsSeeds.length > 0) {
-    parts.push(...selection.nutsSeeds.map((t) => t.name));
-  }
-  if (selection.finish) parts.push(selection.finish.name);
-  if (selection.enhancers.length > 0) {
-    parts.push(...selection.enhancers.map((s) => s.name));
-  }
-  return parts.join(", ");
+  const selection = normalizeSelection(item.selection);
+  if (!selection) return "";
+  return getSelectedIngredients(selection)
+    .map((ingredient) => ingredient.name)
+    .join(", ");
 }
 
 interface CartLineItemProps {

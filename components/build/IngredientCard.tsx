@@ -1,9 +1,9 @@
 "use client";
 
-import type { BuildItem } from "@/lib/menu/buildCatalog";
+import type { Ingredient } from "@/lib/menu/ingredients";
 
 interface IngredientCardProps {
-  item: BuildItem;
+  item: Ingredient;
   selected: boolean;
   priceLabel?: string | null;
   onSelect: () => void;

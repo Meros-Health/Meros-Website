@@ -7,7 +7,7 @@ import { CTAButton } from "@/components/ui/CTAButton";
 import { AddToCartButton } from "@/components/cart/AddToCartButton";
 import { useCartStore } from "@/store/cartStore";
 import { EMPTY_NUTRITION } from "@/lib/menu/nutrition";
-import { formatPrice } from "@/lib/menu/pricing";
+import { formatPrice } from "@/lib/menu/calcBowlPrice";
 import { getSignaturePrice, getSizeLabel, listBowls, listSmoothies } from "@/lib/menu/signatures";
 
 // ─── Carousel data — from lib/menu/menu.json via signatures.ts ────────────────
@@ -22,7 +22,7 @@ const BOWLS: CarouselItem[] = listBowls().map((b) => ({ id: b.id, name: b.name, 
 const SMOOTHIES: CarouselItem[] = listSmoothies().map((s) => ({ id: s.id, name: s.name, src: s.images.transparent }));
 
 // A pair is always the Large bowl plus the single-size smoothie.
-const PAIR_BOWL_SIZE = "large";
+const PAIR_BOWL_SIZE = "medium";
 const PAIR_SMOOTHIE_SIZE = "standard";
 const PAIR_CAPTION = `${getSizeLabel("bowl", PAIR_BOWL_SIZE)} bowl + ${getSizeLabel("smoothie", PAIR_SMOOTHIE_SIZE)} smoothie`;
 

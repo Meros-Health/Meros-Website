@@ -1,12 +1,13 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { NutritionFacts } from "@/lib/menu/nutrition";
+import { getBuildSize } from "@/lib/menu/buildConfig";
+import { calcBowlPrice, getSelectedIngredients, type BowlSelection } from "@/lib/menu/calcBowlPrice";
+import { sumNutrition, type NutritionFacts } from "@/lib/menu/nutrition";
 import {
   findMatchingCustomLine,
   findMatchingSignatureLine,
-  migrateLegacySelection,
-  type BowlSelectionSnapshot,
-  type LegacyBowlSelectionSnapshot,
+  getSelectionHeadline,
+  normalizeSelection,
 } from "@/lib/menu/selectionUtils";
 import {
   getDefaultSizeId,
@@ -19,7 +20,7 @@ import {
 // Types
 // ---------------------------------------------------------------------------
 
-export type CustomBowlSelection = BowlSelectionSnapshot;
+export type CustomBowlSelection = BowlSelection;
 
 export type CartItemSize = { id: string; label: string };
 
@@ -28,8 +29,9 @@ export type CartItem = {
   kind: "signature" | "custom";
   productId: string;
   name: string;
+  /** Custom lines only. Ids against the menu; never catalog objects. */
   selection?: CustomBowlSelection;
-  /** Signature lines only. Bowls are Medium or Large; smoothies have one size. */
+  /** Signature: menu size tier. Custom: build size (Medium / Large). */
   size?: CartItemSize;
   nutrition: NutritionFacts;
   quantity: number;
@@ -48,12 +50,7 @@ interface CartState {
   updateQuantity: (lineId: string, quantity: number) => void;
   incrementItem: (lineId: string) => void;
   decrementItem: (lineId: string) => void;
-  updateCustomBowl: (
-    lineId: string,
-    selection: CustomBowlSelection,
-    nutrition: NutritionFacts,
-    unitPrice: number
-  ) => void;
+  updateCustomBowl: (lineId: string, selection: CustomBowlSelection) => void;
   getItem: (lineId: string) => CartItem | undefined;
   clearCart: () => void;
   subtotal: () => number;
@@ -75,35 +72,50 @@ function signatureLineName(name: string, size: CartItemSize | undefined): string
   return size ? `${name} · ${size.label}` : name;
 }
 
+/**
+ * Everything a custom line derives from its selection. Price and nutrition are
+ * recomputed from the menu here, so a persisted line never carries a stale
+ * figure after a menu change.
+ */
+function customLineFields(selection: BowlSelection) {
+  const buildSize = getBuildSize(selection.sizeId);
+  const size: CartItemSize = { id: selection.sizeId, label: buildSize?.label ?? selection.sizeId };
+  const headline = getSelectionHeadline(selection);
+  const name = ["Custom Bowl", headline, size.label].filter(Boolean).join(" · ");
+  return {
+    selection,
+    size,
+    name,
+    unitPrice: calcBowlPrice(selection),
+    nutrition: sumNutrition(getSelectedIngredients(selection)),
+  };
+}
+
 function migrateCartItem(item: CartItem): CartItem {
-  if (item.kind === "custom" && item.selection) {
-    const selection = migrateLegacySelection(item.selection as LegacyBowlSelectionSnapshot);
-    return {
-      ...item,
-      selection,
-      name: `Custom Bowl · ${selection.base.name}`,
-    };
+  if (item.kind === "custom") {
+    // Any pre-v2 payload, or a v2 payload referencing ingredients that have
+    // since left the menu. A bowl whose required step no longer resolves
+    // throws, and onRehydrateStorage drops the line.
+    const selection = normalizeSelection(item.selection);
+    if (!selection) throw new Error("Custom bowl no longer matches the menu");
+    return { ...item, ...customLineFields(selection) };
   }
 
   // Signature lines persisted before sizes existed carry a stale per-item
   // price. Re-price them at the category's default size. A productId that no
   // longer exists on the menu throws, and onRehydrateStorage drops the line.
-  if (item.kind === "signature" && !item.size) {
-    const catalogItem = getSignatureItem(item.productId);
-    if (!catalogItem) throw new Error(`Unknown signature product "${item.productId}"`);
-    const sizeId = getDefaultSizeId(catalogItem.category);
-    const size = { id: sizeId, label: getSizeLabel(catalogItem.category, sizeId) };
-    const unitPrice = getSignaturePrice(catalogItem.id, sizeId);
-    if (unitPrice === undefined) throw new Error(`No price for "${item.productId}" at "${sizeId}"`);
-    return {
-      ...item,
-      size,
-      unitPrice,
-      name: signatureLineName(catalogItem.name, size),
-    };
-  }
-
-  return item;
+  const catalogItem = getSignatureItem(item.productId);
+  if (!catalogItem) throw new Error(`Unknown signature product "${item.productId}"`);
+  const sizeId = item.size?.id ?? getDefaultSizeId(catalogItem.category);
+  const unitPrice = getSignaturePrice(catalogItem.id, sizeId);
+  if (unitPrice === undefined) throw new Error(`No price for "${item.productId}" at "${sizeId}"`);
+  const size = { id: sizeId, label: getSizeLabel(catalogItem.category, sizeId) };
+  return {
+    ...item,
+    size,
+    unitPrice,
+    name: signatureLineName(catalogItem.name, size),
+  };
 }
 
 export const useCartStore = create<CartState>()(
@@ -121,29 +133,26 @@ export const useCartStore = create<CartState>()(
             get().updateQuantity(existing.lineId, existing.quantity + item.quantity);
             return;
           }
+          set((state) => ({
+            items: [
+              ...state.items,
+              { ...item, lineId: makeLineId(), name: signatureLineName(item.name, item.size) },
+            ],
+          }));
+          return;
         }
 
-        if (item.kind === "custom" && item.selection) {
-          const selection = migrateLegacySelection(item.selection as LegacyBowlSelectionSnapshot);
-          const existing = findMatchingCustomLine(items, selection);
-          if (existing) {
-            get().updateQuantity(existing.lineId, existing.quantity + item.quantity);
-            return;
-          }
-        }
+        const selection = normalizeSelection(item.selection);
+        if (!selection) return;
 
-        const lineId = makeLineId();
-        const selection =
-          item.kind === "custom" && item.selection
-            ? migrateLegacySelection(item.selection as LegacyBowlSelectionSnapshot)
-            : item.selection;
-        const name =
-          item.kind === "custom" && selection
-            ? `Custom Bowl · ${selection.base.name}`
-            : signatureLineName(item.name, item.size);
+        const existing = findMatchingCustomLine(items, selection);
+        if (existing) {
+          get().updateQuantity(existing.lineId, existing.quantity + item.quantity);
+          return;
+        }
 
         set((state) => ({
-          items: [...state.items, { ...item, lineId, name, selection }],
+          items: [...state.items, { ...item, lineId: makeLineId(), ...customLineFields(selection) }],
         }));
       },
 
@@ -176,15 +185,17 @@ export const useCartStore = create<CartState>()(
         get().updateQuantity(lineId, item.quantity - 1);
       },
 
-      updateCustomBowl: (lineId, selection, nutrition, unitPrice) => {
+      updateCustomBowl: (lineId, rawSelection) => {
         const { items } = get();
         const current = items.find((i) => i.lineId === lineId);
         if (!current || current.kind !== "custom") return;
 
-        const normalized = migrateLegacySelection(selection as LegacyBowlSelectionSnapshot);
+        const selection = normalizeSelection(rawSelection);
+        if (!selection) return;
+
         const duplicate = findMatchingCustomLine(
           items.filter((i) => i.lineId !== lineId),
-          normalized
+          selection
         );
 
         if (duplicate) {
@@ -201,17 +212,7 @@ export const useCartStore = create<CartState>()(
         }
 
         set({
-          items: items.map((i) =>
-            i.lineId === lineId
-              ? {
-                  ...i,
-                  selection: normalized,
-                  nutrition,
-                  unitPrice,
-                  name: `Custom Bowl · ${normalized.base.name}`,
-                }
-              : i
-          ),
+          items: items.map((i) => (i.lineId === lineId ? { ...i, ...customLineFields(selection) } : i)),
         });
       },
 
@@ -237,8 +238,9 @@ export const useCartStore = create<CartState>()(
           state.items = [];
           return;
         }
-        // A single unreadable line (older shape, corrupted write, tampering)
-        // must not crash store creation and take the whole app down — drop it.
+        // A single unreadable line (older shape, corrupted write, tampering,
+        // or an ingredient that left the menu) must not crash store creation
+        // and take the whole app down: drop it.
         state.items = state.items.flatMap((item) => {
           try {
             return [migrateCartItem(item)];
@@ -253,6 +255,6 @@ export const useCartStore = create<CartState>()(
 
 export function getCartItemDisplayName(item: CartItem): string {
   // `name` is kept in sync everywhere a line is created, updated, or migrated,
-  // and already carries the size suffix for signature lines.
+  // and already carries the size suffix.
   return item.name;
 }

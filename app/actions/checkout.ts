@@ -1,7 +1,8 @@
 "use server";
 
-import { getItemById } from "@/lib/menu/buildCatalog";
-import { calcBowlPrice } from "@/lib/menu/calcBowlPrice";
+import { calcBowlPrice, isSelectionComplete, PricingError, type BowlSelection } from "@/lib/menu/calcBowlPrice";
+import { getBuildSize } from "@/lib/menu/buildConfig";
+import { getSelectionHeadline } from "@/lib/menu/selectionUtils";
 import { getSignatureItem, getSignaturePrice, getSizeLabel } from "@/lib/menu/signatures";
 
 export type CheckoutFormState = {
@@ -12,21 +13,14 @@ export type CheckoutFormState = {
 
 const MAX_LINES = 50;
 const MAX_QUANTITY = 99;
-
-type IncomingSelection = {
-  base?: { id?: unknown };
-  fruitsBerries?: Array<{ id?: unknown }>;
-  nutsSeeds?: Array<{ id?: unknown }>;
-  finish?: { id?: unknown } | null;
-  enhancers?: Array<{ id?: unknown }>;
-};
+const MAX_STEP_PICKS = 50;
 
 type IncomingLine = {
   kind?: unknown;
   productId?: unknown;
   quantity?: unknown;
   size?: { id?: unknown };
-  selection?: IncomingSelection;
+  selection?: unknown;
 };
 
 type PricedLine = {
@@ -35,20 +29,28 @@ type PricedLine = {
   unitPrice: number;
 };
 
-function resolveItems(refs: Array<{ id?: unknown }> | undefined) {
-  const items = [];
-  for (const ref of refs ?? []) {
-    if (typeof ref?.id !== "string") return null;
-    const item = getItemById(ref.id);
-    if (!item) return null;
-    items.push(item);
+/**
+ * Structural check only: a v2 selection is `{ sizeId, steps: { [stepId]: string[] } }`.
+ * Whether the ids are offered is decided by calcBowlPrice against the menu.
+ */
+function readSelection(raw: unknown): BowlSelection | null {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return null;
+  const { sizeId, steps } = raw as { sizeId?: unknown; steps?: unknown };
+  if (typeof sizeId !== "string") return null;
+  if (typeof steps !== "object" || steps === null || Array.isArray(steps)) return null;
+
+  const out: Record<string, string[]> = {};
+  for (const [stepId, ids] of Object.entries(steps as Record<string, unknown>)) {
+    if (!Array.isArray(ids) || ids.length > MAX_STEP_PICKS) return null;
+    if (!ids.every((id) => typeof id === "string")) return null;
+    out[stepId] = ids as string[];
   }
-  return items;
+  return { sizeId, steps: out };
 }
 
 /**
- * Re-prices a cart line from the server-side catalog. The client only supplies
- * ids and quantities — prices are never trusted from the request.
+ * Re-prices a cart line from the server-side menu. The client only supplies
+ * ids and quantities; prices are never trusted from the request.
  */
 function priceLine(line: IncomingLine): PricedLine | null {
   const quantity = line.quantity;
@@ -69,25 +71,22 @@ function priceLine(line: IncomingLine): PricedLine | null {
   }
 
   if (line.kind === "custom") {
-    const selection = line.selection;
-    if (!selection || typeof selection.base?.id !== "string") return null;
-    const base = getItemById(selection.base.id);
-    if (!base || base.category !== "base") return null;
+    const selection = readSelection(line.selection);
+    if (!selection || !isSelectionComplete(selection)) return null;
 
-    const fruitsBerries = resolveItems(selection.fruitsBerries);
-    const nutsSeeds = resolveItems(selection.nutsSeeds);
-    const enhancers = resolveItems(selection.enhancers);
-    if (!fruitsBerries || !nutsSeeds || !enhancers) return null;
-
-    let finish = null;
-    if (selection.finish) {
-      if (typeof selection.finish.id !== "string") return null;
-      finish = getItemById(selection.finish.id) ?? null;
-      if (!finish) return null;
+    // calcBowlPrice rejects an unknown size, an unknown step, an ingredient
+    // not offered in that step, and over-selection on "one" / hard-cap steps.
+    let unitPrice: number;
+    try {
+      unitPrice = calcBowlPrice(selection);
+    } catch (err) {
+      if (err instanceof PricingError) return null;
+      throw err;
     }
 
-    const unitPrice = calcBowlPrice({ base, fruitsBerries, nutsSeeds, finish, enhancers });
-    return { name: `Custom Bowl · ${base.name}`, quantity, unitPrice };
+    const sizeLabel = getBuildSize(selection.sizeId)?.label ?? selection.sizeId;
+    const name = ["Custom Bowl", getSelectionHeadline(selection), sizeLabel].filter(Boolean).join(" · ");
+    return { name, quantity, unitPrice };
   }
 
   return null;
@@ -143,9 +142,9 @@ export async function submitCheckout(
 
   // TODO(payment): integrate a payment processor here (e.g. Stripe PaymentIntent)
   // before marking the order placed. Prices above are recomputed server-side
-  // from the catalog, so they are safe to charge.
+  // from the menu, so they are safe to charge.
   //
-  // TODO(stripe): when Stripe lands, also update the legal pages — both
+  // TODO(stripe): when Stripe lands, also update the legal pages. Both
   // app/privacy/page.tsx and app/terms/page.tsx have TODO(stripe) comments
   // listing exactly what to change (list Stripe as a processor, describe
   // payment/refund flow, bump effective dates). Stripe's ToS also requires

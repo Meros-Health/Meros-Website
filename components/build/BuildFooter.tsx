@@ -1,6 +1,7 @@
 "use client";
 
-import { BUILD_STEPS } from "@/lib/menu/buildCatalog";
+import { BUILD_CONFIG } from "@/lib/menu/buildConfig";
+import { isSelectionComplete } from "@/lib/menu/calcBowlPrice";
 import { useBowlBuilderStore } from "@/store/bowlBuilderStore";
 import { useCartStore } from "@/store/cartStore";
 import { AddToCartButton } from "@/components/cart/AddToCartButton";
@@ -19,25 +20,22 @@ export function BuildFooter() {
   const addItem = useCartStore((s) => s.addItem);
   const openCart = useCartStore((s) => s.openCart);
 
-  const stepIndex = BUILD_STEPS.findIndex((s) => s.id === activeStep);
+  const stepIndex = BUILD_CONFIG.steps.findIndex((s) => s.id === activeStep);
   const isFirst = stepIndex === 0;
-  const isLast = stepIndex === BUILD_STEPS.length - 1;
-  const canAdd = selection.base !== null;
+  const isLast = stepIndex === BUILD_CONFIG.steps.length - 1;
+  const canAdd = isSelectionComplete(selection);
+  const firstRequired = BUILD_CONFIG.steps.find((s) => s.required);
 
   const handleAddToCart = () => {
-    if (!selection.base) return;
+    if (!canAdd) return;
 
+    // The cart store derives size, name, price and nutrition from the
+    // selection itself; the values passed here are placeholders it overwrites.
     addItem({
       kind: "custom",
       productId: "custom-bowl",
       name: "Custom Bowl",
-      selection: {
-        base: selection.base,
-        fruitsBerries: selection.fruitsBerries,
-        nutsSeeds: selection.nutsSeeds,
-        finish: selection.finish,
-        enhancers: selection.enhancers,
-      },
+      selection,
       nutrition,
       quantity: 1,
       unitPrice: price,
@@ -92,7 +90,7 @@ export function BuildFooter() {
           disabled
           className="font-body-caps text-[10px] tracking-widest px-8 py-3.5 cursor-not-allowed text-midnight/35 bg-midnight/10"
         >
-          Select a Base
+          Select a {firstRequired?.label ?? "Base"}
         </button>
       )}
     </div>

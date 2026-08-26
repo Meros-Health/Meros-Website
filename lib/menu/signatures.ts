@@ -1,7 +1,8 @@
-// Typed accessor over lib/menu/menu.json, the single source of truth for the
-// signature menu. The in-store Menu TV renders from the same file (see
-// ../menu-tv/sync-menu.sh), so any menu change is made in menu.json only.
+// Typed accessor over the signature menu in lib/menu/menu.json. The in-store
+// Menu TV renders from the same file (see ../menu-tv/sync-menu.sh), so any
+// menu change is made in menu.json only.
 import menuData from "@/lib/menu/menu.json";
+import { ingredientName } from "./ingredients";
 
 export type SignatureCategory = "bowl" | "smoothie";
 
@@ -19,26 +20,29 @@ export type SignatureItem = {
   /** Board copy, "The" included: "The Moment". */
   name: string;
   tags: string[];
-  /** Board copy: one comma-separated string. */
+  /** Ingredient ids from the registry, in printed order. */
+  recipe: string[];
+  /** Derived from `recipe`: canonical ingredient names, comma separated. */
   ingredients: string;
   /** Keyed by size id; bowls carry two sizes, smoothies one. */
   sizes: Record<string, SignatureSizeInfo>;
   images: { photo: string; transparent: string };
 };
 
-type RawItem = Omit<SignatureItem, "category">;
+type RawItem = Omit<SignatureItem, "category" | "ingredients">;
 
 const SIZE_TIERS: Record<SignatureCategory, SizeTier[]> = menuData.sizeTiers;
 
-const BOWLS: SignatureItem[] = (menuData.bowls as RawItem[]).map((item) => ({
-  ...item,
-  category: "bowl",
-}));
+function fromRaw(category: SignatureCategory) {
+  return (item: RawItem): SignatureItem => ({
+    ...item,
+    category,
+    ingredients: item.recipe.map(ingredientName).join(", "),
+  });
+}
 
-const SMOOTHIES: SignatureItem[] = (menuData.smoothies as RawItem[]).map((item) => ({
-  ...item,
-  category: "smoothie",
-}));
+const BOWLS: SignatureItem[] = (menuData.signatures.bowls as RawItem[]).map(fromRaw("bowl"));
+const SMOOTHIES: SignatureItem[] = (menuData.signatures.smoothies as RawItem[]).map(fromRaw("smoothie"));
 
 const BY_ID = new Map<string, SignatureItem>(
   [...BOWLS, ...SMOOTHIES].map((item) => [item.id, item])
