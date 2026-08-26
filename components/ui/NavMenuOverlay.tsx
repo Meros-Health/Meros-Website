@@ -28,6 +28,18 @@ interface OverlayDims {
   holeH: number;
 }
 
+function computeDims(): OverlayDims {
+  if (typeof window === "undefined") return { halfW: 0, halfH: 0, holeW: 0, holeH: 0 };
+  const holeW = window.innerWidth * HOLE_W_FRAC;
+  const holeH = window.innerHeight * HOLE_H_FRAC;
+  return {
+    halfW: (window.innerWidth - holeW) / 2,
+    halfH: (window.innerHeight - holeH) / 2,
+    holeW,
+    holeH,
+  };
+}
+
 interface NavMenuOverlayProps {
   open: boolean;
   onClose: () => void;
@@ -45,23 +57,17 @@ export function NavMenuOverlay({
 }: NavMenuOverlayProps) {
   const firstLinkRef = useRef<HTMLAnchorElement>(null);
 
-  // Compute pixel panel sizes — Framer Motion cannot interpolate CSS calc()
-  // expressions from 0, which caused the right-panel flash on the previous build.
-  const [dims, setDims] = useState<OverlayDims | null>(null);
+  // Pixel panel sizes: Framer Motion cannot interpolate CSS calc() from 0,
+  // which caused the right-panel flash on the previous build. Computed
+  // synchronously so the motion panels exist from the first render; panels
+  // that mount a render later than the component can miss their exit if the
+  // overlay is removed in between. This component only mounts client-side
+  // after a click, so window is always available here.
+  const [dims, setDims] = useState<OverlayDims>(computeDims);
   useEffect(() => {
-    const compute = () => {
-      const holeW = window.innerWidth * HOLE_W_FRAC;
-      const holeH = window.innerHeight * HOLE_H_FRAC;
-      setDims({
-        halfW: (window.innerWidth - holeW) / 2,
-        halfH: (window.innerHeight - holeH) / 2,
-        holeW,
-        holeH,
-      });
-    };
-    compute();
-    window.addEventListener("resize", compute);
-    return () => window.removeEventListener("resize", compute);
+    const onResize = () => setDims(computeDims());
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, []);
 
   useEffect(() => {
@@ -86,9 +92,6 @@ export function NavMenuOverlay({
   };
 
   // ── Desktop: four panels around a transparent window ─────────────────────
-  // Wait for dims before rendering so we always have pixel values ready.
-  if (!dims) return null;
-
   const { halfW, halfH, holeW, holeH } = dims;
   const panelBg: React.CSSProperties = {
     background: "var(--nav-overlay-bg)",

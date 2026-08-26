@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useTransitionRouter } from "@/components/transition/TransitionProvider";
 import { useCartStore } from "@/store/cartStore";
+import { lockScroll } from "@/lib/scrollLock";
 import { CartLineItem } from "@/components/cart/CartLineItem";
 import { CHECKOUT_ENABLED } from "@/lib/config";
 
@@ -34,12 +35,7 @@ export function CartDrawer() {
 
   useEffect(() => {
     if (!isOpen) return;
-    const body = document.body;
-    const prevOverflow = body.style.overflow;
-    body.style.overflow = "hidden";
-    return () => {
-      body.style.overflow = prevOverflow;
-    };
+    return lockScroll();
   }, [isOpen]);
 
   useEffect(() => {
