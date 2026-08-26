@@ -74,7 +74,8 @@ function MenuCard({ item, priority = false }: { item: SignatureItem; priority?: 
   const [sizeId, setSizeId] = useState(() => getDefaultSizeId(item.category));
   const [added, setAdded] = useState(false);
   const addedTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const price = item.sizes[sizeId].price;
+  // A size can vanish from the menu under a mounted card (I1); price nothing rather than crash.
+  const price = item.sizes[sizeId]?.price ?? 0;
 
   useEffect(() => {
     return () => {

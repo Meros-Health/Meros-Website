@@ -1,12 +1,13 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { getBuildSize } from "@/lib/menu/buildConfig";
-import { calcBowlPrice, getSelectedIngredients, type BowlSelection } from "@/lib/menu/calcBowlPrice";
+import { calcBowlPrice, formatPrice, getSelectedIngredients, type BowlSelection } from "@/lib/menu/calcBowlPrice";
 import { EMPTY_NUTRITION, sumNutrition, type NutritionFacts } from "@/lib/menu/nutrition";
 import {
   findMatchingCustomLine,
   findMatchingSignatureLine,
   getSelectionHeadline,
+  migrateLegacySelection,
   normalizeSelection,
 } from "@/lib/menu/selectionUtils";
 import {
@@ -41,6 +42,12 @@ export type CartItem = {
 
 export type UpdateCustomBowlResult = "updated" | "merged" | "missing";
 
+/** One line of the "your cart was updated" notice shown after a menu change. */
+export type CartChange = {
+  kind: "dropped" | "ingredients-removed" | "size-changed" | "price-changed";
+  message: string;
+};
+
 // ---------------------------------------------------------------------------
 // Store
 // ---------------------------------------------------------------------------
@@ -48,6 +55,9 @@ export type UpdateCustomBowlResult = "updated" | "merged" | "missing";
 interface CartState {
   items: CartItem[];
   isOpen: boolean;
+  /** Set when rehydration changed the cart to match the current menu; not persisted. */
+  notice: CartChange[] | null;
+  dismissNotice: () => void;
   addItem: (item: Omit<CartItem, "lineId">) => void;
   removeItem: (lineId: string) => void;
   updateQuantity: (lineId: string, quantity: number) => void;
@@ -177,20 +187,89 @@ function readCartItem(raw: unknown, usedIds: Set<string>): CartItem | null {
   return null;
 }
 
-/** Every persisted line that can still be trusted, rebuilt against the current menu. */
-export function migrateCart(rawItems: unknown): CartItem[] {
-  if (!Array.isArray(rawItems)) return [];
+// ---------------------------------------------------------------------------
+// Change report: what the menu did to a persisted line
+// ---------------------------------------------------------------------------
+
+/** "toasted-coconut" to "Toasted Coconut": the ingredient is gone from the registry, so its id is all that is left. */
+function titleFromId(id: string): string {
+  return id
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function selectionIds(selection: BowlSelection | null | undefined): string[] {
+  if (!selection) return [];
+  return Object.values(selection.steps).flat();
+}
+
+function describeRaw(raw: UnknownRecord): string {
+  return typeof raw.name === "string" && raw.name.length > 0 ? raw.name : "An item";
+}
+
+/** Only lines that were structurally sound; a tampered quantity is not a menu change. */
+function wasReadable(raw: unknown): raw is UnknownRecord {
+  return isRecord(raw) && (raw.kind === "custom" || raw.kind === "signature") && readQuantity(raw.quantity) !== null;
+}
+
+function diffLine(raw: UnknownRecord, item: CartItem): CartChange[] {
+  const changes: CartChange[] = [];
+
+  if (item.kind === "custom") {
+    const before = migrateLegacySelection(raw.selection);
+    const removed = selectionIds(before).filter((id) => !selectionIds(item.selection).includes(id));
+    if (removed.length > 0) {
+      const names = removed.map(titleFromId).join(", ");
+      const verb = removed.length === 1 ? "is" : "are";
+      changes.push({
+        kind: "ingredients-removed",
+        message: `${names} ${verb} no longer available and ${removed.length === 1 ? "was" : "were"} removed from ${item.name}.`,
+      });
+    }
+    if (before && item.size && before.sizeId !== item.size.id) {
+      changes.push({
+        kind: "size-changed",
+        message: `${item.name} is no longer available in ${titleFromId(before.sizeId)}; it is now ${item.size.label}.`,
+      });
+    }
+  }
+
+  if (typeof raw.unitPrice === "number" && Number.isFinite(raw.unitPrice) && Math.abs(raw.unitPrice - item.unitPrice) >= 0.005) {
+    changes.push({
+      kind: "price-changed",
+      message: `${item.name} is now ${formatPrice(item.unitPrice)}, was ${formatPrice(raw.unitPrice)}.`,
+    });
+  }
+
+  return changes;
+}
+
+/**
+ * Every persisted line that can still be trusted, rebuilt against the current
+ * menu, plus what changed for lines the menu altered or dropped.
+ */
+export function migrateCart(rawItems: unknown): { items: CartItem[]; changes: CartChange[] } {
+  if (!Array.isArray(rawItems)) return { items: [], changes: [] };
   const usedIds = new Set<string>();
   const items: CartItem[] = [];
+  const changes: CartChange[] = [];
   for (const raw of rawItems) {
+    let item: CartItem | null = null;
     try {
-      const item = readCartItem(raw, usedIds);
-      if (item) items.push(item);
+      item = readCartItem(raw, usedIds);
     } catch {
       // One unreadable line must not take the whole cart down.
     }
+    if (item) {
+      items.push(item);
+      if (wasReadable(raw)) changes.push(...diffLine(raw, item));
+    } else if (wasReadable(raw)) {
+      changes.push({ kind: "dropped", message: `${describeRaw(raw)} is no longer available and was removed.` });
+    }
   }
-  return items;
+  return { items, changes };
 }
 
 export const useCartStore = create<CartState>()(
@@ -198,6 +277,8 @@ export const useCartStore = create<CartState>()(
     (set, get) => ({
       items: [],
       isOpen: false,
+      notice: null,
+      dismissNotice: () => set({ notice: null }),
 
       addItem: (item) => {
         const { items } = get();
@@ -317,11 +398,20 @@ export const useCartStore = create<CartState>()(
       // unchanged and read line by line.
       migrate: (persisted) => persisted as { items: CartItem[] },
       // Runs before `set`, so subscribers only ever see migrated items and the
-      // persisted array is never mutated in place.
-      merge: (persisted, current) => ({
-        ...current,
-        items: migrateCart(isRecord(persisted) ? persisted.items : undefined),
-      }),
+      // persisted array is never mutated in place. A cross-tab rehydrate reads
+      // lines the other tab already migrated, so it reports nothing and leaves
+      // any notice already showing alone.
+      merge: (persisted, current) => {
+        const { items, changes } = migrateCart(isRecord(persisted) ? persisted.items : undefined);
+        return { ...current, items, notice: changes.length > 0 ? changes : current.notice };
+      },
+      // Storage still holds the pre-migration lines until the next write. When
+      // the menu changed something, write the migrated cart back now so the
+      // notice is shown once, not on every load.
+      onRehydrateStorage: () => (state) => {
+        if (!state?.notice) return;
+        queueMicrotask(() => useCartStore.setState((s) => ({ items: [...s.items] })));
+      },
     }
   )
 );

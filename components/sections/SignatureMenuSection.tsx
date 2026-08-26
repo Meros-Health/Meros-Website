@@ -30,7 +30,7 @@ const ALL_ITEMS = [...BOWLS, ...SMOOTHIES];
 function priceNote(category: SignatureCategory): string {
   const sample = category === "bowl" ? BOWLS[0] : SMOOTHIES[0];
   return getSizeTiers(category)
-    .map((tier) => `${tier.label} $${sample.sizes[tier.id].price}`)
+    .map((tier) => `${tier.label} $${sample.sizes[tier.id]?.price ?? 0}`)
     .join(" · ");
 }
 
@@ -149,7 +149,7 @@ function MenuRow({
       size: { id: sizeId, label: getSizeLabel(item.category, sizeId) },
       nutrition: { ...EMPTY_NUTRITION },
       quantity: 1,
-      unitPrice: item.sizes[sizeId].price,
+      unitPrice: item.sizes[sizeId]?.price ?? 0,
     });
     setAdded(true);
     if (addedTimeout.current) clearTimeout(addedTimeout.current);
