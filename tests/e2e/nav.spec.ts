@@ -84,3 +84,26 @@ test("D4: the scroll lock is released after the menu and the drawer close togeth
   expect(await bodyOverflow(page)).toBe("");
   await expect(cartButton(page)).toBeVisible();
 });
+
+test("Escape returns focus to the menu toggle on desktop and mobile", async ({ page }) => {
+  await page.goto("/order");
+  await waitForPageReady(page);
+  await menuToggle(page).click();
+  await page.waitForTimeout(900);
+  await page.keyboard.press("Escape");
+  await expect(menuToggle(page)).toBeFocused();
+
+  await page.setViewportSize({ width: 500, height: 800 });
+  await page.waitForTimeout(500);
+  await menuToggle(page).click();
+  await page.waitForTimeout(600);
+  await page.keyboard.press("Escape");
+  await expect(menuToggle(page)).toBeFocused();
+});
+
+test("G8: an unknown route shows the site's own not-found page", async ({ page }) => {
+  await page.goto("/cart/edit");
+  await waitForPageReady(page);
+  await expect(page.getByRole("heading", { name: "Page Not Found" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Our Menu" })).toBeVisible();
+});

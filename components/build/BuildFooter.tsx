@@ -46,7 +46,7 @@ export function BuildFooter() {
 
     // The cart store derives size, name, price and nutrition from the
     // selection itself; the values passed here are placeholders it overwrites.
-    addItem({
+    const result = addItem({
       kind: "custom",
       productId: "custom-bowl",
       name: "Custom Bowl",
@@ -55,6 +55,8 @@ export function BuildFooter() {
       quantity: 1,
       unitPrice: price,
     });
+    // At the 99 cap nothing was added, so no "Added" feedback either.
+    if (result !== "added") return;
 
     // Order matters: reset() clears the feedback flag, so set it afterwards.
     reset();

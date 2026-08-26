@@ -3,6 +3,8 @@
 import { useTransitionRouter } from "@/components/transition/TransitionProvider";
 import { useCartStore } from "@/store/cartStore";
 
+const MAX_QUANTITY = 99; // matches store/cartStore.ts
+
 interface CartLineActionsProps {
   lineId: string;
   kind: "signature" | "custom";
@@ -52,7 +54,8 @@ export function CartLineActions({ lineId, kind, quantity }: CartLineActionsProps
         </span>
         <button
           type="button"
-          aria-label="Increase quantity"
+          aria-label={quantity >= MAX_QUANTITY ? "Maximum quantity reached" : "Increase quantity"}
+          disabled={quantity >= MAX_QUANTITY}
           onClick={() => incrementItem(lineId)}
           className={stepBtn}
           style={{ color: "var(--color-midnight)" }}

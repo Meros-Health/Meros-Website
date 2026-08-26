@@ -2,6 +2,10 @@
 
 import { logActionError, logContact } from "@/lib/log";
 
+const MAX_NAME_LENGTH = 100;
+const MAX_EMAIL_LENGTH = 254;
+const MAX_MESSAGE_LENGTH = 2000;
+
 export type ContactFormState = {
   status: "idle" | "success" | "error";
   message: string;
@@ -32,6 +36,16 @@ async function processContact(formData: FormData): Promise<ContactFormState> {
 
   if (!name || !email || !message) {
     return { status: "error", message: "All fields are required." };
+  }
+
+  if (name.length > MAX_NAME_LENGTH) {
+    return { status: "error", message: `Name must be ${MAX_NAME_LENGTH} characters or fewer.` };
+  }
+  if (email.length > MAX_EMAIL_LENGTH) {
+    return { status: "error", message: `Email must be ${MAX_EMAIL_LENGTH} characters or fewer.` };
+  }
+  if (message.length > MAX_MESSAGE_LENGTH) {
+    return { status: "error", message: `Message must be ${MAX_MESSAGE_LENGTH} characters or fewer.` };
   }
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {

@@ -206,6 +206,7 @@ export function Footer() {
                   <input
                     id="footer-name"
                     name="name"
+                    maxLength={100}
                     type="text"
                     required
                     autoComplete="name"
@@ -220,6 +221,7 @@ export function Footer() {
                   <input
                     id="footer-email"
                     name="email"
+                    maxLength={254}
                     type="email"
                     required
                     autoComplete="email"
@@ -236,6 +238,7 @@ export function Footer() {
                 <textarea
                   id="footer-message"
                   name="message"
+                  maxLength={2000}
                   required
                   rows={3}
                   className="bg-transparent border-b border-cream/20 text-cream font-body-mixed text-xs py-1.5 placeholder:text-cream/25 outline-none focus:border-grapefruit transition-colors duration-200 resize-none"

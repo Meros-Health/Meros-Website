@@ -31,6 +31,9 @@ const MAX_LINES = 50;
 const MAX_QUANTITY = 99;
 const MAX_STEP_PICKS = 50;
 const MAX_LINE_ID_LENGTH = 64;
+const MAX_NAME_LENGTH = 100;
+const MAX_EMAIL_LENGTH = 254;
+const MAX_PHONE_LENGTH = 30;
 const PRICE_TOLERANCE = 0.005;
 const STEP_ID_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
@@ -189,6 +192,16 @@ async function processCheckout(cartItemsJson: string, formData: FormData): Promi
 
   if (!name || !email || !phone) {
     return error("form", "All fields are required.");
+  }
+
+  if (name.length > MAX_NAME_LENGTH) {
+    return error("form", `Name must be ${MAX_NAME_LENGTH} characters or fewer.`);
+  }
+  if (email.length > MAX_EMAIL_LENGTH) {
+    return error("form", `Email must be ${MAX_EMAIL_LENGTH} characters or fewer.`);
+  }
+  if (phone.length > MAX_PHONE_LENGTH) {
+    return error("form", `Phone must be ${MAX_PHONE_LENGTH} characters or fewer.`);
   }
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {

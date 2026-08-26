@@ -142,7 +142,7 @@ function MenuRow({
 
   const handleAdd = () => {
     const sizeId = getDefaultSizeId(item.category);
-    addItem({
+    const result = addItem({
       kind: "signature",
       productId: item.id,
       name: item.name,
@@ -151,6 +151,8 @@ function MenuRow({
       quantity: 1,
       unitPrice: item.sizes[sizeId]?.price ?? 0,
     });
+    // At the 99 cap nothing was added, so no "Added" feedback either.
+    if (result !== "added") return;
     setAdded(true);
     if (addedTimeout.current) clearTimeout(addedTimeout.current);
     addedTimeout.current = setTimeout(() => setAdded(false), 1400);

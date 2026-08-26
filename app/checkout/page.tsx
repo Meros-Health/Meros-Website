@@ -172,6 +172,7 @@ export default function CheckoutPage() {
               <input
                 id="checkout-name"
                 name="name"
+                maxLength={100}
                 type="text"
                 required
                 autoComplete="name"
@@ -187,6 +188,7 @@ export default function CheckoutPage() {
               <input
                 id="checkout-email"
                 name="email"
+                maxLength={254}
                 type="email"
                 required
                 autoComplete="email"
@@ -202,6 +204,7 @@ export default function CheckoutPage() {
               <input
                 id="checkout-phone"
                 name="phone"
+                maxLength={30}
                 type="tel"
                 required
                 autoComplete="tel"

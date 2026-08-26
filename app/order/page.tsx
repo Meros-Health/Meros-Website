@@ -84,7 +84,7 @@ function MenuCard({ item, priority = false }: { item: SignatureItem; priority?: 
   }, []);
 
   const handleAdd = () => {
-    addItem({
+    const result = addItem({
       kind: "signature",
       productId: item.id,
       name: item.name,
@@ -93,6 +93,8 @@ function MenuCard({ item, priority = false }: { item: SignatureItem; priority?: 
       quantity: 1,
       unitPrice: price,
     });
+    // At the 99 cap nothing was added, so no "Added" feedback either.
+    if (result !== "added") return;
     setAdded(true);
     if (addedTimeout.current) clearTimeout(addedTimeout.current);
     addedTimeout.current = setTimeout(() => setAdded(false), 1400);

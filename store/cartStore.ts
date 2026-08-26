@@ -42,6 +42,9 @@ export type CartItem = {
 
 export type UpdateCustomBowlResult = "updated" | "merged" | "missing";
 
+/** "at-max": the matching line already holds 99, nothing was added. */
+export type AddResult = "added" | "at-max";
+
 /** One line of the "your cart was updated" notice shown after a menu change. */
 export type CartChange = {
   kind: "dropped" | "ingredients-removed" | "size-changed" | "price-changed";
@@ -58,10 +61,10 @@ interface CartState {
   /** Set when rehydration changed the cart to match the current menu; not persisted. */
   notice: CartChange[] | null;
   dismissNotice: () => void;
-  addItem: (item: Omit<CartItem, "lineId">) => void;
+  addItem: (item: Omit<CartItem, "lineId">) => AddResult;
   removeItem: (lineId: string) => void;
   updateQuantity: (lineId: string, quantity: number) => void;
-  incrementItem: (lineId: string) => void;
+  incrementItem: (lineId: string) => AddResult;
   decrementItem: (lineId: string) => void;
   updateCustomBowl: (lineId: string, selection: CustomBowlSelection) => UpdateCustomBowlResult;
   getItem: (lineId: string) => CartItem | undefined;
@@ -286,8 +289,9 @@ export const useCartStore = create<CartState>()(
         if (item.kind === "signature") {
           const existing = findMatchingSignatureLine(items, item.productId, item.size?.id);
           if (existing) {
+            if (existing.quantity >= MAX_QUANTITY) return "at-max";
             get().updateQuantity(existing.lineId, existing.quantity + item.quantity);
-            return;
+            return "added";
           }
           set((state) => ({
             items: [
@@ -295,21 +299,24 @@ export const useCartStore = create<CartState>()(
               { ...item, lineId: makeLineId(), name: signatureLineName(item.name, item.size) },
             ],
           }));
-          return;
+          return "added";
         }
 
         const selection = normalizeSelection(item.selection);
-        if (!selection) return;
+        // The UI never produces an incomplete bowl; treat it as nothing to add.
+        if (!selection) return "at-max";
 
         const existing = findMatchingCustomLine(items, selection);
         if (existing) {
+          if (existing.quantity >= MAX_QUANTITY) return "at-max";
           get().updateQuantity(existing.lineId, existing.quantity + item.quantity);
-          return;
+          return "added";
         }
 
         set((state) => ({
           items: [...state.items, { ...item, lineId: makeLineId(), ...customLineFields(selection) }],
         }));
+        return "added";
       },
 
       removeItem: (lineId) => {
@@ -333,8 +340,9 @@ export const useCartStore = create<CartState>()(
 
       incrementItem: (lineId) => {
         const item = get().getItem(lineId);
-        if (!item) return;
+        if (!item || item.quantity >= MAX_QUANTITY) return "at-max";
         get().updateQuantity(lineId, item.quantity + 1);
+        return "added";
       },
 
       decrementItem: (lineId) => {

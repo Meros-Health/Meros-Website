@@ -78,7 +78,7 @@ export function EditBuildFooter({ lineId, lineExists }: EditBuildFooterProps) {
     busyRef.current = true;
     // The cart store derives size, name, price and nutrition from the
     // selection itself; the values passed here are placeholders it overwrites.
-    addItem({
+    const result = addItem({
       kind: "custom",
       productId: "custom-bowl",
       name: "Custom Bowl",
@@ -87,6 +87,10 @@ export function EditBuildFooter({ lineId, lineExists }: EditBuildFooterProps) {
       quantity: 1,
       unitPrice: price,
     });
+    if (result !== "added") {
+      busyRef.current = false;
+      return;
+    }
     finish("added");
   };
 

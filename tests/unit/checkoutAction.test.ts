@@ -282,3 +282,20 @@ describe("F9: contact form", () => {
     expect(logged).toContain("messageLength");
   });
 });
+
+describe("F5-26 / F5-28: field caps", () => {
+  it("rejects over-long checkout fields with a field-specific message", async () => {
+    expect((await submit([momentMedium()], customer({ name: "x".repeat(101) }))).message).toMatch(/Name must be 100/);
+    expect((await submit([momentMedium()], customer({ phone: "1".repeat(31) }))).message).toMatch(/Phone must be 30/);
+    expect((await submit([momentMedium()], customer({ email: "a".repeat(250) + "@b.co" }))).message).toMatch(/Email must be 254/);
+  });
+
+  it("rejects an over-long contact message", async () => {
+    const result = await submitContactForm(IDLE, makeFormData({ name: "A", email: "a@b.co", message: "x".repeat(2001) }));
+    expect(result.message).toMatch(/Message must be 2000/);
+  });
+
+  it("still accepts a phone with letters as long as ten digits are present (documented rough edge)", async () => {
+    expect((await submit([momentMedium()], customer({ phone: "abc1234567890xyz" }))).status).toBe("success");
+  });
+});

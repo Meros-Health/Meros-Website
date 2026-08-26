@@ -304,3 +304,24 @@ describe("B2: add feedback is visible synchronously to a same-tick second click"
     useBowlBuilderStore.getState().clearAddedFeedback();
   });
 });
+
+describe("B3 / C2 / D1: nothing added at the cap is reported, not celebrated", () => {
+  it("addItem and incrementItem return at-max on a line holding 99", async () => {
+    seedCart([plain("a", { quantity: 99 }), signatureLine("m", "moment", "medium", 12, { quantity: 99 })]);
+    const { cartStore } = await loadWithMenu();
+    const store = cartStore.useCartStore.getState();
+    expect(store.addItem(customInput({ sizeId: "medium", steps: { base: ["plain-greek-yogurt"] } }))).toBe("at-max");
+    expect(store.addItem({ ...signatureLine("z", "moment", "medium", 12), lineId: undefined } as never)).toBe("at-max");
+    expect(store.incrementItem("a")).toBe("at-max");
+    expect(store.incrementItem("m")).toBe("at-max");
+    expect(cartStore.useCartStore.getState().items.map((i) => i.quantity)).toEqual([99, 99]);
+  });
+
+  it("returns added below the cap", async () => {
+    seedCart([plain("a", { quantity: 98 })]);
+    const { cartStore } = await loadWithMenu();
+    expect(cartStore.useCartStore.getState().incrementItem("a")).toBe("added");
+    expect(cartStore.useCartStore.getState().addItem(customInput({ sizeId: "large", steps: { base: ["plain-greek-yogurt"] } }))).toBe("added");
+    expect(cartStore.useCartStore.getState().items).toHaveLength(2);
+  });
+});
