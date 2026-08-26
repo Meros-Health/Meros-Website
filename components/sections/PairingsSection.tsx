@@ -38,7 +38,9 @@ const PAIR_CTA_PADDING_DESKTOP = "clamp(0.5rem, 1.4cqi, 0.875rem) clamp(1rem, 2.
 const PAIR_CTA_FONT_SIZE_DESKTOP = "clamp(0.625rem, 1.35cqi, 0.75rem)";
 const PAIR_CTA_PADDING_MOBILE = "clamp(0.55rem, 4cqw, 0.85rem) clamp(1rem, 5cqw, 1.5rem)";
 const PAIR_CTA_FONT_SIZE_MOBILE = "clamp(0.5rem, 3.4cqw, 0.625rem)";
-const PAIR_CTA_BORDER_WIDTH = "0.5px";
+// 1px, matching CTAButton's default. A 0.5px hairline on a centered button can
+// land on a half-pixel edge and iOS Safari drops that side entirely.
+const PAIR_CTA_BORDER_WIDTH = "1px";
 const PAIR_CTA_FONT_WEIGHT = 300;
 
 // ─── Design-size coordinate system (880 wide). Rendered as % of stage. ────────

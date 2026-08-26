@@ -38,3 +38,30 @@ export function scrollToTarget(lenis: Lenis | null, hash: string | null | undefi
   if (hash && hash !== "#") scrollToHash(lenis, hash, immediate);
   else scrollToTop(lenis, immediate);
 }
+
+// Quint-out, the house entrance curve (see lib/motion.ts ENTRANCE_EASE).
+const GLIDE_EASING = (t: number) => 1 - Math.pow(1 - t, 5);
+const GLIDE_DURATION_S = 1.4;
+
+/**
+ * Glide to an in-page anchor from a user click (e.g. the "Visit" CTA). Unlike
+ * scrollToHash, this always animates, on a fixed slow duration rather than
+ * Lenis's lerp, so the travel reads as one deliberate move.
+ */
+export function glideToHash(lenis: Lenis | null, hash: string) {
+  const id = hash.replace(/^#/, "");
+  const el = id ? document.getElementById(id) : null;
+  if (!el) return scrollToTop(lenis, false);
+
+  if (lenis) {
+    lenis.scrollTo(el, {
+      offset: -NAV_OFFSET,
+      duration: GLIDE_DURATION_S,
+      easing: GLIDE_EASING,
+      force: true,
+    });
+  } else {
+    const y = el.getBoundingClientRect().top + window.scrollY - NAV_OFFSET;
+    window.scrollTo({ top: y, left: 0, behavior: "smooth" });
+  }
+}

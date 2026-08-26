@@ -9,10 +9,10 @@ import { motion, type Variants } from "framer-motion";
 const STORY_LINES = [
   {
     headline: "LOCALLY SOURCED.",
-    body: "Ingredients from the Lower Mainland, bought fresh.",
+    body: "Sourced as locally as possible, with trusted local vendors for the rest.",
   },
   {
-    headline: "STRAINED IN HOUSE.",
+    headline: "STRAINED IN-HOUSE.",
     body: "Yogurt strained daily for higher protein and a thicker texture.",
   },
   {
