@@ -193,7 +193,7 @@ export function Footer() {
 
           {state.status === "success" ? (
             <div className="flex flex-col gap-2 py-4">
-              <span className="font-body-caps text-grapefruit text-[9px] tracking-[0.25em]">Message Sent</span>
+              <span className="font-body-caps text-grapefruit text-[9px] tracking-[0.25em]">Thanks</span>
               <p className="font-body-mixed text-cream/55 text-xs">{state.message}</p>
             </div>
           ) : (

@@ -51,5 +51,12 @@ async function processContact(formData: FormData): Promise<ContactFormState> {
   // form: the log below carries no personal data outside development.
   logContact({ messageLength: message.length }, { name, email, message });
 
-  return { status: "success", message: "Thanks! We'll be in touch shortly." };
+  // Until delivery is wired, the message goes nowhere. Say so and give people a
+  // route that actually reaches someone, rather than promising a reply that
+  // cannot arrive.
+  return {
+    status: "success",
+    message:
+      "We're still setting up the inbox behind this form. Email us at info@merosyogurt.com and we'll get right back to you.",
+  };
 }
