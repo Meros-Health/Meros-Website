@@ -2,8 +2,7 @@
 
 import { useTransitionRouter } from "@/components/transition/TransitionProvider";
 import { useCartStore } from "@/store/cartStore";
-
-const MAX_QUANTITY = 99; // matches store/cartStore.ts
+import { MAX_QUANTITY } from "@/lib/menu/limits";
 
 interface CartLineActionsProps {
   lineId: string;

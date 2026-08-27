@@ -2,22 +2,7 @@
 // docs/qa/ordering-stress-test-2026-08-26.md.
 import { expect, test, type Page } from "@playwright/test";
 import { cartButton, seedCart, waitForPageReady } from "./helpers/cart";
-
-const NUTRITION = { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, calcium: 0, iron: 0, potassium: 0 };
-
-function plainBowl(lineId: string) {
-  return {
-    lineId,
-    kind: "custom",
-    productId: "custom-bowl",
-    name: "Custom Bowl · Plain Greek Yogurt · Medium",
-    selection: { sizeId: "medium", steps: { base: ["plain-greek-yogurt"] } },
-    size: { id: "medium", label: "Medium" },
-    nutrition: NUTRITION,
-    quantity: 1,
-    unitPrice: 12,
-  };
-}
+import { plainBowl } from "./helpers/fixtures";
 
 const menuToggle = (page: Page) => page.getByRole("button", { name: /Open menu|Close menu/ });
 const bodyOverflow = (page: Page) => page.evaluate(() => document.body.style.overflow);

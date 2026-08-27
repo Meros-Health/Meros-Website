@@ -36,3 +36,15 @@ export function logActionError(action: string, err: unknown): void {
   const description = err instanceof Error ? `${err.name}: ${err.message}` : typeof err;
   console.error(`[${action}] failed:`, description);
 }
+
+/**
+ * Development-only warning for failures the app deliberately absorbs (storage
+ * writes, an unreadable persisted line). Silent in production; visible while
+ * developing so an absorbed failure is never a mystery.
+ */
+export function warnDev(message: string, err?: unknown): void {
+  if (isProduction) return;
+  if (err === undefined) console.warn(message);
+  else console.warn(message, err);
+}
+

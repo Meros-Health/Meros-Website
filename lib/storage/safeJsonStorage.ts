@@ -1,4 +1,5 @@
 import type { PersistStorage, StorageValue } from "zustand/middleware";
+import { warnDev } from "@/lib/log";
 
 // localStorage for zustand persist that never throws into the store.
 //
@@ -30,8 +31,9 @@ export function safeJsonStorage<S>(): PersistStorage<S> {
       try {
         const parsed: unknown = JSON.parse(raw);
         if (isStorageValue(parsed)) return parsed as StorageValue<S>;
-      } catch {
-        // Fall through: unreadable, so clear it rather than fail every load.
+      } catch (err) {
+        // Unreadable: clear it below rather than fail every load.
+        warnDev(`[storage] "${name}" is not valid JSON; clearing it`, err);
       }
       try {
         window.localStorage.removeItem(name);
@@ -44,8 +46,9 @@ export function safeJsonStorage<S>(): PersistStorage<S> {
       if (!storageAvailable()) return;
       try {
         window.localStorage.setItem(name, JSON.stringify(value));
-      } catch {
+      } catch (err) {
         // Quota exceeded or storage disabled: the cart keeps working in memory.
+        warnDev(`[storage] write to "${name}" failed; cart is in memory only`, err);
       }
     },
     removeItem: (name) => {

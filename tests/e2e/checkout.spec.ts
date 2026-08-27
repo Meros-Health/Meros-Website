@@ -2,21 +2,7 @@
 // docs/qa/ordering-stress-test-2026-08-26.md.
 import { expect, test, type Page } from "@playwright/test";
 import { readCart, seedCart, waitForPageReady } from "./helpers/cart";
-
-const NUTRITION = { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, calcium: 0, iron: 0, potassium: 0 };
-
-function moment(lineId: string, quantity = 1) {
-  return {
-    lineId,
-    kind: "signature",
-    productId: "moment",
-    name: "The Moment · Medium",
-    size: { id: "medium", label: "Medium" },
-    nutrition: NUTRITION,
-    quantity,
-    unitPrice: 12,
-  };
-}
+import { moment } from "./helpers/fixtures";
 
 async function fillCustomer(page: Page) {
   await page.getByLabel("Name").fill("Test Customer");

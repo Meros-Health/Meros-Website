@@ -2,8 +2,7 @@
 // drawer says what changed, once.
 import { expect, test } from "@playwright/test";
 import { cartButton, readCart, seedCart, waitForPageReady } from "./helpers/cart";
-
-const NUTRITION = { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, calcium: 0, iron: 0, potassium: 0 };
+import { NUTRITION } from "./helpers/fixtures";
 
 // A bowl persisted before "nope" left the menu, at a price the menu no longer charges.
 const staleBowl = {

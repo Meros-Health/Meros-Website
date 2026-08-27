@@ -17,6 +17,8 @@ import {
   getSizeLabel,
 } from "@/lib/menu/signatures";
 import { safeJsonStorage } from "@/lib/storage/safeJsonStorage";
+import { warnDev } from "@/lib/log";
+import { MAX_QUANTITY } from "@/lib/menu/limits";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -42,8 +44,8 @@ export type CartItem = {
 
 export type UpdateCustomBowlResult = "updated" | "merged" | "missing";
 
-/** "at-max": the matching line already holds 99, nothing was added. */
-export type AddResult = "added" | "at-max";
+/** "at-max": the matching line already holds 99. "invalid": the selection cannot be added. */
+export type AddResult = "added" | "at-max" | "invalid";
 
 /** One line of the "your cart was updated" notice shown after a menu change. */
 export type CartChange = {
@@ -73,8 +75,6 @@ interface CartState {
   openCart: () => void;
   closeCart: () => void;
 }
-
-const MAX_QUANTITY = 99;
 
 // Bump only together with a `migrate` branch below. A bump without one makes
 // zustand discard the persisted cart with a console warning (E9).
@@ -126,8 +126,9 @@ function isRecord(value: unknown): value is UnknownRecord {
 }
 
 /**
- * Integer 1..99 or nothing. A line whose quantity cannot be trusted is not
- * clamped to some guess; it is dropped, so it can never reach checkout.
+ * A non-integer (string, fraction, null, NaN) or a value below 1 cannot be
+ * trusted and is not guessed at: the line is dropped. An integer above the cap
+ * is a real count the store would have clamped anyway, so it clamps here too.
  */
 function readQuantity(value: unknown): number | null {
   if (typeof value !== "number" || !Number.isInteger(value)) return null;
@@ -170,9 +171,16 @@ function readCartItem(raw: unknown, usedIds: Set<string>): CartItem | null {
     if (typeof raw.productId !== "string") return null;
     const catalogItem = getSignatureItem(raw.productId);
     if (!catalogItem) return null;
+    // A size that left the menu falls back to the category default, the same
+    // treatment a custom bowl gets; diffLine reports it.
     const rawSizeId = isRecord(raw.size) && typeof raw.size.id === "string" ? raw.size.id : undefined;
-    const sizeId = rawSizeId ?? getDefaultSizeId(catalogItem.category);
-    const unitPrice = getSignaturePrice(catalogItem.id, sizeId);
+    const defaultSizeId = getDefaultSizeId(catalogItem.category);
+    let sizeId = rawSizeId ?? defaultSizeId;
+    let unitPrice = getSignaturePrice(catalogItem.id, sizeId);
+    if (unitPrice === undefined && sizeId !== defaultSizeId) {
+      sizeId = defaultSizeId;
+      unitPrice = getSignaturePrice(catalogItem.id, sizeId);
+    }
     if (unitPrice === undefined) return null;
     const size = { id: sizeId, label: getSizeLabel(catalogItem.category, sizeId) };
     return {
@@ -222,7 +230,8 @@ function diffLine(raw: UnknownRecord, item: CartItem): CartChange[] {
 
   if (item.kind === "custom") {
     const before = migrateLegacySelection(raw.selection);
-    const removed = selectionIds(before).filter((id) => !selectionIds(item.selection).includes(id));
+    const after = new Set(selectionIds(item.selection));
+    const removed = selectionIds(before).filter((id) => !after.has(id));
     if (removed.length > 0) {
       const names = removed.map(titleFromId).join(", ");
       const verb = removed.length === 1 ? "is" : "are";
@@ -235,6 +244,14 @@ function diffLine(raw: UnknownRecord, item: CartItem): CartChange[] {
       changes.push({
         kind: "size-changed",
         message: `${item.name} is no longer available in ${titleFromId(before.sizeId)}; it is now ${item.size.label}.`,
+      });
+    }
+  } else {
+    const rawSizeId = isRecord(raw.size) && typeof raw.size.id === "string" ? raw.size.id : undefined;
+    if (rawSizeId && item.size && rawSizeId !== item.size.id) {
+      changes.push({
+        kind: "size-changed",
+        message: `${item.name} is no longer available in ${titleFromId(rawSizeId)}; it is now ${item.size.label}.`,
       });
     }
   }
@@ -262,8 +279,9 @@ export function migrateCart(rawItems: unknown): { items: CartItem[]; changes: Ca
     let item: CartItem | null = null;
     try {
       item = readCartItem(raw, usedIds);
-    } catch {
+    } catch (err) {
       // One unreadable line must not take the whole cart down.
+      warnDev("[cart] dropped a persisted line that could not be read", err);
     }
     if (item) {
       items.push(item);
@@ -303,8 +321,9 @@ export const useCartStore = create<CartState>()(
         }
 
         const selection = normalizeSelection(item.selection);
-        // The UI never produces an incomplete bowl; treat it as nothing to add.
-        if (!selection) return "at-max";
+        // The UI never produces an incomplete bowl, but the menu can change
+        // under a mounted builder.
+        if (!selection) return "invalid";
 
         const existing = findMatchingCustomLine(items, selection);
         if (existing) {

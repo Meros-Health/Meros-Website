@@ -64,11 +64,15 @@ describe("menu drift on rehydrate", () => {
     expect(messages.some((m) => m.includes("now $12.00, was $15.00"))).toBe(true);
   });
 
-  it("H3: a removed signature product and a removed signature size drop both lines", async () => {
-    const { items, messages } = await rehydrateSevenLines(signatureRemovedAndSilkLargeRemoved);
-    expect(items.map((i) => i.lineId)).toEqual(["plain-medium", "plain-large", "vanilla-three-fruits", "vanilla-nuts", "crunch-medium"]);
-    expect(messages).toHaveLength(2);
-    expect(messages.every((m) => m.includes("was removed"))).toBe(true);
+  it("H3: a removed signature product drops the line; a removed signature size falls back with a notice", async () => {
+    const { items, byId, messages } = await rehydrateSevenLines(signatureRemovedAndSilkLargeRemoved);
+    expect(items.map((i) => i.lineId)).toEqual(["plain-medium", "plain-large", "vanilla-three-fruits", "vanilla-nuts", "silk-large", "crunch-medium"]);
+    expect(byId["silk-large"].size?.id).toBe("medium");
+    expect(byId["silk-large"].unitPrice).toBe(12);
+    expect(messages).toHaveLength(3);
+    expect(messages.some((m) => m.includes("was removed"))).toBe(true);
+    expect(messages.some((m) => m.includes("Large") && m.includes("Medium"))).toBe(true);
+    expect(messages.some((m) => m.includes("now $12.00, was $15.00"))).toBe(true);
   });
 
   it("H2: raised prices re-price every affected line and list each one", async () => {

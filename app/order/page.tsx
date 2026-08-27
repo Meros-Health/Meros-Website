@@ -74,8 +74,9 @@ function MenuCard({ item, priority = false }: { item: SignatureItem; priority?: 
   const [sizeId, setSizeId] = useState(() => getDefaultSizeId(item.category));
   const [added, setAdded] = useState(false);
   const addedTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // A size can vanish from the menu under a mounted card (I1); price nothing rather than crash.
-  const price = item.sizes[sizeId]?.price ?? 0;
+  // A size can vanish from the menu under a mounted card (I1). No price means
+  // nothing can be added, rather than a $0.00 line the server would reject.
+  const price = item.sizes[sizeId]?.price;
 
   useEffect(() => {
     return () => {
@@ -84,6 +85,7 @@ function MenuCard({ item, priority = false }: { item: SignatureItem; priority?: 
   }, []);
 
   const handleAdd = () => {
+    if (price === undefined) return;
     const result = addItem({
       kind: "signature",
       productId: item.id,
@@ -135,7 +137,7 @@ function MenuCard({ item, priority = false }: { item: SignatureItem; priority?: 
             className="font-body-caps text-juniper shrink-0"
             style={{ fontSize: "clamp(0.55rem, 4.2cqw, 0.75rem)" }}
           >
-            ${price.toFixed(2)}
+            {price === undefined ? "Unavailable" : `$${price.toFixed(2)}`}
           </span>
         </div>
 

@@ -55,7 +55,13 @@ export function EditBuildFooter({ lineId, lineExists }: EditBuildFooterProps) {
     timerRef.current = setTimeout(() => {
       // If another navigation started during the beat, the push is refused
       // and the drawer must not open over whichever page that click chose.
-      if (transitionRouter.push("/order")) openCart();
+      // Return the footer to its live state in case this page stays mounted.
+      if (transitionRouter.push("/order")) {
+        openCart();
+      } else {
+        busyRef.current = false;
+        setOutcome(null);
+      }
     }, CONFIRMATION_MS);
   };
 

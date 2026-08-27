@@ -1,21 +1,19 @@
 "use server";
 
 import { logActionError, logContact } from "@/lib/log";
-
-const MAX_NAME_LENGTH = 100;
-const MAX_EMAIL_LENGTH = 254;
-const MAX_MESSAGE_LENGTH = 2000;
+import {
+  EMAIL_PATTERN,
+  MAX_EMAIL_LENGTH,
+  MAX_MESSAGE_LENGTH,
+  MAX_NAME_LENGTH,
+  readField,
+  tooLong,
+} from "@/lib/forms";
 
 export type ContactFormState = {
   status: "idle" | "success" | "error";
   message: string;
 };
-
-/** FormData values are strings or Files; anything but a string is treated as missing. */
-function readField(formData: FormData, name: string): string | null {
-  const value = formData.get(name);
-  return typeof value === "string" ? value.trim() : null;
-}
 
 export async function submitContactForm(
   _prev: ContactFormState,
@@ -38,17 +36,13 @@ async function processContact(formData: FormData): Promise<ContactFormState> {
     return { status: "error", message: "All fields are required." };
   }
 
-  if (name.length > MAX_NAME_LENGTH) {
-    return { status: "error", message: `Name must be ${MAX_NAME_LENGTH} characters or fewer.` };
-  }
-  if (email.length > MAX_EMAIL_LENGTH) {
-    return { status: "error", message: `Email must be ${MAX_EMAIL_LENGTH} characters or fewer.` };
-  }
-  if (message.length > MAX_MESSAGE_LENGTH) {
-    return { status: "error", message: `Message must be ${MAX_MESSAGE_LENGTH} characters or fewer.` };
-  }
+  const lengthError =
+    tooLong("Name", name, MAX_NAME_LENGTH) ??
+    tooLong("Email", email, MAX_EMAIL_LENGTH) ??
+    tooLong("Message", message, MAX_MESSAGE_LENGTH);
+  if (lengthError) return { status: "error", message: lengthError };
 
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (!EMAIL_PATTERN.test(email)) {
     return { status: "error", message: "Please enter a valid email address." };
   }
 

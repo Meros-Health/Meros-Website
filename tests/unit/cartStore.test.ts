@@ -325,3 +325,13 @@ describe("B3 / C2 / D1: nothing added at the cap is reported, not celebrated", (
     expect(cartStore.useCartStore.getState().items).toHaveLength(2);
   });
 });
+
+describe("AddResult: invalid is distinct from at-max", () => {
+  it("returns invalid for a selection the menu cannot describe", async () => {
+    const { cartStore } = await loadWithMenu();
+    const store = cartStore.useCartStore.getState();
+    expect(store.addItem(customInput({ sizeId: "medium", steps: { fruits: ["strawberries"] } }))).toBe("invalid");
+    expect(cartStore.useCartStore.getState().items).toHaveLength(0);
+  });
+});
+

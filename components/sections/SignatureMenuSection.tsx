@@ -30,7 +30,8 @@ const ALL_ITEMS = [...BOWLS, ...SMOOTHIES];
 function priceNote(category: SignatureCategory): string {
   const sample = category === "bowl" ? BOWLS[0] : SMOOTHIES[0];
   return getSizeTiers(category)
-    .map((tier) => `${tier.label} $${sample.sizes[tier.id]?.price ?? 0}`)
+    .filter((tier) => sample.sizes[tier.id] !== undefined)
+    .map((tier) => `${tier.label} $${sample.sizes[tier.id].price}`)
     .join(" · ");
 }
 
@@ -142,6 +143,10 @@ function MenuRow({
 
   const handleAdd = () => {
     const sizeId = getDefaultSizeId(item.category);
+    // A size can vanish from the menu under a mounted row (I1); add nothing
+    // rather than a $0.00 line the server would reject.
+    const unitPrice = item.sizes[sizeId]?.price;
+    if (unitPrice === undefined) return;
     const result = addItem({
       kind: "signature",
       productId: item.id,
@@ -149,7 +154,7 @@ function MenuRow({
       size: { id: sizeId, label: getSizeLabel(item.category, sizeId) },
       nutrition: { ...EMPTY_NUTRITION },
       quantity: 1,
-      unitPrice: item.sizes[sizeId]?.price ?? 0,
+      unitPrice,
     });
     // At the 99 cap nothing was added, so no "Added" feedback either.
     if (result !== "added") return;

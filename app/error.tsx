@@ -1,38 +1,24 @@
 "use client";
 
-import Link from "next/link";
+import { useEffect } from "react";
+import { ErrorScreen } from "@/components/ui/ErrorScreen";
 
 // Route-level error boundary. Without one, any uncaught render error is a
-// white screen. The cart lives in localStorage and survives; say so.
-export default function RouteError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
+// white screen. The cart lives in localStorage and survives; say so. The
+// digest is what matches a customer report to the server log line.
+export default function RouteError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  useEffect(() => {
+    console.error("[route error]", error.digest ?? "", error);
+  }, [error]);
+
   return (
-    <main className="px-[7vw] pt-36 pb-24">
-      <span className="font-body-caps text-midnight/50 text-[10px] tracking-[0.30em]">Error</span>
-      <h1
-        className="font-headline text-midnight leading-[0.9] uppercase mt-2"
-        style={{ fontSize: "clamp(2.5rem, 5vw, 4rem)" }}
-      >
-        Something Went Wrong
-      </h1>
-      <p className="font-body-mixed text-sm text-juniper mt-4 max-w-lg">
-        This page could not be shown. Your cart is saved on this device.
-      </p>
-      <div className="mt-8 flex flex-wrap gap-3">
-        <button
-          type="button"
-          onClick={reset}
-          className="font-body-caps text-[10px] tracking-widest text-cream bg-midnight px-8 py-3 hover:opacity-85 transition-opacity duration-300"
-        >
-          Try Again
-        </button>
-        <Link
-          href="/order"
-          className="font-body-caps text-[10px] tracking-widest text-midnight px-8 py-3 transition-opacity hover:opacity-70"
-          style={{ border: "0.5px solid rgba(41,45,42,0.28)" }}
-        >
-          Our Menu
-        </Link>
-      </div>
-    </main>
+    <ErrorScreen
+      eyebrow="Error"
+      title="Something Went Wrong"
+      body="This page could not be shown. Your cart is saved on this device."
+      primary={{ label: "Try Again", onClick: reset }}
+      secondary={{ label: "Our Menu", href: "/order" }}
+      digest={error.digest}
+    />
   );
 }

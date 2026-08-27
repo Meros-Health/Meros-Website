@@ -7,6 +7,15 @@ import { calcBowlPrice, isSelectionComplete, PricingError, type BowlSelection } 
 import { getBuildSize } from "@/lib/menu/buildConfig";
 import { getSelectionHeadline, getSelectionKey, sanitizeSelection } from "@/lib/menu/selectionUtils";
 import { getSignatureItem, getSignaturePrice, getSizeLabel } from "@/lib/menu/signatures";
+import { MAX_LINES, MAX_QUANTITY } from "@/lib/menu/limits";
+import {
+  EMAIL_PATTERN,
+  MAX_EMAIL_LENGTH,
+  MAX_NAME_LENGTH,
+  MAX_PHONE_LENGTH,
+  readField,
+  tooLong,
+} from "@/lib/forms";
 
 export type CheckoutErrorCode =
   | "closed"
@@ -27,13 +36,8 @@ export type CheckoutFormState = {
   code?: CheckoutErrorCode;
 };
 
-const MAX_LINES = 50;
-const MAX_QUANTITY = 99;
 const MAX_STEP_PICKS = 50;
 const MAX_LINE_ID_LENGTH = 64;
-const MAX_NAME_LENGTH = 100;
-const MAX_EMAIL_LENGTH = 254;
-const MAX_PHONE_LENGTH = 30;
 const PRICE_TOLERANCE = 0.005;
 const STEP_ID_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
@@ -72,12 +76,6 @@ function fail(code: LineErrorCode): LineResult {
 
 function error(code: CheckoutErrorCode, message: string, lineId?: string): CheckoutFormState {
   return { status: "error", code, message, lineId };
-}
-
-/** FormData values are strings or Files; anything but a string is treated as missing. */
-function readField(formData: FormData, name: string): string | null {
-  const value = formData.get(name);
-  return typeof value === "string" ? value.trim() : null;
 }
 
 /** Echoed back to the client only when it is a short string; never reflected otherwise. */
@@ -194,17 +192,13 @@ async function processCheckout(cartItemsJson: string, formData: FormData): Promi
     return error("form", "All fields are required.");
   }
 
-  if (name.length > MAX_NAME_LENGTH) {
-    return error("form", `Name must be ${MAX_NAME_LENGTH} characters or fewer.`);
-  }
-  if (email.length > MAX_EMAIL_LENGTH) {
-    return error("form", `Email must be ${MAX_EMAIL_LENGTH} characters or fewer.`);
-  }
-  if (phone.length > MAX_PHONE_LENGTH) {
-    return error("form", `Phone must be ${MAX_PHONE_LENGTH} characters or fewer.`);
-  }
+  const lengthError =
+    tooLong("Name", name, MAX_NAME_LENGTH) ??
+    tooLong("Email", email, MAX_EMAIL_LENGTH) ??
+    tooLong("Phone", phone, MAX_PHONE_LENGTH);
+  if (lengthError) return error("form", lengthError);
 
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (!EMAIL_PATTERN.test(email)) {
     return error("form", "Please enter a valid email address.");
   }
 

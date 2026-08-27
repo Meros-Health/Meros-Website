@@ -1,19 +1,11 @@
 // Persisted cart payloads. `persisted()` writes them in zustand persist's
 // storage envelope so a fresh store rehydrates from them.
+import { EMPTY_NUTRITION } from "@/lib/menu/nutrition";
 import type { CartItem } from "@/store/cartStore";
 
-export const CART_KEY = "meros-cart";
+export { EMPTY_NUTRITION };
 
-export const EMPTY_NUTRITION = {
-  calories: 0,
-  protein: 0,
-  carbs: 0,
-  fat: 0,
-  fiber: 0,
-  calcium: 0,
-  iron: 0,
-  potassium: 0,
-};
+export const CART_KEY = "meros-cart";
 
 export function customLine(
   lineId: string,
