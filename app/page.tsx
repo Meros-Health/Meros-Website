@@ -1,3 +1,4 @@
+import { pageMetadata } from "@/lib/seo";
 import { HeroSection } from "@/components/sections/HeroSection";
 import { SignatureMenuSection } from "@/components/sections/SignatureMenuSection";
 import { OurStorySection } from "@/components/sections/OurStorySection";
@@ -8,6 +9,12 @@ import { OurStorySection } from "@/components/sections/OurStorySection";
 import { GallerySection } from "@/components/sections/GallerySection";
 import { BuildSection } from "@/components/sections/BuildSection";
 import { SectionBand } from "@/components/ui/SectionBand";
+
+export const metadata = pageMetadata({
+  title: "MERŌS - House of Yogurt",
+  description: "Greek yogurt bowls and smoothies, strained and built in-house. Yaletown, Vancouver.",
+  path: "/",
+});
 
 export default function HomePage() {
   return (

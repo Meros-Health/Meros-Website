@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { LegalShell, LegalSection, LegalList } from "@/components/legal/LegalPage";
 
@@ -9,10 +9,11 @@ import { LegalShell, LegalSection, LegalList } from "@/components/legal/LegalPag
 
 const EFFECTIVE_DATE = "July 7, 2026";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Terms of Service — MERŌS",
   description: "The terms that govern your use of the MERŌS website and ordering.",
-};
+  path: "/terms",
+});
 
 export default function TermsPage() {
   return (

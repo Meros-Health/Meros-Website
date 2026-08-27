@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { LegalShell, LegalSection, LegalList } from "@/components/legal/LegalPage";
 
@@ -12,10 +12,11 @@ import { LegalShell, LegalSection, LegalList } from "@/components/legal/LegalPag
 
 const EFFECTIVE_DATE = "July 7, 2026";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Privacy Policy — MERŌS",
   description: "How MERŌS collects, uses, and protects your personal information.",
-};
+  path: "/privacy",
+});
 
 export default function PrivacyPage() {
   return (

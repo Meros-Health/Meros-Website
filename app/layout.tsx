@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { SITE_URL } from "@/lib/config";
+import { OG_IMAGE, SITE_NAME } from "@/lib/seo";
 import { montageSerif, aetheria, dmSans } from "@/lib/fonts";
 import { LenisProvider } from "@/components/animation/LenisProvider";
 import { Navbar } from "@/components/ui/Navbar";
@@ -18,11 +19,16 @@ const DESCRIPTION = "Greek yogurt bowls and smoothies, strained and built in-hou
 // metadataBase resolves every relative URL below to an absolute one. Without
 // it, Open Graph tags ship relative paths, which no scraper follows, and a
 // link to the site previews as a blank card everywhere it is shared.
+//
+// Deliberately no canonical, no og:url and no per-route title here. Metadata
+// inherits down the tree, so anything set here is claimed by every route: a
+// canonical would tell crawlers each page's canonical version is the home
+// page. Routes build their own with pageMetadata() in lib/seo.ts. What stays
+// is the fallback any route without its own metadata should still get.
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: TITLE,
   description: DESCRIPTION,
-  alternates: { canonical: "/" },
   icons: {
     icon: "/logos/logo-terracotta.png",
     shortcut: "/logos/logo-terracotta.png",
@@ -30,27 +36,17 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    siteName: "MERŌS House of Yogurt",
+    siteName: SITE_NAME,
     title: TITLE,
     description: DESCRIPTION,
-    url: "/",
     locale: "en_CA",
-    images: [
-      {
-        // Placeholder until a purpose-cropped 1200x630 exists: this is the
-        // hero shot at 3:2, so social platforms crop the top and bottom.
-        url: "/images-web/Hero/Gallery-8-hero-web.jpg",
-        width: 2880,
-        height: 1922,
-        alt: "A Meros yogurt bowl",
-      },
-    ],
+    images: [OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
     title: TITLE,
     description: DESCRIPTION,
-    images: ["/images-web/Hero/Gallery-8-hero-web.jpg"],
+    images: [OG_IMAGE.url],
   },
 };
 
