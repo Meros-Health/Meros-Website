@@ -27,12 +27,9 @@ const HEADER_ENTRANCE = {
   transition: { delay: 0.4, duration: 0.8, ease: [0.16, 1, 0.3, 1] as const },
 };
 
-// Nav bar runway fade: transparent for the first 25% of the hero's height,
-// then fades to opaque cream over the next 250px of scroll. Icon/logo color
-// crossfades cream -> midnight over the same t, independent of the
-// background — see chromeTRef / applyChromeState.
-const HERO_FADE_START_FRACTION = 0.25;
-const HERO_FADE_RUNWAY_PX = 250;
+// The nav bar is a flat cream panel at every breakpoint and every scroll
+// position. Icon/logo colour still crossfades, but only for the menu — see
+// chromeTRef / applyChromeState.
 const MENU_FADE_MS = 150;
 const BAND_RGB = "255, 247, 240"; // --color-cream
 const BORDER_RGB = "41, 45, 42"; // --color-midnight
@@ -69,15 +66,12 @@ export function Navbar() {
   const [menuState, setMenuState] = useState({ open: false, mobile: false });
   const menuOpen = menuState.open && menuState.mobile === isMobile;
   const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const bandRef = useRef<HTMLDivElement>(null);
   const chromeRef = useRef<HTMLDivElement>(null);
   const logoLightRef = useRef<HTMLImageElement>(null);
   const logoDarkRef = useRef<HTMLImageElement>(null);
-  const scrollOpacityRef = useRef(pathname === "/" ? 0 : 1);
   // Icon/logo color is dark by default, always — unrelated to scroll. It
   // only switches to light while the menu is open (see the menuOpen effect).
   const chromeTRef = useRef(1);
-  const heroHeightRef = useRef(0);
   const menuOpenRef = useRef(menuOpen);
   const chromeTweenRef = useRef<{ stop: () => void } | null>(null);
   const mountedRef = useRef(false);
@@ -85,20 +79,6 @@ export function Navbar() {
 
   const cartCount = useCartStore((s) => s.items.reduce((n, item) => n + item.quantity, 0));
   const openCart = useCartStore((s) => s.openCart);
-
-  // Background fade is purely scroll-driven now — no menu-awareness needed,
-  // since the overlay visually covers this layer entirely when open (see
-  // HEADER_BG_Z / HEADER_CONTENT_Z below).
-  const applyBandOpacity = useCallback((opacity: number) => {
-    const band = bandRef.current;
-    if (!band) return;
-    band.style.transition = "none";
-    band.style.backgroundColor =
-      opacity >= 1 ? `rgb(${BAND_RGB})` : `rgba(${BAND_RGB}, ${opacity})`;
-    band.style.borderBottomWidth = "1px";
-    band.style.borderBottomStyle = "solid";
-    band.style.borderBottomColor = `rgba(${BORDER_RGB}, ${BORDER_MAX_ALPHA * opacity})`;
-  }, []);
 
   // Icon/logo color-fade: t=0 is the light (cream) phase, t=1 is dark
   // (midnight). Applied via inheritance from chromeRef, plus the two
@@ -129,55 +109,6 @@ export function Navbar() {
     },
     [applyChromeState]
   );
-
-  // Track the hero section's rendered height so the fade thresholds stay
-  // correct across viewport/orientation changes (100svh shifts with mobile
-  // browser chrome show/hide).
-  useLayoutEffect(() => {
-    if (pathname !== "/") return;
-    const heroEl = document.getElementById("hero");
-    if (!heroEl) return;
-    heroHeightRef.current = heroEl.getBoundingClientRect().height;
-    const ro = new ResizeObserver(([entry]) => {
-      heroHeightRef.current = entry.contentRect.height;
-    });
-    ro.observe(heroEl);
-    return () => ro.disconnect();
-  }, [pathname]);
-
-  // Runway fade: transparent for the first HERO_FADE_START_FRACTION of hero
-  // height, then ramps to opaque cream over HERO_FADE_RUNWAY_PX of scroll.
-  // Non-home routes have no hero, so the bar stays solid. This only affects
-  // the background — icon/logo color is unrelated to scroll (see below).
-  useLayoutEffect(() => {
-    if (pathname !== "/") {
-      scrollOpacityRef.current = 1;
-      applyBandOpacity(1);
-      return;
-    }
-
-    const update = (scrollY: number) => {
-      const heroHeight = heroHeightRef.current;
-      const fadeStart = heroHeight * HERO_FADE_START_FRACTION;
-      // Mobile keeps a flat, always-opaque band; the runway fade is desktop only.
-      const opacity =
-        isMobile || heroHeight === 0
-          ? 1
-          : Math.min(1, Math.max(0, (scrollY - fadeStart) / HERO_FADE_RUNWAY_PX));
-      scrollOpacityRef.current = opacity;
-      applyBandOpacity(opacity);
-    };
-
-    update(lenis?.scroll ?? window.scrollY);
-
-    if (!lenis) {
-      const onScroll = () => update(window.scrollY);
-      window.addEventListener("scroll", onScroll, { passive: true });
-      return () => window.removeEventListener("scroll", onScroll);
-    }
-
-    return lenis.on("scroll", (instance) => update(instance.scroll));
-  }, [lenis, pathname, applyBandOpacity, isMobile]);
 
   // Icon/logo color: dark (t=1) by default always; the desktop menu forces it
   // fully light (t=0) because its dark panels sit behind the bar, closing
@@ -317,7 +248,14 @@ export function Navbar() {
           pointerEvents: "none",
         }}
       >
-        <div ref={bandRef} style={{ position: "absolute", inset: 0 }} />
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: `rgb(${BAND_RGB})`,
+            borderBottom: `1px solid rgba(${BORDER_RGB}, ${BORDER_MAX_ALPHA})`,
+          }}
+        />
       </motion.div>
 
       {/* Content layer — always above the menu overlay, so icons/logo stay
