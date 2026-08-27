@@ -10,8 +10,8 @@ custom domain are all exactly as they were. That is this morning's work.
 
 ## Where things stand
 
-`main` is at `d4db6b7`. It is the only branch that exists, locally and on
-GitHub. Three deploys ran tonight, all green, and the last one is live at
+`main` is at `98584f9`. It is the only branch that exists, locally and on
+GitHub. Four deploys ran, all green, and the last one is live at
 `meros-website.merosyogurt.workers.dev`.
 
 | Gate | Result |
@@ -20,7 +20,7 @@ GitHub. Three deploys ran tonight, all green, and the last one is live at
 | `eslint` | clean |
 | `tsc --noEmit` | clean |
 | `vitest` | 147 passed |
-| `playwright` | 77 passed, 2 skipped, across 5 device projects |
+| `playwright` | 85 passed, 2 skipped, across 5 device projects |
 | `opennextjs-cloudflare build` | completes |
 | Workers Builds on `main` | success |
 
@@ -49,6 +49,19 @@ tree is now on `main`.
 - **Cross-device test coverage**: desktop Safari, iPad, iPhone, Pixel.
 - **SEO**: robots.txt, sitemap.xml, Open Graph and Twitter cards, and 308
   redirects for the agency site's five moved URLs.
+- **Per-route canonicals.** The first pass set `alternates.canonical` once in
+  the root layout. Metadata inherits down the tree, so every route claimed the
+  home page as its canonical, which folds /order, /build, /privacy and /terms
+  out of the index. Each route now declares its own through `pageMetadata()` in
+  `lib/seo.ts`, with real titles. `tests/e2e/seo.spec.ts` locks it.
+- **The nav bar is a flat cream panel at every breakpoint.** The scroll-driven
+  runway fade is gone, along with the hero-height observer and scroll
+  subscriptions that only existed to drive it.
+- **The hero image is cropped 12.5% off the bottom** (2880x1919 → 2880x1680).
+  The frame is taller than it is wide, so `object-cover` scaled by height and a
+  quarter of it was empty countertop. Removing the dead space lets it scale up
+  14% and the bowls fill the frame. A crop, not a resample; the uncropped
+  master stays beside it.
 
 ### Why the build was failing
 
