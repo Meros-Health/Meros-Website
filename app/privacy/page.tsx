@@ -31,8 +31,8 @@ export default function PrivacyPage() {
         </p>
         <p>
           Questions about this policy or your personal information can be sent to{" "}
-          <a href="mailto:hello@meros.ca" className="underline hover:text-grapefruit transition-colors">
-            hello@meros.ca
+          <a href="mailto:info@merosyogurt.com" className="underline hover:text-grapefruit transition-colors">
+            info@merosyogurt.com
           </a>
           .
         </p>
@@ -137,8 +137,8 @@ export default function PrivacyPage() {
           By submitting an order or contact form, you consent to us collecting and using
           the information you provide for the purposes described above. You may withdraw
           your consent at any time by emailing{" "}
-          <a href="mailto:hello@meros.ca" className="underline hover:text-grapefruit transition-colors">
-            hello@meros.ca
+          <a href="mailto:info@merosyogurt.com" className="underline hover:text-grapefruit transition-colors">
+            info@merosyogurt.com
           </a>
           , subject to legal or contractual restrictions &mdash; for example, we may need
           to retain records of a completed order for accounting purposes. Withdrawing
@@ -180,8 +180,8 @@ export default function PrivacyPage() {
           Under Canadian privacy law, you may ask us to show you the personal information
           we hold about you, correct it if it is inaccurate, or delete it (subject to legal
           retention requirements). To make a request, email{" "}
-          <a href="mailto:hello@meros.ca" className="underline hover:text-grapefruit transition-colors">
-            hello@meros.ca
+          <a href="mailto:info@merosyogurt.com" className="underline hover:text-grapefruit transition-colors">
+            info@merosyogurt.com
           </a>
           . We will respond within the timelines required by law. If you are not satisfied
           with our response, you may contact the Office of the Information and Privacy
@@ -194,8 +194,8 @@ export default function PrivacyPage() {
           The website is not directed at children, and we do not knowingly collect
           personal information from anyone under 13. If you believe a child has submitted
           personal information through the website, contact us at{" "}
-          <a href="mailto:hello@meros.ca" className="underline hover:text-grapefruit transition-colors">
-            hello@meros.ca
+          <a href="mailto:info@merosyogurt.com" className="underline hover:text-grapefruit transition-colors">
+            info@merosyogurt.com
           </a>{" "}
           and we will delete it.
         </p>

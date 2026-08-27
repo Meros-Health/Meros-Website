@@ -4,11 +4,44 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCartStore } from "@/store/cartStore";
+import { useCartHydrated } from "@/store/useCartHydrated";
 import { CartLineItem } from "@/components/cart/CartLineItem";
 import { submitCheckout, type CheckoutFormState } from "@/app/actions/checkout";
+import { makeIdempotencyKey } from "@/lib/checkout/idempotency";
+import { toCheckoutLines } from "@/lib/checkout/lines";
 import { CHECKOUT_ENABLED } from "@/lib/config";
 
 const LAST_ORDER_KEY = "meros-last-order";
+// One key per purchase attempt, kept in sessionStorage so a reload after a
+// hung submit still dedupes against an order that may already exist.
+const IDEMPOTENCY_KEY = "meros-checkout-key";
+
+function loadIdempotencyKey(): string {
+  try {
+    const existing = sessionStorage.getItem(IDEMPOTENCY_KEY);
+    if (existing) return existing;
+  } catch {
+    // Storage unavailable: a per-mount key still covers same-page retries.
+  }
+  const key = makeIdempotencyKey();
+  try {
+    sessionStorage.setItem(IDEMPOTENCY_KEY, key);
+  } catch {
+    // Best effort only.
+  }
+  return key;
+}
+
+function clearIdempotencyKey(): void {
+  try {
+    sessionStorage.removeItem(IDEMPOTENCY_KEY);
+  } catch {
+    // Nothing to recover.
+  }
+}
+
+// Which errors a cart edit can fix, and which need the current menu.
+const RELOAD_CODES = new Set(["price-changed", "unavailable", "invalid"]);
 
 function readLastOrder(): CheckoutFormState | null {
   try {
@@ -26,21 +59,17 @@ export default function CheckoutPage() {
   const items = useCartStore((s) => s.items);
   const subtotal = useCartStore((s) => s.subtotal());
   const clearCart = useCartStore((s) => s.clearCart);
+  const openCart = useCartStore((s) => s.openCart);
 
   const [state, setState] = useState<CheckoutFormState>({ status: "idle", message: "" });
   const [pending, setPending] = useState(false);
-  // Wait for the persisted cart to rehydrate before deciding anything —
+  // In-flight guard: the disabled attribute only applies after the next
+  // render, so a second submit dispatched in the same tick needs the ref.
+  const submittingRef = useRef(false);
+  // Wait for the persisted cart to rehydrate before deciding anything,
   // otherwise a fresh page load always sees an empty cart and redirects.
-  const [hydrated, setHydrated] = useState(false);
+  const hydrated = useCartHydrated();
   const formRef = useRef<HTMLFormElement>(null);
-
-  useEffect(() => {
-    if (useCartStore.persist.hasHydrated()) {
-      setHydrated(true);
-      return;
-    }
-    return useCartStore.persist.onFinishHydration(() => setHydrated(true));
-  }, []);
 
   useEffect(() => {
     if (!CHECKOUT_ENABLED) {
@@ -62,21 +91,44 @@ export default function CheckoutPage() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setPending(true);
+
     const formData = new FormData(e.currentTarget);
-    const result = await submitCheckout(JSON.stringify(items), state, formData);
-    setState(result);
-    setPending(false);
-    if (result.status === "success") {
-      formRef.current?.reset();
-      clearCart();
-      try {
-        sessionStorage.setItem(LAST_ORDER_KEY, JSON.stringify(result));
-      } catch {
-        // Confirmation persistence is best-effort only.
+    formData.set("idempotencyKey", loadIdempotencyKey());
+
+    try {
+      const result = await submitCheckout(JSON.stringify(toCheckoutLines(items)), state, formData);
+      setState(result);
+      if (result.status === "success") {
+        clearIdempotencyKey();
+        formRef.current?.reset();
+        clearCart();
+        try {
+          sessionStorage.setItem(LAST_ORDER_KEY, JSON.stringify(result));
+        } catch {
+          // Confirmation persistence is best-effort only.
+        }
       }
+    } catch {
+      // A thrown action (network failure, a POS or payment call that fails
+      // once those exist) must never leave the button on "Placing Order...".
+      setState({ status: "error", code: "unknown", message: "Something went wrong. Please try again." });
+    } finally {
+      submittingRef.current = false;
+      setPending(false);
     }
   }
+
+  const lineError = state.status === "error" && state.lineId ? state : null;
+  const needsReload = lineError !== null && RELOAD_CODES.has(lineError.code ?? "");
+
+  // A line-specific error is about the cart as it was submitted. Once the cart
+  // changes (the customer edited or removed the line) the marker is stale.
+  useEffect(() => {
+    setState((current) => (current.status === "error" && current.lineId ? { status: "idle", message: "" } : current));
+  }, [items]);
 
   if (!CHECKOUT_ENABLED || !hydrated) {
     return null;
@@ -123,7 +175,12 @@ export default function CheckoutPage() {
             </h2>
             <ul className="space-y-3">
               {items.map((item) => (
-                <CartLineItem key={item.lineId} item={item} showActions={false} />
+                <CartLineItem
+                  key={item.lineId}
+                  item={item}
+                  showActions={false}
+                  error={lineError?.lineId === item.lineId ? lineError.message : undefined}
+                />
               ))}
             </ul>
             <div className="flex justify-between pt-4">
@@ -147,6 +204,7 @@ export default function CheckoutPage() {
               <input
                 id="checkout-name"
                 name="name"
+                maxLength={100}
                 type="text"
                 required
                 autoComplete="name"
@@ -162,6 +220,7 @@ export default function CheckoutPage() {
               <input
                 id="checkout-email"
                 name="email"
+                maxLength={254}
                 type="email"
                 required
                 autoComplete="email"
@@ -177,6 +236,7 @@ export default function CheckoutPage() {
               <input
                 id="checkout-phone"
                 name="phone"
+                maxLength={30}
                 type="tel"
                 required
                 autoComplete="tel"
@@ -186,7 +246,25 @@ export default function CheckoutPage() {
             </div>
 
             {state.status === "error" && (
-              <p className="font-body-mixed text-grapefruit text-[11px]">{state.message}</p>
+              <div className="flex flex-col items-start gap-2">
+                <p className="font-body-mixed text-grapefruit text-[11px]">
+                  {needsReload
+                    ? "The menu has changed since you opened this page. Reload to see the current menu, then place your order again."
+                    : lineError
+                      ? "Update the marked item, then place your order again."
+                      : state.message}
+                </p>
+                {lineError && (
+                  <button
+                    type="button"
+                    onClick={needsReload ? () => window.location.reload() : openCart}
+                    className="font-body-caps text-[10px] tracking-widest text-midnight px-4 py-2 transition-opacity hover:opacity-70"
+                    style={{ border: "0.5px solid rgba(41,45,42,0.28)" }}
+                  >
+                    {needsReload ? "Reload" : "Edit cart"}
+                  </button>
+                )}
+              </div>
             )}
 
             <button

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { BUILD_CONFIG } from "@/lib/menu/buildConfig";
 import { isSelectionComplete } from "@/lib/menu/calcBowlPrice";
 import { useBowlBuilderStore } from "@/store/bowlBuilderStore";
@@ -20,6 +21,18 @@ export function BuildFooter() {
   const addItem = useCartStore((s) => s.addItem);
   const openCart = useCartStore((s) => s.openCart);
 
+  // Leaving /build within the feedback window drops the drawer-open
+  // choreography; the cart write itself already happened. The feedback flag
+  // is cleared too so the next visit starts on the button, not on "Added".
+  const timersRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
+  useEffect(() => {
+    return () => {
+      timersRef.current.forEach(clearTimeout);
+      timersRef.current = [];
+      clearAddedFeedback();
+    };
+  }, [clearAddedFeedback]);
+
   const stepIndex = BUILD_CONFIG.steps.findIndex((s) => s.id === activeStep);
   const isFirst = stepIndex === 0;
   const isLast = stepIndex === BUILD_CONFIG.steps.length - 1;
@@ -27,11 +40,13 @@ export function BuildFooter() {
   const firstRequired = BUILD_CONFIG.steps.find((s) => s.required);
 
   const handleAddToCart = () => {
-    if (!canAdd) return;
+    // The store flag is set synchronously below, so a second click in the
+    // same tick (before React swaps the button for the feedback text) sees it.
+    if (!canAdd || useBowlBuilderStore.getState().addedFeedback) return;
 
     // The cart store derives size, name, price and nutrition from the
     // selection itself; the values passed here are placeholders it overwrites.
-    addItem({
+    const result = addItem({
       kind: "custom",
       productId: "custom-bowl",
       name: "Custom Bowl",
@@ -40,12 +55,16 @@ export function BuildFooter() {
       quantity: 1,
       unitPrice: price,
     });
+    // At the 99 cap nothing was added, so no "Added" feedback either.
+    if (result !== "added") return;
 
     // Order matters: reset() clears the feedback flag, so set it afterwards.
     reset();
     showAddedFeedback();
-    setTimeout(() => openCart(), 600);
-    setTimeout(() => clearAddedFeedback(), 2000);
+    timersRef.current.push(
+      setTimeout(() => openCart(), 600),
+      setTimeout(() => clearAddedFeedback(), 2000)
+    );
   };
 
   return (

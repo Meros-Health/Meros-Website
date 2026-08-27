@@ -14,6 +14,7 @@ import { useTransitionRouter } from "@/components/transition/TransitionProvider"
 import { MENU_EXIT_COVER_MS } from "@/lib/motion";
 import { useCartStore } from "@/store/cartStore";
 import { useIsMobile } from "@/lib/useIsMobile";
+import { lockScroll } from "@/lib/scrollLock";
 
 const HEADER_BG_Z = 110;
 const HEADER_CONTENT_Z = 120;
@@ -59,8 +60,14 @@ export function Navbar() {
   const transitionRouter = useTransitionRouter();
   const pathname = usePathname();
   const lenis = useLenis();
-  const [menuOpen, setMenuOpen] = useState(false);
   const isMobile = useIsMobile();
+  // The menu remembers which breakpoint it opened at. Crossing the
+  // breakpoint swaps which menu component renders; deriving `menuOpen` this
+  // way makes it false on the very render where isMobile changes, so the
+  // other branch is never mounted open (which left the desktop overlay's
+  // panels stuck at full size with no exit to play).
+  const [menuState, setMenuState] = useState({ open: false, mobile: false });
+  const menuOpen = menuState.open && menuState.mobile === isMobile;
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const bandRef = useRef<HTMLDivElement>(null);
   const chromeRef = useRef<HTMLDivElement>(null);
@@ -184,11 +191,10 @@ export function Navbar() {
     setChromeT(menuOpen && !isMobile ? 0 : 1, true);
   }, [menuOpen, isMobile, setChromeT]);
 
-  // Crossing the breakpoint swaps which menu component renders. Close rather
-  // than strand an open menu in the other branch (phone rotate is enough to
-  // hit this). No-op on mount: menuOpen is already false.
+  // Clear the stored open flag once the breakpoint has moved so the next
+  // open starts clean. The derived `menuOpen` is already false by now.
   useEffect(() => {
-    setMenuOpen(false);
+    setMenuState((state) => (state.open && state.mobile !== isMobile ? { open: false, mobile: isMobile } : state));
   }, [isMobile]);
 
   useEffect(() => {
@@ -196,18 +202,21 @@ export function Navbar() {
     else lenis?.start();
   }, [menuOpen, lenis]);
 
-  // Native scroll lock. No scrollbar-width compensation is needed here because
-  // `scrollbar-gutter: stable` (globals.css) keeps the gutter reserved, so
-  // hiding overflow never changes the viewport width or shifts the layout.
+  // Native scroll lock, shared with the cart drawer (lib/scrollLock.ts). No
+  // scrollbar-width compensation is needed here because `scrollbar-gutter:
+  // stable` (globals.css) keeps the gutter reserved, so hiding overflow never
+  // changes the viewport width or shifts the layout.
   useEffect(() => {
     if (!menuOpen) return;
-    const body = document.body;
-    const prevOverflow = body.style.overflow;
-    body.style.overflow = "hidden";
-    return () => {
-      body.style.overflow = prevOverflow;
-    };
+    return lockScroll();
   }, [menuOpen]);
+
+  const openMenu = () => setMenuState({ open: true, mobile: isMobile });
+
+  const closeMenu = useCallback(() => {
+    setMenuState({ open: false, mobile: isMobile });
+    requestAnimationFrame(() => menuButtonRef.current?.focus());
+  }, [isMobile]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -216,12 +225,7 @@ export function Navbar() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [menuOpen]);
-
-  const closeMenu = () => {
-    setMenuOpen(false);
-    requestAnimationFrame(() => menuButtonRef.current?.focus());
-  };
+  }, [menuOpen, closeMenu]);
 
   // The desktop menu's own close animation doubles as the transition's exit
   // cover: menu-composed mode waits out the tuned close window, then navigates
@@ -351,7 +355,7 @@ export function Navbar() {
               type="button"
               aria-label={menuOpen ? "Close menu" : "Open menu"}
               aria-expanded={menuOpen}
-              onClick={() => (menuOpen ? closeMenu() : setMenuOpen(true))}
+              onClick={() => (menuOpen ? closeMenu() : openMenu())}
               style={{
                 ...iconButtonStyle,
                 fontFamily: "var(--font-body)",

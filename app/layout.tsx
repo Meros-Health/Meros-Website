@@ -7,6 +7,7 @@ import { RouteScroll } from "@/components/ui/RouteScroll";
 import { Footer } from "@/components/ui/Footer";
 import { Preloader } from "@/components/ui/Preloader";
 import { CartDrawer } from "@/components/ui/CartDrawer";
+import { CartSync } from "@/components/cart/CartSync";
 import { TransitionProvider } from "@/components/transition/TransitionProvider";
 
 export const metadata: Metadata = {
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               {children}
               <Footer />
               <CartDrawer />
+              <CartSync />
             </TransitionProvider>
           </Preloader>
         </LenisProvider>

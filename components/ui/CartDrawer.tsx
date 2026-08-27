@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useTransitionRouter } from "@/components/transition/TransitionProvider";
 import { useCartStore } from "@/store/cartStore";
+import { lockScroll } from "@/lib/scrollLock";
 import { CartLineItem } from "@/components/cart/CartLineItem";
 import { CHECKOUT_ENABLED } from "@/lib/config";
 
@@ -16,6 +17,8 @@ export function CartDrawer() {
   const isOpen = useCartStore((s) => s.isOpen);
   const closeCart = useCartStore((s) => s.closeCart);
   const items = useCartStore((s) => s.items);
+  const notice = useCartStore((s) => s.notice);
+  const dismissNotice = useCartStore((s) => s.dismissNotice);
   const subtotal = useCartStore((s) => s.subtotal());
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -34,12 +37,7 @@ export function CartDrawer() {
 
   useEffect(() => {
     if (!isOpen) return;
-    const body = document.body;
-    const prevOverflow = body.style.overflow;
-    body.style.overflow = "hidden";
-    return () => {
-      body.style.overflow = prevOverflow;
-    };
+    return lockScroll();
   }, [isOpen]);
 
   useEffect(() => {
@@ -116,6 +114,32 @@ export function CartDrawer() {
 
             {/* Items */}
             <div className="flex-1 overflow-y-auto px-6 py-5">
+              {notice && (
+                <div
+                  role="status"
+                  data-cart-notice
+                  className="mb-5 px-4 py-3"
+                  style={{ border: "0.5px solid rgba(41,45,42,0.28)" }}
+                >
+                  <p className="font-body-caps text-[10px] tracking-widest text-midnight">
+                    Your cart was updated to match the current menu.
+                  </p>
+                  <ul className="mt-2 space-y-1">
+                    {notice.map((change, i) => (
+                      <li key={i} className="font-body-mixed text-xs text-juniper leading-relaxed">
+                        {change.message}
+                      </li>
+                    ))}
+                  </ul>
+                  <button
+                    type="button"
+                    onClick={dismissNotice}
+                    className="mt-3 font-body-caps text-[10px] tracking-widest text-juniper transition-opacity hover:opacity-70"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              )}
               {items.length === 0 ? (
                 <p className="font-body-mixed text-sm text-juniper">No items yet.</p>
               ) : (

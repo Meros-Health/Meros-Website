@@ -502,7 +502,7 @@ export function PairingsSection() {
   const pairPrice = bowlPrice + smoothiePrice;
 
   const handleAddPair = () => {
-    addItem({
+    const bowlResult = addItem({
       kind: "signature",
       productId: bowl.id,
       name: bowl.name,
@@ -511,7 +511,7 @@ export function PairingsSection() {
       quantity: 1,
       unitPrice: bowlPrice,
     });
-    addItem({
+    const smoothieResult = addItem({
       kind: "signature",
       productId: smoothie.id,
       name: smoothie.name,
@@ -520,6 +520,9 @@ export function PairingsSection() {
       quantity: 1,
       unitPrice: smoothiePrice,
     });
+    // At the 99 cap nothing was added for that half; only confirm when
+    // something actually went into the cart.
+    if (bowlResult !== "added" && smoothieResult !== "added") return;
     setAdded(true);
     if (addedTimeout.current) clearTimeout(addedTimeout.current);
     addedTimeout.current = setTimeout(() => setAdded(false), 1400);

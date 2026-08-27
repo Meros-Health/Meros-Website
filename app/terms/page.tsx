@@ -62,8 +62,8 @@ export default function TermsPage() {
           Because our products are fresh and perishable, all sales are final once an order
           has been prepared. If something is wrong with your order &mdash; a missing item,
           an incorrect item, or a quality issue &mdash; contact us at{" "}
-          <a href="mailto:hello@meros.ca" className="underline hover:text-grapefruit transition-colors">
-            hello@meros.ca
+          <a href="mailto:info@merosyogurt.com" className="underline hover:text-grapefruit transition-colors">
+            info@merosyogurt.com
           </a>{" "}
           or speak to us in store, and we will make it right with a replacement or refund.
         </p>
@@ -179,8 +179,8 @@ export default function TermsPage() {
         </p>
         <p>
           Questions? Reach us at{" "}
-          <a href="mailto:hello@meros.ca" className="underline hover:text-grapefruit transition-colors">
-            hello@meros.ca
+          <a href="mailto:info@merosyogurt.com" className="underline hover:text-grapefruit transition-colors">
+            info@merosyogurt.com
           </a>
           .
         </p>

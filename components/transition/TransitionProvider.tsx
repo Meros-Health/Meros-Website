@@ -41,8 +41,9 @@ export interface TransitionNavigateOptions {
 }
 
 interface TransitionRouterValue {
-  push: (href: string, options?: TransitionNavigateOptions) => void;
-  replace: (href: string, options?: TransitionNavigateOptions) => void;
+  /** False when a transition is already in flight and the navigation was ignored. */
+  push: (href: string, options?: TransitionNavigateOptions) => boolean;
+  replace: (href: string, options?: TransitionNavigateOptions) => boolean;
 }
 
 // Default true so consumers outside a provider (or during unmount) never get
@@ -62,8 +63,14 @@ export function useTransitionRouter(): TransitionRouterValue {
   return useMemo(
     () =>
       ctx ?? {
-        push: (href: string) => router.push(href),
-        replace: (href: string) => router.replace(href),
+        push: (href: string) => {
+          router.push(href);
+          return true;
+        },
+        replace: (href: string) => {
+          router.replace(href);
+          return true;
+        },
       },
     [ctx, router]
   );
@@ -110,16 +117,16 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   const navigate = useCallback(
-    (href: string, options: TransitionNavigateOptions | undefined, method: "push" | "replace") => {
+    (href: string, options: TransitionNavigateOptions | undefined, method: "push" | "replace"): boolean => {
       const doNavigate = () => (method === "replace" ? router.replace(href) : router.push(href));
 
       // Transitions are atomic: ignore further navigation until idle again.
-      if (phaseRef.current !== "idle") return;
+      if (phaseRef.current !== "idle") return false;
 
       // Same-pathname navigations (query/hash tweaks) get no choreography.
       if (pathnameOf(href) === pathnameRef.current) {
         doNavigate();
-        return;
+        return true;
       }
 
       const id = ++transitionIdRef.current;
@@ -148,6 +155,8 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
           releaseCover(id);
         }
       }, exitDelay + NAV_WATCHDOG_MS);
+
+      return true;
     },
     [router, releaseCover]
   );

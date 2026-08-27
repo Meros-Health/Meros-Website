@@ -12,6 +12,8 @@ import { MacroDashboard } from "./MacroDashboard";
 interface BowlConfiguratorProps {
   mode: "create" | "edit";
   editLineId?: string;
+  /** Edit mode: false once the line being edited has left the cart. */
+  editLineExists?: boolean;
   header: {
     eyebrow: string;
     title: string;
@@ -19,7 +21,7 @@ interface BowlConfiguratorProps {
   };
 }
 
-export function BowlConfigurator({ mode, editLineId, header }: BowlConfiguratorProps) {
+export function BowlConfigurator({ mode, editLineId, editLineExists = true, header }: BowlConfiguratorProps) {
   const [mobileExpanded, setMobileExpanded] = useState(false);
 
   return (
@@ -61,7 +63,7 @@ export function BowlConfigurator({ mode, editLineId, header }: BowlConfiguratorP
             {mode === "create" ? (
               <BuildFooter />
             ) : (
-              <EditBuildFooter lineId={editLineId!} />
+              <EditBuildFooter lineId={editLineId!} lineExists={editLineExists} />
             )}
           </div>
         </div>
