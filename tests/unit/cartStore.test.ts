@@ -335,3 +335,76 @@ describe("AddResult: invalid is distinct from at-max", () => {
   });
 });
 
+
+describe("signature additions and removals", () => {
+  const mango = { additions: ["mangoes"], removals: [] };
+  const withMango = (lineId = "with-mango", extra = {}) =>
+    signatureLine(lineId, "moment", "medium", 14, { mods: mango, ...extra });
+
+  it("the same bowl with different mods is a separate line; the same mods merge", async () => {
+    seedCart([signatureLine("plain", "moment", "medium", 12), withMango()]);
+    const { cartStore } = await loadWithMenu();
+    const store = cartStore.useCartStore;
+    expect(store.getState().items).toHaveLength(2);
+    store.getState().addItem({ ...withMango("x"), lineId: undefined } as never);
+    expect(store.getState().items).toHaveLength(2);
+    expect(store.getState().items[1].quantity).toBe(2);
+    store.getState().addItem({ ...signatureLine("y", "moment", "medium", 12), lineId: undefined } as never);
+    expect(store.getState().items[0].quantity).toBe(2);
+  });
+
+  it("prices and sanitizes mods on add, and omits the field when nothing changed", async () => {
+    const { cartStore } = await loadWithMenu();
+    const store = cartStore.useCartStore;
+    store.getState().addItem({
+      ...signatureLine("z", "moment", "medium", 1, { mods: { additions: ["mangoes", "nope"], removals: ["mangoes"] } }),
+      lineId: undefined,
+    } as never);
+    expect(store.getState().items[0].unitPrice).toBe(14);
+    expect(store.getState().items[0].mods).toEqual({ additions: ["mangoes"], removals: [] });
+    store.getState().addItem({ ...signatureLine("w", "moment", "large", 1, { mods: { additions: [], removals: [] } }), lineId: undefined } as never);
+    expect(store.getState().items[1].unitPrice).toBe(15);
+    expect("mods" in store.getState().items[1]).toBe(false);
+  });
+
+  it("updateSignatureLine re-prices in place and clears mods when everything is undone", async () => {
+    seedCart([withMango("a")]);
+    const { cartStore } = await loadWithMenu();
+    const store = cartStore.useCartStore;
+    expect(store.getState().updateSignatureLine("a", { sizeId: "large", mods: { additions: ["mangoes"], removals: ["house-granola"] } })).toBe("updated");
+    let item = store.getState().items[0];
+    expect(item.unitPrice).toBe(17);
+    expect(item.name).toBe("The Moment · Large");
+    expect(item.mods).toEqual({ additions: ["mangoes"], removals: ["house-granola"] });
+    expect(store.getState().updateSignatureLine("a", { sizeId: "medium", mods: { additions: [], removals: [] } })).toBe("updated");
+    item = store.getState().items[0];
+    expect(item.unitPrice).toBe(12);
+    expect("mods" in item).toBe(false);
+    expect((readPersistedItems()[0] as { mods?: unknown }).mods).toBeUndefined();
+  });
+
+  it("updateSignatureLine merges into a duplicate under the 99 cap and reports missing lines", async () => {
+    seedCart([signatureLine("plain", "moment", "medium", 12, { quantity: 60 }), withMango("b", { quantity: 60 }), plain("custom")]);
+    const { cartStore } = await loadWithMenu();
+    const store = cartStore.useCartStore;
+    expect(store.getState().updateSignatureLine("b", { sizeId: "medium", mods: { additions: [], removals: [] } })).toBe("merged");
+    expect(store.getState().items.map((i) => [i.lineId, i.quantity])).toEqual([["plain", 99], ["custom", 1]]);
+    expect(store.getState().updateSignatureLine("custom", { sizeId: "medium", mods: mango })).toBe("missing");
+    expect(store.getState().updateSignatureLine("gone", { sizeId: "medium", mods: mango })).toBe("missing");
+    expect(store.getState().updateSignatureLine("plain", { sizeId: "huge", mods: mango })).toBe("missing");
+  });
+
+  it("persisted mods survive rehydrate; the modal's line id does not persist", async () => {
+    seedCart([withMango("a")]);
+    const { cartStore } = await loadWithMenu();
+    const store = cartStore.useCartStore;
+    expect(store.getState().items[0].mods).toEqual(mango);
+    expect(store.getState().items[0].unitPrice).toBe(14);
+    store.getState().openEdit("a");
+    expect(store.getState().editingLineId).toBe("a");
+    store.getState().incrementItem("a");
+    expect(JSON.parse(localStorage.getItem(CART_KEY)!).state.editingLineId).toBeUndefined();
+    store.getState().closeEdit();
+    expect(store.getState().editingLineId).toBeNull();
+  });
+});

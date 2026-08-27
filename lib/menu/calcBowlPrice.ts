@@ -25,8 +25,12 @@ export function formatSurcharge(amount: number): string {
   return `+$${amount.toFixed(2)}`;
 }
 
-/** Cost of `extra` picks beyond the included count, honouring the bundle when present. */
-function extrasCost(extra: number, pricing: Extract<BuildStep["pricing"], { mode: "included-then-extra" }>): number {
+/**
+ * Cost of `extra` picks beyond the included count, honouring the bundle when
+ * present. Shared with signature additions (lib/menu/signatureMods.ts), which
+ * are priced as extras on top of a signature's flat price.
+ */
+export function extrasCost(extra: number, pricing: Extract<BuildStep["pricing"], { mode: "included-then-extra" }>): number {
   if (extra <= 0) return 0;
   if (pricing.bundle) {
     const bundles = Math.floor(extra / pricing.bundle.count);

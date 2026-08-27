@@ -197,12 +197,9 @@ export function Navbar() {
     setMenuState((state) => (state.open && state.mobile !== isMobile ? { open: false, mobile: isMobile } : state));
   }, [isMobile]);
 
-  useEffect(() => {
-    if (menuOpen) lenis?.stop();
-    else lenis?.start();
-  }, [menuOpen, lenis]);
-
-  // Native scroll lock, shared with the cart drawer (lib/scrollLock.ts). No
+  // Scroll lock, shared with the cart drawer and the edit modal
+  // (lib/scrollLock.ts); it stops and starts Lenis too, so closing the menu
+  // while the drawer is still open no longer restarts smooth scrolling. No
   // scrollbar-width compensation is needed here because `scrollbar-gutter:
   // stable` (globals.css) keeps the gutter reserved, so hiding overflow never
   // changes the viewport width or shifts the layout.

@@ -120,7 +120,31 @@ TV pick it up. The TV needs a column-count hint for the new step id in
 - `calcBowlPrice.ts`: `calcBowlPrice(selection)`, option price labels, step instructions. Throws `PricingError` on anything the menu does not offer.
 - `selectionUtils.ts`: the persisted custom-bowl shape `{ sizeId, steps: { [stepId]: ingredientId[] } }`, migration of older cart payloads, `sanitizeSelection` which drops ids that no longer resolve.
 - `signatures.ts`: signature items with `recipe` resolved to a display string.
+- `signatureMods.ts`: additions and removals on a signature line (see below).
 - `legacyIdMap.ts`: old builder ids to registry ids, used only when rehydrating carts saved before v2.
+
+### Signature additions and removals
+
+A signature bowl or smoothie in the cart can be edited from the cart drawer:
+up to `MAX_ADDITIONS` (2) ingredients added, up to `MAX_REMOVALS` (2) recipe
+ingredients left out, and a size change. Nothing in this file describes it;
+the rules are derived:
+
+- **Addable**: any ingredient offered in a `select: "multi"` build step that
+  the recipe does not already contain. Priced as an extra on that step: the
+  step's `extraPrice` (bundle included, though it is unreachable at a cap of
+  2), or the option's `surcharge` on a surcharge-only step. The recipe never
+  counts against a step's `included` allowance; the signature price covers it.
+- **Removable**: any recipe ingredient except the base (an ingredient offered
+  in a `select: "one"` step). Free. Recipe-only ingredients the builder does
+  not offer (toasted almonds, almond butter) are removable but not addable,
+  because nothing prices them.
+
+The cart persists `mods: { additions, removals }` as ingredient ids on the
+line, re-validates them on every load like a custom selection, and checkout
+re-prices them server-side. Removing an ingredient from `menu.json` therefore
+also removes it from any persisted addition, with a notice. The caps are
+constants in `signatureMods.ts`, not menu data.
 
 Signature `calories` / `protein` per size are hand-entered from the macro
 sheets. Recipes are references for integrity and display; they are not summed

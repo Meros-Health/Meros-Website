@@ -6,7 +6,15 @@ import { logActionError, logOrder } from "@/lib/log";
 import { calcBowlPrice, isSelectionComplete, PricingError, type BowlSelection } from "@/lib/menu/calcBowlPrice";
 import { getBuildSize } from "@/lib/menu/buildConfig";
 import { getSelectionHeadline, getSelectionKey, sanitizeSelection } from "@/lib/menu/selectionUtils";
-import { getSignatureItem, getSignaturePrice, getSizeLabel } from "@/lib/menu/signatures";
+import {
+  calcSignaturePrice,
+  emptyMods,
+  formatSignatureMods,
+  getSignatureModsKey,
+  sanitizeSignatureMods,
+  type SignatureMods,
+} from "@/lib/menu/signatureMods";
+import { getSignatureItem, getSizeLabel } from "@/lib/menu/signatures";
 import { MAX_LINES, MAX_QUANTITY } from "@/lib/menu/limits";
 import {
   EMAIL_PATTERN,
@@ -60,6 +68,7 @@ type IncomingLine = {
   unitPrice?: unknown;
   size?: { id?: unknown };
   selection?: unknown;
+  mods?: unknown;
 };
 
 type PricedLine = {
@@ -105,6 +114,28 @@ function readSelection(raw: unknown): BowlSelection | null {
   return { sizeId, steps: out };
 }
 
+function readIdList(value: unknown): string[] | null {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.length > MAX_STEP_PICKS) return null;
+  if (!value.every((id) => typeof id === "string")) return null;
+  return value as string[];
+}
+
+/**
+ * Structural check only: mods are `{ additions?: string[], removals?: string[] }`
+ * or absent. Whether the ids are allowed for the item is decided by
+ * sanitizeSignatureMods against the menu.
+ */
+function readSignatureMods(raw: unknown): SignatureMods | null {
+  if (raw === undefined || raw === null) return emptyMods();
+  if (typeof raw !== "object" || Array.isArray(raw)) return null;
+  const { additions, removals } = raw as { additions?: unknown; removals?: unknown };
+  const additionIds = readIdList(additions);
+  const removalIds = readIdList(removals);
+  if (!additionIds || !removalIds) return null;
+  return { additions: additionIds, removals: removalIds };
+}
+
 /**
  * Re-prices a cart line from the server-side menu. The client only supplies
  * ids, a quantity and the price it displayed; the displayed price is compared,
@@ -128,10 +159,22 @@ function priceLine(raw: unknown): LineResult {
     if (typeof sizeId !== "string") return fail("invalid");
     const item = getSignatureItem(line.productId);
     if (!item) return fail("unavailable");
+
+    const mods = readSignatureMods(line.mods);
+    if (!mods) return fail("invalid");
+    // As with a custom selection: the client always sends sanitized mods, so a
+    // difference here (an id the item cannot take, a pick over the cap, a
+    // removal of the base) means tampering or a menu change under the client.
+    const sanitized = sanitizeSignatureMods(item, mods);
+    if (getSignatureModsKey(sanitized) !== getSignatureModsKey(mods)) return fail("unavailable");
+
     // Unknown size for this item (e.g. "large" on a smoothie) is rejected, not priced.
-    const unitPrice = getSignaturePrice(item.id, sizeId);
+    const unitPrice = calcSignaturePrice(item.id, sizeId, sanitized);
     if (unitPrice === undefined) return fail("unavailable");
-    priced = { name: `${item.name} · ${getSizeLabel(item.category, sizeId)}`, quantity, unitPrice };
+    const name = [`${item.name} · ${getSizeLabel(item.category, sizeId)}`, formatSignatureMods(sanitized)]
+      .filter(Boolean)
+      .join(" · ");
+    priced = { name, quantity, unitPrice };
   } else if (line.kind === "custom") {
     const selection = readSelection(line.selection);
     if (!selection || !isSelectionComplete(selection)) return fail("invalid");

@@ -3,6 +3,7 @@ import { getCartItemDisplayName } from "@/store/cartStore";
 import { getSelectedIngredients } from "@/lib/menu/calcBowlPrice";
 import { formatMacroSummary } from "@/lib/menu/nutrition";
 import { normalizeSelection } from "@/lib/menu/selectionUtils";
+import { formatSignatureMods, hasMods } from "@/lib/menu/signatureMods";
 import { CartLineActions } from "./CartLineActions";
 
 export function formatCustomBowlIngredients(item: CartItem): string {
@@ -22,6 +23,7 @@ interface CartLineItemProps {
 
 export function CartLineItem({ item, showActions = true, error }: CartLineItemProps) {
   const isCustom = item.kind === "custom" && item.selection;
+  const modsText = item.kind === "signature" && hasMods(item.mods) ? formatSignatureMods(item.mods) : "";
 
   return (
     <li
@@ -46,6 +48,11 @@ export function CartLineItem({ item, showActions = true, error }: CartLineItemPr
               {formatCustomBowlIngredients(item)}
             </p>
           )}
+          {modsText && (
+            <p data-line-mods className="font-body-mixed text-xs text-juniper mt-1 leading-relaxed">
+              {modsText}
+            </p>
+          )}
           {isCustom && item.nutrition.calories > 0 && (
             <p className="font-body-caps text-[9px] tracking-widest text-grapefruit mt-1.5">
               {formatMacroSummary(item.nutrition)}
@@ -62,7 +69,12 @@ export function CartLineItem({ item, showActions = true, error }: CartLineItemPr
         </p>
       )}
       {showActions && (
-        <CartLineActions lineId={item.lineId} kind={item.kind} quantity={item.quantity} />
+        <CartLineActions
+          lineId={item.lineId}
+          kind={item.kind}
+          name={getCartItemDisplayName(item)}
+          quantity={item.quantity}
+        />
       )}
     </li>
   );

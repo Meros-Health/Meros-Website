@@ -20,6 +20,7 @@ export function CartDrawer() {
   const notice = useCartStore((s) => s.notice);
   const dismissNotice = useCartStore((s) => s.dismissNotice);
   const subtotal = useCartStore((s) => s.subtotal());
+  const editing = useCartStore((s) => s.editingLineId !== null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   // The transition cover sits above the drawer, so its slide-out plays hidden
@@ -40,14 +41,17 @@ export function CartDrawer() {
     return lockScroll();
   }, [isOpen]);
 
+  // While the edit modal is open above the drawer, Escape belongs to the
+  // modal. Both listen on window, and this one registered first, so the modal
+  // cannot stop the event from reaching here; the condition has to be here.
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || editing) return;
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") closeCart();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [isOpen, closeCart]);
+  }, [isOpen, editing, closeCart]);
 
   return (
     <AnimatePresence>
@@ -113,7 +117,7 @@ export function CartDrawer() {
             </div>
 
             {/* Items */}
-            <div className="flex-1 overflow-y-auto px-6 py-5">
+            <div className="flex-1 overflow-y-auto px-6 py-5" data-lenis-prevent>
               {notice && (
                 <div
                   role="status"

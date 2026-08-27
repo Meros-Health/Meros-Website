@@ -7,6 +7,7 @@ import { RouteScroll } from "@/components/ui/RouteScroll";
 import { Footer } from "@/components/ui/Footer";
 import { Preloader } from "@/components/ui/Preloader";
 import { CartDrawer } from "@/components/ui/CartDrawer";
+import { SignatureEditModal } from "@/components/cart/SignatureEditModal";
 import { CartSync } from "@/components/cart/CartSync";
 import { TransitionProvider } from "@/components/transition/TransitionProvider";
 
@@ -32,6 +33,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               {children}
               <Footer />
               <CartDrawer />
+              {/* A sibling of the drawer, never a child: the drawer panel keeps a
+                  transform, which would become the containing block for the
+                  modal's fixed positioning. */}
+              <SignatureEditModal />
               <CartSync />
             </TransitionProvider>
           </Preloader>

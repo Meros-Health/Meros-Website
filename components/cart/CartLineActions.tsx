@@ -7,17 +7,26 @@ import { MAX_QUANTITY } from "@/lib/menu/limits";
 interface CartLineActionsProps {
   lineId: string;
   kind: "signature" | "custom";
+  /** Display name, for the Edit button's accessible label. */
+  name: string;
   quantity: number;
 }
 
-export function CartLineActions({ lineId, kind, quantity }: CartLineActionsProps) {
+export function CartLineActions({ lineId, kind, name, quantity }: CartLineActionsProps) {
   const transitionRouter = useTransitionRouter();
   const incrementItem = useCartStore((s) => s.incrementItem);
   const decrementItem = useCartStore((s) => s.decrementItem);
   const removeItem = useCartStore((s) => s.removeItem);
   const closeCart = useCartStore((s) => s.closeCart);
+  const openEdit = useCartStore((s) => s.openEdit);
 
+  // A custom bowl edits in the full builder on its own page. A signature line
+  // edits in a modal over the drawer, which stays open underneath.
   const handleEdit = () => {
+    if (kind === "signature") {
+      openEdit(lineId);
+      return;
+    }
     closeCart();
     transitionRouter.push(`/cart/edit/${lineId}`);
   };
@@ -63,20 +72,19 @@ export function CartLineActions({ lineId, kind, quantity }: CartLineActionsProps
         </button>
       </div>
 
-      {kind === "custom" && (
-        <button
-          type="button"
-          onClick={handleEdit}
-          className={actionBtn}
-          style={{
-            background: "transparent",
-            color: "var(--color-midnight)",
-            border: "0.5px solid rgba(41,45,42,0.28)",
-          }}
-        >
-          Edit
-        </button>
-      )}
+      <button
+        type="button"
+        aria-label={`Edit ${name}`}
+        onClick={handleEdit}
+        className={actionBtn}
+        style={{
+          background: "transparent",
+          color: "var(--color-midnight)",
+          border: "0.5px solid rgba(41,45,42,0.28)",
+        }}
+      >
+        Edit
+      </button>
 
       <button
         type="button"

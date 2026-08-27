@@ -299,3 +299,49 @@ describe("F5-26 / F5-28: field caps", () => {
     expect((await submit([momentMedium()], customer({ phone: "abc1234567890xyz" }))).status).toBe("success");
   });
 });
+
+describe("signature additions and removals", () => {
+  const modded = (lineId: string, mods: unknown, unitPrice: number) =>
+    signatureLine(lineId, "moment", "medium", unitPrice, { mods: mods as never });
+
+  it("prices valid mods from the menu and names the change on the order line", async () => {
+    const result = await submit([modded("m", { additions: ["mangoes", "maca-powder"], removals: ["house-granola"] }, 17)]);
+    expect(result.status).toBe("success");
+    const logged = logSpy.mock.calls[0][1] as { items: Array<{ name: string; unitPrice: number }> };
+    expect(logged.items[0].unitPrice).toBe(17);
+    expect(logged.items[0].name).toBe("The Moment · Medium · Add Mangoes, Maca Powder · No House Granola");
+  });
+
+  it("accepts an absent or empty mods field as no change", async () => {
+    expect((await submit([modded("e", { additions: [], removals: [] }, 12)])).status).toBe("success");
+    expect((await submit([modded("n", undefined, 12)])).status).toBe("success");
+  });
+
+  const rejected: Array<[string, unknown, number, string]> = [
+    ["three additions", { additions: ["mangoes", "pineapples", "grapes"], removals: [] }, 18, "unavailable"],
+    ["three removals", { additions: [], removals: ["house-granola", "bananas", "chia-seeds"] }, 12, "unavailable"],
+    ["removal of the base", { additions: [], removals: ["plain-greek-yogurt"] }, 12, "unavailable"],
+    ["addition already in the recipe", { additions: ["blueberries"], removals: [] }, 14, "unavailable"],
+    ["addition of a base", { additions: ["vanilla-greek-yogurt"], removals: [] }, 12, "unavailable"],
+    ["unknown addition", { additions: ["nope"], removals: [] }, 14, "unavailable"],
+    ["duplicate addition", { additions: ["mangoes", "mangoes"], removals: [] }, 16, "unavailable"],
+    ["price without the addition", { additions: ["mangoes"], removals: [] }, 12, "price-changed"],
+    ["mods as a string", "mangoes", 12, "invalid"],
+    ["mods as an array", ["mangoes"], 12, "invalid"],
+    ["additions not an array", { additions: "mangoes" }, 12, "invalid"],
+    ["non-string id", { additions: [42] }, 12, "invalid"],
+    ["51 ids", { additions: Array(51).fill("mangoes") }, 12, "invalid"],
+  ];
+  for (const [label, mods, unitPrice, code] of rejected) {
+    it(`rejects ${label} with code ${code}`, async () => {
+      const result = await submit([modded("bad", mods, unitPrice)]);
+      expect(result).toMatchObject({ status: "error", code, lineId: "bad" });
+      expect(logSpy).not.toHaveBeenCalled();
+    });
+  }
+
+  it("still rejects an unknown size when mods are present", async () => {
+    const line = signatureLine("sz", "rise", "large", 17, { mods: { additions: ["mangoes"], removals: [] } });
+    expect((await submit([line])).code).toBe("unavailable");
+  });
+});

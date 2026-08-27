@@ -3,7 +3,7 @@
 // rehydrated through it, and both the resulting cart and the notice the
 // drawer will show are asserted.
 import { describe, expect, it } from "vitest";
-import { loadWithMenu } from "./helpers/menuVariant";
+import { findSignature, loadWithMenu } from "./helpers/menuVariant";
 import { CART_KEY, persisted, readPersistedItems, seedCart, sevenLineCart } from "./helpers/cartFixtures";
 import {
   fruitsIncludedLowered,
@@ -125,5 +125,44 @@ describe("notice lifecycle", () => {
     const { cartStore } = await loadWithMenu();
     expect(cartStore.useCartStore.getState().items).toHaveLength(0);
     expect(cartStore.useCartStore.getState().notice).toBeNull();
+  });
+});
+
+describe("signature additions under menu drift", () => {
+  const modded = () => [
+    { ...sevenLineCart()[4], unitPrice: 16, mods: { additions: ["mangoes", "strawberries"], removals: ["house-granola"] } },
+  ];
+
+  it("keeps additions the menu still offers", async () => {
+    seedCart([{ ...sevenLineCart()[4], unitPrice: 14, mods: { additions: ["mangoes"], removals: ["house-granola"] } }]);
+    const { cartStore } = await loadWithMenu();
+    const state = cartStore.useCartStore.getState();
+    expect(state.items[0].mods).toEqual({ additions: ["mangoes"], removals: ["house-granola"] });
+    expect(state.items[0].unitPrice).toBe(14);
+    expect(state.notice).toBeNull();
+  });
+
+  it("drops an addition that left the menu, re-prices, and says so", async () => {
+    // Strawberries are in The Moment's recipe, so as a persisted addition they
+    // stand in for "an addition the menu no longer allows".
+    seedCart(modded());
+    const { cartStore } = await loadWithMenu();
+    const state = cartStore.useCartStore.getState();
+    expect(state.items[0].mods).toEqual({ additions: ["mangoes"], removals: ["house-granola"] });
+    expect(state.items[0].unitPrice).toBe(14);
+    const messages = (state.notice ?? []).map((c) => c.message);
+    expect(messages).toContain("Strawberries is no longer available and was removed from The Moment · Medium.");
+    expect(messages).toContain("The Moment · Medium is now $14.00, was $16.00.");
+  });
+
+  it("drops a removal that no longer applies without a notice", async () => {
+    seedCart([{ ...sevenLineCart()[4], unitPrice: 12, mods: { additions: [], removals: ["house-granola"] } }]);
+    const { cartStore } = await loadWithMenu((menu) => {
+      const moment = findSignature(menu, "moment");
+      moment!.item.recipe = moment!.item.recipe.filter((id: string) => id !== "house-granola");
+    });
+    const state = cartStore.useCartStore.getState();
+    expect("mods" in state.items[0]).toBe(false);
+    expect(state.notice).toBeNull();
   });
 });
