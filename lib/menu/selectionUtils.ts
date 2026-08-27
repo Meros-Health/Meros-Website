@@ -10,6 +10,7 @@ import {
 import type { BowlSelection } from "./calcBowlPrice";
 import { getIngredient } from "./ingredients";
 import { LEGACY_ID_MAP } from "./legacyIdMap";
+import { getSignatureModsKey, type SignatureMods } from "./signatureMods";
 
 export type { BowlSelection } from "./calcBowlPrice";
 
@@ -152,12 +153,20 @@ export function selectionsMatch(a: BowlSelection, b: BowlSelection): boolean {
   return getSelectionKey(a) === getSelectionKey(b);
 }
 
-/** Same product at a different size is a separate line, so both must match. */
+/**
+ * Same product at a different size, or with different additions or removals,
+ * is a separate line, so all three must match. `modsKey` comes from
+ * getSignatureModsKey; "" means no changes.
+ */
 export function findMatchingSignatureLine<
-  T extends { kind: string; productId: string; size?: { id: string } },
->(items: T[], productId: string, sizeId: string | undefined): T | undefined {
+  T extends { kind: string; productId: string; size?: { id: string }; mods?: SignatureMods },
+>(items: T[], productId: string, sizeId: string | undefined, modsKey: string): T | undefined {
   return items.find(
-    (i) => i.kind === "signature" && i.productId === productId && i.size?.id === sizeId
+    (i) =>
+      i.kind === "signature" &&
+      i.productId === productId &&
+      i.size?.id === sizeId &&
+      getSignatureModsKey(i.mods) === modsKey
   );
 }
 

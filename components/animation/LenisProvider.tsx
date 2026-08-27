@@ -4,6 +4,7 @@ import { useEffect, useState, createContext, useContext } from "react";
 import Lenis from "lenis";
 import gsap from "gsap";
 import ScrollTrigger from "gsap/ScrollTrigger";
+import { setScrollController } from "@/lib/scrollLock";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -52,6 +53,9 @@ export function LenisProvider({ children }: LenisProviderProps) {
     });
 
     setLenis(instance);
+    // Overlays lock scrolling through lib/scrollLock.ts, which stops and
+    // starts this instance alongside the native overflow lock.
+    setScrollController(instance);
 
     // Bridge Lenis scroll position to GSAP ScrollTrigger.
     // ScrollTrigger reads window.scrollY by default; Lenis virtualises scroll so
@@ -68,6 +72,7 @@ export function LenisProvider({ children }: LenisProviderProps) {
 
     return () => {
       gsap.ticker.remove(tickerCallback);
+      setScrollController(null);
       instance.destroy();
       setLenis(null);
     };

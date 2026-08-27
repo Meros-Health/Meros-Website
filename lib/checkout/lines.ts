@@ -1,4 +1,5 @@
 import type { BowlSelection } from "@/lib/menu/calcBowlPrice";
+import type { SignatureMods } from "@/lib/menu/signatureMods";
 import type { CartItem } from "@/store/cartStore";
 
 /**
@@ -13,6 +14,8 @@ export type CheckoutLine = {
   productId: string;
   size?: { id: string };
   selection?: BowlSelection;
+  /** Signature lines only: additions and removals, as ingredient ids. */
+  mods?: SignatureMods;
   quantity: number;
   unitPrice: number;
 };
@@ -24,6 +27,7 @@ export function toCheckoutLines(items: CartItem[]): CheckoutLine[] {
     productId: item.productId,
     size: item.size ? { id: item.size.id } : undefined,
     selection: item.selection,
+    mods: item.mods,
     quantity: item.quantity,
     unitPrice: item.unitPrice,
   }));

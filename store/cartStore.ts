@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { getBuildSize } from "@/lib/menu/buildConfig";
 import { calcBowlPrice, formatPrice, getSelectedIngredients, type BowlSelection } from "@/lib/menu/calcBowlPrice";
+import { getIngredient } from "@/lib/menu/ingredients";
 import { EMPTY_NUTRITION, sumNutrition, type NutritionFacts } from "@/lib/menu/nutrition";
 import {
   findMatchingCustomLine,
@@ -11,10 +12,17 @@ import {
   normalizeSelection,
 } from "@/lib/menu/selectionUtils";
 import {
+  calcSignaturePrice,
+  getSignatureModsKey,
+  hasMods,
+  sanitizeSignatureMods,
+  type SignatureMods,
+} from "@/lib/menu/signatureMods";
+import {
   getDefaultSizeId,
   getSignatureItem,
-  getSignaturePrice,
   getSizeLabel,
+  type SignatureItem,
 } from "@/lib/menu/signatures";
 import { safeJsonStorage } from "@/lib/storage/safeJsonStorage";
 import { warnDev } from "@/lib/log";
@@ -37,12 +45,21 @@ export type CartItem = {
   selection?: CustomBowlSelection;
   /** Signature: menu size tier. Custom: build size (Medium / Large). */
   size?: CartItemSize;
+  /**
+   * Signature lines only: additions and removals as ingredient ids. Absent
+   * when nothing was changed, so an untouched line keeps its persisted shape.
+   */
+  mods?: SignatureMods;
   nutrition: NutritionFacts;
   quantity: number;
   unitPrice: number;
 };
 
 export type UpdateCustomBowlResult = "updated" | "merged" | "missing";
+export type UpdateSignatureLineResult = UpdateCustomBowlResult;
+
+/** What the edit modal saves for a signature line. Sanitized against the menu on save. */
+export type SignatureLineEdit = { sizeId: string; mods: SignatureMods };
 
 /** "at-max": the matching line already holds 99. "invalid": the selection cannot be added. */
 export type AddResult = "added" | "at-max" | "invalid";
@@ -62,6 +79,10 @@ interface CartState {
   isOpen: boolean;
   /** Set when rehydration changed the cart to match the current menu; not persisted. */
   notice: CartChange[] | null;
+  /** The signature line open in the edit modal; not persisted. */
+  editingLineId: string | null;
+  /** Bumped by every openEdit, so the modal can key a fresh draft per open; not persisted. */
+  editSession: number;
   dismissNotice: () => void;
   addItem: (item: Omit<CartItem, "lineId">) => AddResult;
   removeItem: (lineId: string) => void;
@@ -69,11 +90,14 @@ interface CartState {
   incrementItem: (lineId: string) => AddResult;
   decrementItem: (lineId: string) => void;
   updateCustomBowl: (lineId: string, selection: CustomBowlSelection) => UpdateCustomBowlResult;
+  updateSignatureLine: (lineId: string, edit: SignatureLineEdit) => UpdateSignatureLineResult;
   getItem: (lineId: string) => CartItem | undefined;
   clearCart: () => void;
   subtotal: () => number;
   openCart: () => void;
   closeCart: () => void;
+  openEdit: (lineId: string) => void;
+  closeEdit: () => void;
 }
 
 // Bump only together with a `migrate` branch below. A bump without one makes
@@ -94,6 +118,25 @@ function clampQuantity(quantity: number): number {
 
 function signatureLineName(name: string, size: CartItemSize | undefined): string {
   return size ? `${name} · ${size.label}` : name;
+}
+
+/**
+ * Everything a signature line derives from the menu: name, size, price, and
+ * the additions and removals it can actually take. Null when the size does
+ * not exist for this item. `mods` is set only when something was changed.
+ */
+function signatureLineFields(catalogItem: SignatureItem, sizeId: string, mods: SignatureMods) {
+  const unitPrice = calcSignaturePrice(catalogItem.id, sizeId, mods);
+  if (unitPrice === undefined) return null;
+  const size: CartItemSize = { id: sizeId, label: getSizeLabel(catalogItem.category, sizeId) };
+  return {
+    productId: catalogItem.id,
+    name: signatureLineName(catalogItem.name, size),
+    size,
+    nutrition: { ...EMPTY_NUTRITION },
+    unitPrice,
+    ...(hasMods(mods) ? { mods } : {}),
+  };
 }
 
 /**
@@ -175,23 +218,20 @@ function readCartItem(raw: unknown, usedIds: Set<string>): CartItem | null {
     // treatment a custom bowl gets; diffLine reports it.
     const rawSizeId = isRecord(raw.size) && typeof raw.size.id === "string" ? raw.size.id : undefined;
     const defaultSizeId = getDefaultSizeId(catalogItem.category);
+    // Additions the menu no longer offers are dropped here; diffLine reports them.
+    const mods = sanitizeSignatureMods(catalogItem, raw.mods);
     let sizeId = rawSizeId ?? defaultSizeId;
-    let unitPrice = getSignaturePrice(catalogItem.id, sizeId);
-    if (unitPrice === undefined && sizeId !== defaultSizeId) {
+    let fields = signatureLineFields(catalogItem, sizeId, mods);
+    if (!fields && sizeId !== defaultSizeId) {
       sizeId = defaultSizeId;
-      unitPrice = getSignaturePrice(catalogItem.id, sizeId);
+      fields = signatureLineFields(catalogItem, sizeId, mods);
     }
-    if (unitPrice === undefined) return null;
-    const size = { id: sizeId, label: getSizeLabel(catalogItem.category, sizeId) };
+    if (!fields) return null;
     return {
       lineId: readLineId(raw.lineId, usedIds),
       kind: "signature",
-      productId: catalogItem.id,
-      name: signatureLineName(catalogItem.name, size),
-      size,
-      nutrition: { ...EMPTY_NUTRITION },
       quantity,
-      unitPrice,
+      ...fields,
     };
   }
 
@@ -216,6 +256,24 @@ function selectionIds(selection: BowlSelection | null | undefined): string[] {
   return Object.values(selection.steps).flat();
 }
 
+/** The additions a persisted signature line asked for, before sanitizing. */
+function rawAdditionIds(mods: unknown): string[] {
+  if (!isRecord(mods) || !Array.isArray(mods.additions)) return [];
+  const ids = mods.additions.filter((id): id is string => typeof id === "string");
+  return ids.filter((id, index) => ids.indexOf(id) === index);
+}
+
+/** Registry name while the ingredient still exists, else a title from its id. */
+function ingredientTitle(id: string): string {
+  return getIngredient(id)?.name ?? titleFromId(id);
+}
+
+function removedMessage(names: string[], lineName: string): string {
+  const verb = names.length === 1 ? "is" : "are";
+  const past = names.length === 1 ? "was" : "were";
+  return `${names.join(", ")} ${verb} no longer available and ${past} removed from ${lineName}.`;
+}
+
 function describeRaw(raw: UnknownRecord): string {
   return typeof raw.name === "string" && raw.name.length > 0 ? raw.name : "An item";
 }
@@ -233,11 +291,9 @@ function diffLine(raw: UnknownRecord, item: CartItem): CartChange[] {
     const after = new Set(selectionIds(item.selection));
     const removed = selectionIds(before).filter((id) => !after.has(id));
     if (removed.length > 0) {
-      const names = removed.map(titleFromId).join(", ");
-      const verb = removed.length === 1 ? "is" : "are";
       changes.push({
         kind: "ingredients-removed",
-        message: `${names} ${verb} no longer available and ${removed.length === 1 ? "was" : "were"} removed from ${item.name}.`,
+        message: removedMessage(removed.map(titleFromId), item.name),
       });
     }
     if (before && item.size && before.sizeId !== item.size.id) {
@@ -252,6 +308,19 @@ function diffLine(raw: UnknownRecord, item: CartItem): CartChange[] {
       changes.push({
         kind: "size-changed",
         message: `${item.name} is no longer available in ${titleFromId(rawSizeId)}; it is now ${item.size.label}.`,
+      });
+    }
+  }
+
+  if (item.kind === "signature") {
+    // A removal that no longer applies changes nothing the customer pays for,
+    // so only dropped additions are reported.
+    const kept = item.mods?.additions ?? [];
+    const dropped = rawAdditionIds(raw.mods).filter((id) => !kept.includes(id));
+    if (dropped.length > 0) {
+      changes.push({
+        kind: "ingredients-removed",
+        message: removedMessage(dropped.map(ingredientTitle), item.name),
       });
     }
   }
@@ -299,23 +368,34 @@ export const useCartStore = create<CartState>()(
       items: [],
       isOpen: false,
       notice: null,
+      editingLineId: null,
+      editSession: 0,
       dismissNotice: () => set({ notice: null }),
 
       addItem: (item) => {
         const { items } = get();
 
         if (item.kind === "signature") {
-          const existing = findMatchingSignatureLine(items, item.productId, item.size?.id);
+          // Rebuilt from the menu when the product resolves, so a line added
+          // with mods is priced the same way it will be on rehydrate. A product
+          // the menu no longer has is kept as given; rehydration drops it.
+          const catalogItem = getSignatureItem(item.productId);
+          const mods = catalogItem ? sanitizeSignatureMods(catalogItem, item.mods) : undefined;
+          const fields =
+            catalogItem && mods && item.size ? signatureLineFields(catalogItem, item.size.id, mods) : null;
+          const { mods: _ignored, ...given } = item;
+          const line: Omit<CartItem, "lineId"> = fields
+            ? { ...given, ...fields }
+            : { ...given, name: signatureLineName(item.name, item.size) };
+
+          const existing = findMatchingSignatureLine(items, line.productId, line.size?.id, getSignatureModsKey(line.mods));
           if (existing) {
             if (existing.quantity >= MAX_QUANTITY) return "at-max";
             get().updateQuantity(existing.lineId, existing.quantity + item.quantity);
             return "added";
           }
           set((state) => ({
-            items: [
-              ...state.items,
-              { ...item, lineId: makeLineId(), name: signatureLineName(item.name, item.size) },
-            ],
+            items: [...state.items, { ...line, lineId: makeLineId() }],
           }));
           return "added";
         }
@@ -402,6 +482,48 @@ export const useCartStore = create<CartState>()(
         return "updated";
       },
 
+      updateSignatureLine: (lineId, edit) => {
+        const { items } = get();
+        const current = items.find((i) => i.lineId === lineId);
+        if (!current || current.kind !== "signature") return "missing";
+
+        const catalogItem = getSignatureItem(current.productId);
+        if (!catalogItem) return "missing";
+
+        const mods = sanitizeSignatureMods(catalogItem, edit.mods);
+        const fields = signatureLineFields(catalogItem, edit.sizeId, mods);
+        if (!fields) return "missing";
+
+        const duplicate = findMatchingSignatureLine(
+          items.filter((i) => i.lineId !== lineId),
+          catalogItem.id,
+          edit.sizeId,
+          getSignatureModsKey(mods)
+        );
+
+        if (duplicate) {
+          set({
+            items: items
+              .map((i) =>
+                i.lineId === duplicate.lineId
+                  ? { ...i, quantity: clampQuantity(i.quantity + current.quantity) }
+                  : i
+              )
+              .filter((i) => i.lineId !== lineId),
+          });
+          return "merged";
+        }
+
+        // A fresh object, not a spread over the old one, so clearing every
+        // change also clears the persisted `mods` field.
+        set({
+          items: items.map((i) =>
+            i.lineId === lineId ? { lineId, kind: "signature", quantity: i.quantity, ...fields } : i
+          ),
+        });
+        return "updated";
+      },
+
       // Items are normalized on add, on update, and on rehydration, so no
       // re-migration is needed here.
       getItem: (lineId) => get().items.find((i) => i.lineId === lineId),
@@ -414,6 +536,8 @@ export const useCartStore = create<CartState>()(
 
       openCart: () => set({ isOpen: true }),
       closeCart: () => set({ isOpen: false }),
+      openEdit: (lineId) => set((state) => ({ editingLineId: lineId, editSession: state.editSession + 1 })),
+      closeEdit: () => set({ editingLineId: null }),
     }),
     {
       name: "meros-cart",
