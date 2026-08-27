@@ -105,7 +105,11 @@ function MenuCard({ item, priority = false }: { item: SignatureItem; priority?: 
   return (
     <article
       className="bg-cream flex flex-col"
-      style={{ border: "0.5px solid rgba(41,45,42,0.15)", containerType: "inline-size" }}
+      style={{
+        border: "0.5px solid rgba(41,45,42,0.15)",
+        containerType: "inline-size",
+        maxWidth: "var(--menu-card-max-width)",
+      }}
     >
       {/* Square-cropped image — always rendered at ~half a 2-column grid, at every breakpoint */}
       <div className="relative w-full aspect-square overflow-hidden">
@@ -113,7 +117,7 @@ function MenuCard({ item, priority = false }: { item: SignatureItem; priority?: 
           src={item.images.photo}
           alt={item.name}
           fill
-          sizes="(max-width: 1024px) 42vw, 22vw"
+          sizes="(max-width: 640px) 92vw, 560px"
           priority={priority}
           className="object-cover object-center"
         />
@@ -123,19 +127,19 @@ function MenuCard({ item, priority = false }: { item: SignatureItem; priority?: 
           text always fits 2-up regardless of how much room the sidebar title leaves it */}
       <div
         className="flex flex-1 flex-col min-w-0"
-        style={{ gap: "clamp(0.35rem, 3cqw, 0.625rem)", padding: "clamp(0.6rem, 5cqw, 1.25rem)" }}
+        style={{ gap: "var(--menu-card-gap)", padding: "var(--menu-card-padding)" }}
       >
         {/* Name + price */}
         <div className="flex items-baseline justify-between gap-2">
           <h3
             className="font-headline text-midnight leading-none min-w-0"
-            style={{ fontSize: "clamp(0.85rem, 9cqw, 1.5rem)" }}
+            style={{ fontSize: "var(--menu-card-name-size)" }}
           >
             {shortName(item)}
           </h3>
           <span
             className="font-body-caps text-juniper shrink-0"
-            style={{ fontSize: "clamp(0.55rem, 4.2cqw, 0.75rem)" }}
+            style={{ fontSize: "var(--menu-card-price-size)" }}
           >
             {price === undefined ? "Unavailable" : `$${price.toFixed(2)}`}
           </span>
@@ -144,7 +148,7 @@ function MenuCard({ item, priority = false }: { item: SignatureItem; priority?: 
         {/* Tags */}
         <p
           className="font-body-caps text-grapefruit tracking-widest -mt-0.5"
-          style={{ fontSize: "clamp(0.48rem, 3.4cqw, 0.625rem)" }}
+          style={{ fontSize: "var(--menu-card-tag-size)" }}
         >
           {item.tags.join(" · ")}
         </p>
@@ -152,13 +156,13 @@ function MenuCard({ item, priority = false }: { item: SignatureItem; priority?: 
         {/* Ingredients */}
         <p
           className="font-body-mixed text-juniper leading-relaxed"
-          style={{ fontSize: "clamp(0.62rem, 4.6cqw, 0.875rem)" }}
+          style={{ fontSize: "var(--menu-card-desc-size)" }}
         >
           {item.ingredients}
         </p>
 
         {/* Size + add to cart */}
-        <div className="mt-auto flex flex-col" style={{ gap: "clamp(0.35rem, 3cqw, 0.625rem)" }}>
+        <div className="mt-auto flex flex-col" style={{ gap: "var(--menu-card-gap)" }}>
           <SizeToggle category={item.category} value={sizeId} onChange={setSizeId} />
           <AddToCartButton onClick={handleAdd} added={added} />
         </div>
@@ -169,8 +173,9 @@ function MenuCard({ item, priority = false }: { item: SignatureItem; priority?: 
 
 // ── Menu section ─────────────────────────────────────────────────────────────
 //
-// Layout strategy: the item grid is always 2 columns, at every breakpoint —
-// only card text/image sizes shrink (via clamp) to keep it from crowding.
+// Layout strategy: the item grid is always 1 column, at every breakpoint —
+// each card gets the full row (capped at --menu-card-max-width), so text and
+// image can render larger than a 2-up grid would allow.
 //   - Wide (md+):   flex-row — title on the left, grid fills the remaining width.
 //   - Mobile (<md): flex-col — title stacks above the full-width grid.
 
@@ -213,10 +218,10 @@ function MenuSection({
           </Title>
         </div>
 
-        {/* Grid — always 2 columns; only type/image scale shrink to fit at narrower widths */}
+        {/* Grid — always 1 column; each card is capped at --menu-card-max-width */}
         <div
-          className="min-w-0 flex-1 grid grid-cols-2"
-          style={{ gap: "clamp(0.6rem, 2.5vw, 1.25rem)" }}
+          className="min-w-0 flex-1 grid grid-cols-1"
+          style={{ gap: "var(--menu-grid-row-gap)" }}
         >
           {items.map((item, i) => (
             <MenuCard key={item.id} item={item} priority={priorityFirstImage && i === 0} />

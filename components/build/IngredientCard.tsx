@@ -26,7 +26,7 @@ export function IngredientCard({ item, selected, priceLabel, onSelect }: Ingredi
         border: selected
           ? "0.5px solid var(--color-grapefruit)"
           : "0.5px solid rgba(41,45,42,0.15)",
-        padding: "clamp(0.75rem, 2vw, 1rem)",
+        padding: "var(--ingredient-card-padding)",
         background: selected ? "var(--color-grapefruit)" : "transparent",
       }}
     >
@@ -41,11 +41,17 @@ export function IngredientCard({ item, selected, priceLabel, onSelect }: Ingredi
       )}
 
       <div className="flex items-start justify-between gap-2 mb-1">
-        <span className="font-body-mixed text-sm leading-snug" style={{ color: textColor }}>
+        <span
+          className="font-body-mixed leading-snug"
+          style={{ color: textColor, fontSize: "var(--ingredient-name-size)" }}
+        >
           {item.name}
         </span>
         {priceLabel && (
-          <span className="font-body-caps text-[9px] shrink-0" style={{ color: subtextColor }}>
+          <span
+            className="font-body-caps shrink-0"
+            style={{ color: subtextColor, fontSize: "var(--ingredient-meta-size)" }}
+          >
             {priceLabel}
           </span>
         )}
@@ -53,22 +59,26 @@ export function IngredientCard({ item, selected, priceLabel, onSelect }: Ingredi
 
       {item.description && (
         <p
-          className="font-body-mixed text-[11px] leading-relaxed mb-2"
-          style={{ color: subtextColor }}
+          className="font-body-mixed leading-relaxed mb-2"
+          style={{ color: subtextColor, fontSize: "var(--ingredient-desc-size)" }}
         >
           {item.description}
         </p>
       )}
 
       <div className="mt-auto flex flex-wrap items-center gap-2">
-        <span className="font-body-caps text-[9px] tracking-widest" style={{ color: subtextColor }}>
+        <span
+          className="font-body-caps tracking-widest"
+          style={{ color: subtextColor, fontSize: "var(--ingredient-meta-size)" }}
+        >
           {item.servingLabel}
         </span>
         {proteinHighlight && (
           <span
-            className="font-body-caps text-[8px] tracking-widest px-1.5 py-0.5"
+            className="font-body-caps tracking-widest px-1.5 py-0.5"
             style={{
               color: accentColor,
+              fontSize: "var(--ingredient-badge-size)",
               border: selected
                 ? "0.5px solid rgba(255,247,240,0.5)"
                 : "0.5px solid rgba(215,142,119,0.4)",
@@ -78,7 +88,10 @@ export function IngredientCard({ item, selected, priceLabel, onSelect }: Ingredi
           </span>
         )}
         {item.tags?.includes("vegan") && (
-          <span className="font-body-caps text-[8px] tracking-widest" style={{ color: subtextColor }}>
+          <span
+            className="font-body-caps tracking-widest"
+            style={{ color: subtextColor, fontSize: "var(--ingredient-badge-size)" }}
+          >
             Vegan
           </span>
         )}
