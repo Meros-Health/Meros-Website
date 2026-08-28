@@ -60,3 +60,66 @@ test("the link preview image the metadata promises actually exists", async ({ pa
   expect(res.status(), `${path} should be served`).toBe(200);
   expect(res.headers()["content-type"]).toContain("image");
 });
+
+// Structured data is what produces the map card, hours and knowledge panel.
+// It is built from lib/business.ts, the same data the footer renders.
+async function jsonLd(page: import("@playwright/test").Page): Promise<Array<Record<string, unknown>>> {
+  const blocks = await page.locator('script[type="application/ld+json"]').allTextContents();
+  return blocks.map((b) => JSON.parse(b));
+}
+
+test("the home page carries a Restaurant schema that agrees with the footer", async ({ page }) => {
+  await page.goto("/");
+  const [restaurant] = await jsonLd(page);
+  expect(restaurant["@type"]).toBe("Restaurant");
+  const address = restaurant.address as Record<string, string>;
+  expect(address.streetAddress).toBe("1207 Hamilton Street");
+  const hours = (restaurant.openingHoursSpecification as Array<Record<string, unknown>>)[0];
+  expect(hours.dayOfWeek).toHaveLength(7);
+  expect(hours.opens).toBe("08:00");
+  expect(hours.closes).toBe("22:00");
+  await expect(page.locator("footer")).toContainText("1207 Hamilton Street");
+  await expect(page.locator("footer")).toContainText("8 AM – 10 PM");
+  expect(restaurant.telephone).toBe("+1-778-345-3023");
+  await expect(page.locator("footer")).toContainText("(778) 345-3023");
+});
+
+for (const path of ["/order", "/build", "/privacy", "/terms"]) {
+  test(`${path} carries a BreadcrumbList back to the home page`, async ({ page }) => {
+    await page.goto(path);
+    const crumbs = (await jsonLd(page)).find((d) => d["@type"] === "BreadcrumbList");
+    expect(crumbs, `${path} BreadcrumbList`).toBeTruthy();
+    const items = crumbs!.itemListElement as Array<Record<string, unknown>>;
+    expect(items[0].item).toBe(SITE);
+    expect(items[1].item).toBe(`${SITE}${path}`);
+  });
+}
+
+test("every icon role and the manifest resolve at the paths clients request", async ({ page, request }) => {
+  await page.goto("/");
+  for (const path of ["/favicon.ico", "/icon.png", "/apple-icon.png", "/apple-touch-icon.png", "/manifest.webmanifest"]) {
+    const res = await request.get(path);
+    expect(res.status(), path).toBe(200);
+  }
+  await expect(page.locator('link[rel="icon"][href*="favicon.ico"]')).toHaveCount(1);
+  await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveCount(1);
+  await expect(page.locator('link[rel="manifest"]')).toHaveCount(1);
+});
+
+test("the link preview image is 1200x630", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator('meta[property="og:image:width"]')).toHaveAttribute("content", "1200");
+  await expect(page.locator('meta[property="og:image:height"]')).toHaveAttribute("content", "630");
+});
+
+test("a missing page says so in its title instead of claiming to be the home page", async ({ page }) => {
+  await page.goto("/no-such-page");
+  await expect(page).toHaveTitle(/Page Not Found/);
+});
+
+test("/checkout and /cart/edit have their own titles and stay out of the index", async ({ page }) => {
+  await page.goto("/cart/edit/nope");
+  await expect(page).toHaveTitle(/Edit Your Bowl/);
+  const robots = await page.locator('meta[name="robots"]').getAttribute("content");
+  expect(robots).toMatch(/noindex/);
+});

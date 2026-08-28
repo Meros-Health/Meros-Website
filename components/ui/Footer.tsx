@@ -7,12 +7,13 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { submitContactForm, type ContactFormState } from "@/app/actions/contact";
 import { INSTAGRAM_POSTS, INSTAGRAM_URL, INSTAGRAM_HANDLE } from "@/lib/instagramFeed";
+import { BUSINESS, hoursDisplay, mapsQuery, mapsUrl } from "@/lib/business";
+import { useRevealReady } from "@/lib/useRevealReady";
 
-// Query the live Google Maps listing instead of storing a brittle, generic
-// neighbourhood embed. The query resolves to MERŌS once the listing is live.
-const MAPS_QUERY = "Meros, 1207 Hamilton Street, Vancouver, BC";
-const MAPS_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(MAPS_QUERY)}`;
-const MAPS_EMBED_URL = `https://www.google.com/maps?q=${encodeURIComponent(MAPS_QUERY)}&output=embed`;
+// Address, hours and phone come from lib/business.ts, the same data the
+// home page's Restaurant schema is built from.
+const MAPS_URL = mapsUrl();
+const MAPS_EMBED_URL = `https://www.google.com/maps?q=${encodeURIComponent(mapsQuery())}&output=embed`;
 
 // Prefix-matched so dynamic routes (e.g. /cart/edit/[lineId]) are covered too.
 const HIDDEN_ON = ["/order", "/build", "/checkout", "/cart"];
@@ -76,11 +77,13 @@ export function Footer() {
             <div className="flex flex-col gap-2">
               <span className="font-body-caps text-cream/40 text-[9px] tracking-[0.30em]">Find Us</span>
               <address className="not-italic flex flex-col gap-0.5">
-                <span className="font-body-mixed text-cream text-xs leading-relaxed">1207 Hamilton Street</span>
-                <span className="font-body-mixed text-cream/55 text-xs leading-relaxed">Yaletown, Vancouver, BC V6B 2R5</span>
+                <span className="font-body-mixed text-cream text-xs leading-relaxed">{BUSINESS.address.street}</span>
+                <span className="font-body-mixed text-cream/55 text-xs leading-relaxed">
+                  {BUSINESS.address.neighbourhood}, {BUSINESS.address.city}, {BUSINESS.address.region} {BUSINESS.address.postalCode}
+                </span>
               </address>
               <span className="font-body-caps text-cream/55 text-[9px] tracking-[0.20em] mt-2">
-                Open 8 AM – 10 PM Daily
+                {hoursDisplay()}
               </span>
             </div>
             <a
@@ -178,16 +181,16 @@ export function Footer() {
           <div className="flex flex-col gap-3">
             <span className="font-body-caps text-cream/40 text-[9px] tracking-[0.30em]">Get In Touch</span>
             <a
-              href="mailto:info@merosyogurt.com"
+              href={`mailto:${BUSINESS.email}`}
               className="font-body-mixed text-cream/70 text-xs hover:text-grapefruit transition-colors duration-200"
             >
-              info@merosyogurt.com
+              {BUSINESS.email}
             </a>
             <a
-              href="tel:+17783453023"
+              href={`tel:${BUSINESS.phone.replace(/-/g, "")}`}
               className="font-body-mixed text-cream/70 text-xs hover:text-grapefruit transition-colors duration-200"
             >
-              (778) 345-3023
+              {BUSINESS.phoneDisplay}
             </a>
           </div>
 
@@ -337,15 +340,19 @@ interface FooterInstagramTileProps {
 
 function FooterInstagramTile({ post, index }: FooterInstagramTileProps) {
   const [hovered, setHovered] = useState(false);
+  const ref = useRef<HTMLAnchorElement>(null);
+  // Fades in only once its own image has decoded, so the grid never shows a
+  // tile animating in around an empty frame.
+  const show = useRevealReady(ref, "-40px");
 
   return (
     <motion.a
+      ref={ref}
       href={INSTAGRAM_URL}
       target="_blank"
       rel="noopener noreferrer"
       initial={{ opacity: 0 }}
-      whileInView={{ opacity: 1 }}
-      viewport={{ once: true, margin: "-40px" }}
+      animate={{ opacity: show ? 1 : 0 }}
       transition={{
         delay: Math.min((index % 3) * 0.05, 0.15),
         duration: 0.5,

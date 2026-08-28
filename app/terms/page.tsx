@@ -1,4 +1,7 @@
 import { pageMetadata } from "@/lib/seo";
+import { SITE_URL } from "@/lib/config";
+import { breadcrumbSchema } from "@/lib/business";
+import { JsonLd } from "@/components/seo/JsonLd";
 import Link from "next/link";
 import { LegalShell, LegalSection, LegalList } from "@/components/legal/LegalPage";
 
@@ -17,7 +20,9 @@ export const metadata = pageMetadata({
 
 export default function TermsPage() {
   return (
-    <LegalShell title="Terms of Service" effectiveDate={EFFECTIVE_DATE}>
+    <>
+      <JsonLd data={breadcrumbSchema(SITE_URL, "Terms of Service", "/terms")} />
+      <LegalShell title="Terms of Service" effectiveDate={EFFECTIVE_DATE}>
       <LegalSection heading="Agreement">
         <p>
           These Terms of Service (&ldquo;Terms&rdquo;) govern your use of the MERŌS website
@@ -187,5 +192,6 @@ export default function TermsPage() {
         </p>
       </LegalSection>
     </LegalShell>
+    </>
   );
 }

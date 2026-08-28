@@ -1,4 +1,12 @@
+import type { Metadata } from "next";
 import { ErrorScreen } from "@/components/ui/ErrorScreen";
+
+// Without this a missing page inherits the root layout's title and claims to
+// be the home page.
+export const metadata: Metadata = {
+  title: "Page Not Found - MERŌS",
+  robots: { index: false, follow: true },
+};
 
 export default function NotFound() {
   return (

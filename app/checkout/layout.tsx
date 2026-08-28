@@ -1,13 +1,14 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 
 // Transactional, and there is nothing here worth a search result. robots.txt
-// disallows /checkout already; this is the second lock, for crawlers that
+// disallows /checkout already; noindex is the second lock, for crawlers that
 // reach the URL from a link rather than from the crawl.
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Checkout - MERŌS",
-  robots: { index: false, follow: false },
-  alternates: { canonical: "/checkout" },
-};
+  description: "Review your order and check out.",
+  path: "/checkout",
+  noindex: true,
+});
 
 export default function CheckoutLayout({ children }: { children: React.ReactNode }) {
   return children;

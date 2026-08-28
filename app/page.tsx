@@ -1,4 +1,7 @@
-import { pageMetadata } from "@/lib/seo";
+import { OG_IMAGE, pageMetadata } from "@/lib/seo";
+import { SITE_URL } from "@/lib/config";
+import { restaurantSchema } from "@/lib/business";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { HeroSection } from "@/components/sections/HeroSection";
 import { SignatureMenuSection } from "@/components/sections/SignatureMenuSection";
 import { OurStorySection } from "@/components/sections/OurStorySection";
@@ -19,6 +22,10 @@ export const metadata = pageMetadata({
 export default function HomePage() {
   return (
     <main className="overflow-x-clip">
+      {/* The store as structured data: what produces the map card, hours and
+          knowledge panel in search. Built from the same lib/business.ts the
+          footer renders from. */}
+      <JsonLd data={restaurantSchema(SITE_URL, "/icons/icon-512.png", OG_IMAGE.url)} />
       <div id="hero">
         <HeroSection />
       </div>

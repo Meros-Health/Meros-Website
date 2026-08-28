@@ -1,4 +1,7 @@
 import { pageMetadata } from "@/lib/seo";
+import { SITE_URL } from "@/lib/config";
+import { breadcrumbSchema } from "@/lib/business";
+import { JsonLd } from "@/components/seo/JsonLd";
 import Link from "next/link";
 import { LegalShell, LegalSection, LegalList } from "@/components/legal/LegalPage";
 
@@ -20,7 +23,9 @@ export const metadata = pageMetadata({
 
 export default function PrivacyPage() {
   return (
-    <LegalShell title="Privacy Policy" effectiveDate={EFFECTIVE_DATE}>
+    <>
+      <JsonLd data={breadcrumbSchema(SITE_URL, "Privacy Policy", "/privacy")} />
+      <LegalShell title="Privacy Policy" effectiveDate={EFFECTIVE_DATE}>
       <LegalSection heading="Who We Are">
         <p>
           MERŌS (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;) operates a yogurt bar
@@ -217,5 +222,6 @@ export default function PrivacyPage() {
         </p>
       </LegalSection>
     </LegalShell>
+    </>
   );
 }
