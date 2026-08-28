@@ -192,27 +192,56 @@ Rules needed for them. You still want one for `www`.
 
 **Stage the zone. Zero user impact, fully reversible.**
 
-- [ ] **5.** Add merosyogurt.com as a Free zone in the **merosyogurt**
-      Cloudflare account.
-- [ ] **6.** Diff the scan against the 15-record table in `docs/dns-cutover.md`.
-      Add the two SRV records and `litesrv._domainkey` by hand if the scan
-      misses them, as it did last time. Skip `_domainconnect`.
-- [ ] **7.** Grey-cloud everything. Mail and Microsoft records must be DNS-only.
-- [ ] **8.** Note the two assigned Cloudflare nameservers.
-- [ ] **8a. Gate.** `./scripts/dns-preflight.sh <cloudflare-ns>`. Do not
-      continue until it exits clean. It diffs all 13 record sets against
-      GoDaddy and fails on any mail-critical mismatch, while GoDaddy is still
-      authoritative and a fix costs nothing.
+- [x] **5.** Add merosyogurt.com as a Free zone in the **merosyogurt**
+      Cloudflare account. **Done 23:21.**
+- [x] **6.** Diff the scan against the 15-record table. **Done. The scan found
+      everything**, including the two SRV records and `litesrv._domainkey` that
+      were invisible to external enumeration during the August 26 survey.
+      Nothing had to be added by hand. `_domainconnect` deleted rather than
+      migrated, leaving 15 records.
+- [x] **7.** Grey-cloud everything. **Done, and this one nearly went wrong.**
+      Cloudflare's add-site flow has a "connect automatically" option checked by
+      default in advanced settings, which proxied all nine proxiable records on
+      import: the apex A, `www`, and every Microsoft and mail CNAME including
+      `litesrv._domainkey`. Proxying a DKIM CNAME makes it answer with
+      Cloudflare's IPs instead of resolving to the signing target, so every
+      MailerLite send would have failed its signature check and been
+      quarantined by our own `p=quarantine` DMARC policy. Silent, and it
+      presents as a deliverability problem rather than a DNS one. All nine
+      turned off before activation. **If this zone is ever rebuilt, uncheck
+      that option.**
+- [x] **8.** Assigned nameservers: `eric.ns.cloudflare.com` and
+      `marissa.ns.cloudflare.com`.
+- [x] **8a. Gate. Passed**, against both `eric` and `marissa` independently.
+      All 13 record sets identical, and the six that carry mail were dumped and
+      compared byte for byte: MX, SPF, the M365 tenant TXT, the MailerLite
+      verification TXT, DMARC, and the DKIM CNAME.
 
 **Delegation. Still nothing user-visible, because the zone is a mirror.**
 
-- [ ] **9.** GoDaddy → DNS → Nameservers → the Cloudflare pair.
-- [ ] **10.** Wait for Cloudflare to mark the zone Active (15 min to an hour;
-      you can force a re-check). Then `dig NS merosyogurt.com @1.1.1.1
-      @8.8.8.8 @9.9.9.9`.
-- [ ] **11. Checkpoint.** REX site still loads. `dig MX` still returns Outlook.
-      Send to `info@merosyogurt.com` from an outside address, confirm no
-      bounce. Do not continue until all three hold.
+- [x] **9.** GoDaddy → DNS → Nameservers → the Cloudflare pair. **Done 23:41.**
+      No lock had to be cleared, per step 0a.
+- [x] **10.** Registry delegation confirmed straight from a `.com` TLD server,
+      bypassing resolver caches: `eric` and `marissa`. Resolver propagation
+      tracked by a background monitor rather than by hand.
+
+      Worth writing down: single-shot `dig` against a public resolver **flaps**
+      between the old and new delegation for hours, and it is not a regression.
+      These are anycast clusters whose cache nodes refresh independently, so
+      each query lands on whichever node is nearest at that moment. Sample
+      20 times and read the proportion; do not read one answer.
+- [x] **11. Checkpoint. Passed 23:47.** REX still serving 200, `www` still
+      301ing to the apex, apex still on `72.167.53.201`. Every mail record
+      re-verified **through a resolver that had already moved to Cloudflare**,
+      so this was Cloudflare actually answering in the live resolution path
+      rather than a prediction: MX, SPF, DMARC, DKIM and `autodiscover` all
+      identical.
+
+      The `info@merosyogurt.com` mailbox came online during the cutover, and a
+      Gmail round trip in both directions was confirmed before the nameserver
+      change as a baseline. That also settles the open question about the six
+      PIPEDA and BC PIPA contact links in the privacy policy and terms: the
+      address is real and someone can read it.
 
 **The switch. This is the first user-visible change.**
 
