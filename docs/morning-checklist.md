@@ -1,16 +1,20 @@
-# Morning checklist — 2026-08-27
+# Cutover checklist
 
-Written overnight. Everything below is verified against the deployed Worker,
-not inferred.
+Written overnight 2026-08-27, revised 22:45 the same day when the decision was
+made to cut over that night rather than in the morning. Everything below is
+verified against the deployed Worker and live DNS, not inferred.
 
-**No DNS was touched.** GoDaddy, the Cloudflare zone, nameservers and the
-custom domain are all exactly as they were. That is this morning's work.
+**No DNS has been touched.** GoDaddy, the Cloudflare zone, nameservers and the
+custom domain are all exactly as they were.
+
+**Hard deadline: the store opens at 08:00.** Go / no-go at 02:00. If the apex is
+not clean by 04:00, roll back and sleep on it.
 
 ---
 
 ## Where things stand
 
-`main` is at `98584f9`. It is the only branch that exists, locally and on
+`main` is at `5f24438`. It is the only branch that exists, locally and on
 GitHub. Four deploys ran, all green, and the last one is live at
 `meros-website.merosyogurt.workers.dev`.
 
@@ -25,9 +29,14 @@ GitHub. Four deploys ran, all green, and the last one is live at
 | Workers Builds on `main` | success |
 
 Live probe: `/`, `/build`, `/order`, `/checkout`, `/privacy`, `/terms`,
-`/robots.txt`, `/sitemap.xml` all 200. Unknown paths 404 to the site's own
-page. Cart drawer reads "Checkout · Coming Soon", so **ordering is closed**.
-The signature Edit button is live in the drawer.
+`/robots.txt`, `/sitemap.xml` all 200, and all five legacy URLs 308 to the right
+place. Unknown paths 404 to the site's own page. Cart drawer reads
+"Checkout · Coming Soon", so **ordering is closed**. The signature Edit button
+is live in the drawer.
+
+**Ordering stays closed for the cutover. Decided.** The agency site has no
+online ordering either, so shipping with checkout gated regresses nothing. The
+flag is inlined at build time, so opening it later is a rebuild, not a toggle.
 
 ## What went in
 
@@ -89,11 +98,15 @@ Ordered by how much they cost if missed.
    account (`dc18109d…`), the one that owns the Worker. Your CLI is
    authenticated as `thomas.2l@icloud.com` and only sees your personal account
    (`4372c46b…`). A Worker custom domain can only bind a zone in its own
-   account, so this is a hard prerequisite, not a preference.
-2. **A mailbox to test with.** Runbook step 11 is a checkpoint: mail must send
-   and receive before you proceed. You have no `@merosyogurt.com` mailbox.
-   Either get Kim on call for ten minutes or get into GoDaddy's Email & Office
-   dashboard first.
+   account, so this is a hard prerequisite, not a preference. **The entire
+   cutover is dashboard work. Wrangler cannot help with any of it.**
+2. **No mailbox to test with, and the `info@` password is still being
+   requested.** Runbook step 11 wanted a send-and-receive test. Substituted:
+   step 8a's preflight diff is the real guard, since a mistyped record is the
+   actual failure mode and the diff catches it while GoDaddy is still
+   authoritative. Back it with `dig MX` and a non-bouncing send to
+   `info@merosyogurt.com` from an outside address. Run the real test the moment
+   the password lands.
 3. **`hello@meros.ca` was pointed at a dead address.** The privacy policy and
    terms had six contact links to it: PIPEDA and PIPA access, correction,
    deletion and consent-withdrawal requests, plus the Terms refund contact.
@@ -109,10 +122,12 @@ Ordered by how much they cost if missed.
    "EV Olive Oil".** Menu removals are global. `validate:menu` clears the repo,
    but the Menu TV static board and any printed or CSV surfaces live outside it
    and need the same edit.
-6. **The Instagram section is fabricated.** `lib/instagramFeed.ts` ships nine
-   hand-written posts, each linking to `instagram.com/merosyogurt`. On a public
-   brand domain that reads as a live feed. Decide: wire a real feed, relabel
-   the section, or confirm the account exists.
+6. ~~**The Instagram section is fabricated.**~~ **Decided: ship it static.**
+   I overstated this. The nine posts are Meros's own editorial photography,
+   linking to `instagram.com/merosyogurt`, and that account exists and returns
+   200. It is a static section, not fabricated content. Wiring a real feed via
+   Behold.so is delegable work for later; `lib/instagramFeed.ts` is already
+   shaped so only the data source changes.
 7. **The Open Graph image is a stand-in.** It is the hero shot at 3:2, so
    platforms crop the top and bottom. A purpose-made 1200x630 would be better.
    Every share of the link uses it.
@@ -163,6 +178,14 @@ redirect in `next.config.ts` and are covered by `tests/e2e/redirects.spec.ts`.
 They are 308s, which Google treats the same as 301s. No Cloudflare Redirect
 Rules needed for them. You still want one for `www`.
 
+**Before any DNS**
+
+- [ ] **0a.** GoDaddy → Domain Settings. Check whether `clientUpdateProhibited`
+      blocks the nameserver edit, and turn Domain Lock off if it does. Do this
+      before you need it, not at 01:00.
+
+**Stage the zone. Zero user impact, fully reversible.**
+
 - [ ] **5.** Add merosyogurt.com as a Free zone in the **merosyogurt**
       Cloudflare account.
 - [ ] **6.** Diff the scan against the 15-record table in `docs/dns-cutover.md`.
@@ -170,24 +193,61 @@ Rules needed for them. You still want one for `www`.
       misses them, as it did last time. Skip `_domainconnect`.
 - [ ] **7.** Grey-cloud everything. Mail and Microsoft records must be DNS-only.
 - [ ] **8.** Note the two assigned Cloudflare nameservers.
+- [ ] **8a. Gate.** `./scripts/dns-preflight.sh <cloudflare-ns>`. Do not
+      continue until it exits clean. It diffs all 13 record sets against
+      GoDaddy and fails on any mail-critical mismatch, while GoDaddy is still
+      authoritative and a fix costs nothing.
+
+**Delegation. Still nothing user-visible, because the zone is a mirror.**
+
 - [ ] **9.** GoDaddy → DNS → Nameservers → the Cloudflare pair.
-- [ ] **10.** Wait for `dig NS merosyogurt.com` to return Cloudflare.
-- [ ] **11. Checkpoint.** REX site still loads, mail sends and receives. **Do
-      not continue until both are verified.**
-- [ ] **12.** Workers & Pages → meros-website → Domains → add `merosyogurt.com`
-      and `www.merosyogurt.com`.
-- [ ] **13.** Wait for the certificate.
-- [ ] **14.** Redirect Rule: `www` → apex, 301.
-- [ ] **16.** SSL/TLS Full (strict), Always Use HTTPS. Hold HSTS.
-- [ ] **17.** Disable the `workers.dev` production route. Leave preview on.
-- [ ] **18.** Verify the apex over https, `/build`, `/order`, cart persistence,
-      and the five legacy redirects on the real domain.
-- [ ] **19.** Test mail. Confirm MailerLite still reports the domain verified.
+- [ ] **10.** Wait for Cloudflare to mark the zone Active (15 min to an hour;
+      you can force a re-check). Then `dig NS merosyogurt.com @1.1.1.1
+      @8.8.8.8 @9.9.9.9`.
+- [ ] **11. Checkpoint.** REX site still loads. `dig MX` still returns Outlook.
+      Send to `info@merosyogurt.com` from an outside address, confirm no
+      bounce. Do not continue until all three hold.
+
+**The switch. This is the first user-visible change.**
+
+- [ ] **12.** Workers & Pages → meros-website → Domains → add
+      `merosyogurt.com` and `www.merosyogurt.com`.
+- [ ] **13.** Wait for the certificate. Usually under a minute, allow 15.
+- [ ] **14.** Redirect Rule: `www` → apex, 301. This preserves existing
+      behaviour exactly; REX already 301s www to the apex.
+- [ ] **16.** SSL/TLS Full (strict), Always Use HTTPS. **Hold HSTS.**
+
+**Verify**
+
+- [ ] **18.** Apex over https, `/order`, `/build`, `/privacy`, `/terms`, all
+      five legacy redirects, cart persistence, no mixed content.
+- [ ] **19.** Confirm MailerLite still reports the domain verified.
 - [ ] **20.** Search Console: add the property, submit
       `https://merosyogurt.com/sitemap.xml`.
-- [ ] **21.** Tell REX so they can decommission. Nothing to cancel on our side.
+
+**Deliberately held**
+
+- [ ] **21. Wait 48 hours minimum**, then tell REX so they can decommission.
+      This is the highest-severity remaining risk. The `.com` delegation is
+      cached for 172800 seconds, so until it has fully propagated some
+      resolvers still send visitors to REX's box. Tearing it down early turns a
+      harmless split-brain into a real outage for that share. Nothing to cancel
+      on our side.
+- [ ] **17.** Disable the `workers.dev` production route. Hold a few days: it is
+      both the rollback escape hatch and the pre-domain deploy check.
 - [ ] **22.** Delete the duplicate Worker in the personal Cloudflare account.
 - [ ] **23.** Optional: add merosyogurt.ca and 301 it to the .com.
+
+## Why the delegation TTL shapes the night
+
+The `.com` registry serves this delegation with a **48 hour TTL**, so resolvers
+move to Cloudflare gradually, not at once. Step 9 is therefore free: the
+Cloudflare zone is a byte-identical mirror, so both nameserver sets answer the
+same. Step 12 is where split-brain begins, since Cloudflare's apex points at the
+Worker while GoDaddy's still points at REX. For up to 48 hours some visitors get
+the new site and some get the old one. No outage, no broken state, and mail is
+untouched because the MX records are identical in both zones. With ordering
+closed, nothing transactional rides on which one a visitor lands on.
 
 Rollback before step 12 is a nameserver revert. After step 12 it is deleting
 the custom domain and re-adding `A @ → 72.167.53.201`, which is one 600s TTL.
