@@ -20,7 +20,7 @@ GitHub. Four deploys ran, all green, and the last one is live at
 
 | Gate | Result |
 |---|---|
-| `validate:menu` | ok — 61 ingredients, 5 build steps, 10 signatures |
+| `validate:menu` | ok: 61 ingredients, 5 build steps, 10 signatures |
 | `eslint` | clean |
 | `tsc --noEmit` | clean |
 | `vitest` | 147 passed |
@@ -180,9 +180,15 @@ Rules needed for them. You still want one for `www`.
 
 **Before any DNS**
 
-- [ ] **0a.** GoDaddy → Domain Settings. Check whether `clientUpdateProhibited`
-      blocks the nameserver edit, and turn Domain Lock off if it does. Do this
-      before you need it, not at 01:00.
+- [x] **0a.** ~~Check whether the registrar lock blocks the nameserver edit.~~
+      **Resolved, nothing to do.** All four `client*Prohibited` EPP codes are
+      set at the registry, which is standard for a GoDaddy domain carrying
+      Domains By Proxy privacy. They are registry status codes, not account
+      settings, so there is no toggle and none is needed: they reject changes
+      arriving from outside GoDaddy, and GoDaddy lifts them internally for its
+      own dashboard. Only `clientTransferProhibited` would ever matter, and
+      only for moving the registration to another registrar. That is not
+      happening; the registration stays at GoDaddy and only DNS hosting moves.
 
 **Stage the zone. Zero user impact, fully reversible.**
 
