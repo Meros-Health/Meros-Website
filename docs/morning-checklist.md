@@ -245,11 +245,52 @@ Rules needed for them. You still want one for `www`.
 
 **The switch. This is the first user-visible change.**
 
-- [ ] **12.** Workers & Pages → meros-website → Domains → add
-      `merosyogurt.com` and `www.merosyogurt.com`.
-- [ ] **13.** Wait for the certificate. Usually under a minute, allow 15.
-- [ ] **14.** Redirect Rule: `www` → apex, 301. This preserves existing
-      behaviour exactly; REX already 301s www to the apex.
+- [x] **12.** Apex bound to the Worker at 23:52. **Three things the runbook did
+      not warn about, all now folded into `docs/dns-cutover.md`:**
+
+      **Cloudflare does not replace the old records for you.** It refuses with
+      "Hostname already has externally managed DNS records. Delete them first."
+      So the apex A record had to be deleted by hand immediately before adding
+      the custom domain. That gap is not free: **this zone's SOA negative TTL
+      is 1800 seconds**, so any resolver querying while the record is absent
+      caches the empty answer for up to 30 minutes and keeps serving a dead
+      domain long after the binding succeeds. Two tabs, one motion, about three
+      seconds of exposure.
+
+      **Binding the apex breaks www a few seconds later.** `www` was a CNAME to
+      the apex, so it followed the apex to Cloudflare's anycast IPs, but while
+      grey-clouded Cloudflare is told not to handle that hostname and returned
+      **522**. Silent, and visible only to the resolvers that had already
+      migrated. Plan www in the same motion as the apex, not as a follow-up.
+
+      **The Add Domain dialog has a trap.** Typing the full
+      `www.merosyogurt.com` into the domain box searches for a matching *zone*,
+      finds none, and offers to onboard it as a **separate Cloudflare zone**,
+      which would need its own delegation that will never exist. Select the
+      existing `merosyogurt.com` zone first; the resulting "Connect to
+      merosyogurt.com" dialog has a **Subdomain** field, and that is where
+      `www` goes. Zone picker takes the apex, subdomain box takes the label.
+- [x] **13.** Certificate issued 05:52 UTC by Google Trust Services,
+      `CN=merosyogurt.com`, valid to Nov 26.
+- [x] **14.** Redirect Rule `www` → apex, 301. **Done a better way than
+      planned**, which also removed the need to bind www to the Worker at all:
+      create the rule first while www has no DNS record and the rule is inert,
+      then let Cloudflare add `A www → 192.0.2.1` **proxied**. That address is
+      RFC 5737 documentation space and never routable; it exists only so www
+      resolves to Cloudflare's edge, where the rule fires ahead of any origin
+      lookup. Also better for search than a www custom domain, which would have
+      served a full second copy of the site until the redirect existed.
+
+      Two edits to Cloudflare's "Redirect from WWW to root" template were
+      needed: the request URL, tightened from `https://www.*` to
+      `https://www.merosyogurt.com/*` with target
+      `https://merosyogurt.com/${1}`, and **Preserve query string, which the
+      template ships with off**. Without it every query string is stripped,
+      silently breaking MailerLite campaign attribution and any `utm_`
+      parameter landing on www.
+
+      Verified: `/` → apex, `/order` → `/order`, `?utm_source=test` preserved.
+      That one www record is the **only** orange cloud in the zone.
 - [ ] **16.** SSL/TLS Full (strict), Always Use HTTPS. **Hold HSTS.**
 
 **Verify**
