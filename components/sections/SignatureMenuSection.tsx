@@ -40,7 +40,8 @@ function priceNote(category: SignatureCategory): string {
 // House entrance curve; rows cascade in visual order, hairlines draw left to
 // right. Item swaps on the stage are interactive feedback, so they use the
 // snappier curve the Pairings carousel uses. Every reveal waits on its own
-// images having decoded (useRevealReady), never on scroll position alone.
+// on-screen images having decoded (useRevealReady), never on scroll position
+// alone. The row thumbnails are display:none above lg and are excluded there.
 
 const REVEAL_EASE = [0.22, 1, 0.36, 1] as const;
 const SWAP_EASE = [0.16, 1, 0.3, 1] as const;

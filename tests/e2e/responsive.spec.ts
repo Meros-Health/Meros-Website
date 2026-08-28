@@ -56,6 +56,35 @@ for (const route of ROUTES) {
   });
 }
 
+// The Signature Menu ledger gates its entrance on its images decoding. Above
+// lg its row thumbnails are display:none and, at device pixel ratio 2, Chrome
+// never starts their lazy load, so decode() on them never settles. That once
+// held the whole ledger invisible until useRevealReady's safety valve fired.
+// The 2.5s bound sits under that valve, so passing means the gate resolved on
+// its own, not that the valve rescued it. The hidpi project is the one that
+// reproduced the bug; the other projects keep the non-retina paths honest.
+test("the signature menu ledger reveals when it enters view", async ({ page }) => {
+  await page.goto("/");
+  await waitForPageReady(page);
+
+  const firstRow = page.locator("#menu section ul li").first();
+  await expect(firstRow).toHaveCount(1);
+
+  // Land the first group 150px under the top edge: clear of the fixed nav and
+  // inside the hook's -100px root margin on even the shortest window.
+  await firstRow.evaluate((li) => {
+    const group = li.closest("ul")!.parentElement!;
+    window.scrollTo(0, group.getBoundingClientRect().top + window.scrollY - 150);
+  });
+
+  await expect
+    .poll(() => firstRow.evaluate((el) => parseFloat(getComputedStyle(el).opacity)), {
+      message: "the first menu row never reached full opacity after entering view",
+      timeout: 2500,
+    })
+    .toBe(1);
+});
+
 test("primary calls to action are large enough to tap", async ({ page }, testInfo) => {
   test.skip(!testInfo.project.use.hasTouch, "tap targets only matter on touch devices");
 

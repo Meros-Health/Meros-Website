@@ -27,6 +27,14 @@ export default defineConfig({
       name: "chromium",
       use: { ...devices["Desktop Chrome"], viewport: { width: 1400, height: 900 } },
     },
+    // Retina desktop Chrome in a short window: what a minimised MacBook window
+    // looks like, and the device pixel ratio that changes which lazy images
+    // Chrome bothers to load (the Signature Menu ledger reveal regression).
+    {
+      name: "desktop-chrome-hidpi",
+      testMatch: /responsive\.spec\.ts/,
+      use: { ...devices["Desktop Chrome HiDPI"], viewport: { width: 1651, height: 690 } },
+    },
     {
       name: "desktop-safari",
       testMatch: /responsive\.spec\.ts/,
