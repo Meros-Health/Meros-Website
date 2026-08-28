@@ -144,6 +144,12 @@ After, local production build (`docs/qa/web-vitals-local-2026-08-28.json`):
 | `/build` desktop | 28 ms | 1,640 ms | 0.0077 | 327 KB | 6 KB in 2 |
 | `/build` iPhone, Fast 4G | 168 ms | 2,300 ms | 0 | 333 KB | 12 KB in 2 |
 
+Live, the same afternoon, after the deploy (`docs/qa/web-vitals-live-2026-08-28.json`):
+desktop `/` LCP 2,476 ms at 1.37 MB; iPhone Fast 4G 3,352 ms at 676 KB; iPhone
+Lighthouse mobile 5,528 ms. `/order` and `/build` within a few hundred
+milliseconds of the local figures. `cutover-verify.sh` 31 of 31, and the
+variants, static chunks and icons carry the intended cache headers at the edge.
+
 Against the plan's targets:
 
 | Metric | Target | Result |
