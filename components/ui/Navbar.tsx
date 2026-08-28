@@ -5,15 +5,16 @@ import { usePathname } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { animate, motion, AnimatePresence } from "framer-motion";
-import { NavMenuOverlay } from "./NavMenuOverlay";
+import { NavMenuOverlay, type NavMenuCloseMode } from "./NavMenuOverlay";
 import { MobileNavPanel } from "./MobileNavPanel";
 import { NavKitchenNote } from "./NavKitchenNote";
 import { useLenis } from "@/components/animation/LenisProvider";
 import { scrollToTop } from "@/lib/scroll";
-import { useTransitionRouter } from "@/components/transition/TransitionProvider";
-import { MENU_EXIT_COVER_MS } from "@/lib/motion";
+import { useTransitionReady, useTransitionRouter } from "@/components/transition/TransitionProvider";
+import { MENU_EXIT_COVER_MS, NAV_WATCHDOG_MS } from "@/lib/motion";
 import { useCartStore } from "@/store/cartStore";
 import { useIsMobile } from "@/lib/useIsMobile";
+import { CRITICAL_IMAGE } from "@/lib/criticalImages";
 import { lockScroll } from "@/lib/scrollLock";
 
 const HEADER_BG_Z = 110;
@@ -65,6 +66,14 @@ export function Navbar() {
   // panels stuck at full size with no exit to play).
   const [menuState, setMenuState] = useState({ open: false, mobile: false });
   const menuOpen = menuState.open && menuState.mobile === isMobile;
+  // Desktop only. "navigate" keeps the overlay mounted while its panels close
+  // inward and the page transition's cover (same colour) takes over; the
+  // overlay is then unmounted under that cover, where nothing can be seen.
+  const [closeMode, setCloseMode] = useState<NavMenuCloseMode>("dismiss");
+  const transitionReady = useTransitionReady();
+  // While the panels are closing inward a dismiss would snap them away and
+  // expose the page the transition is about to leave, so it is ignored.
+  const menuNavigating = menuOpen && closeMode === "navigate";
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const chromeRef = useRef<HTMLDivElement>(null);
   const logoLightRef = useRef<HTMLImageElement>(null);
@@ -139,21 +148,37 @@ export function Navbar() {
     return lockScroll();
   }, [menuOpen]);
 
-  const openMenu = () => setMenuState({ open: true, mobile: isMobile });
+  const openMenu = () => {
+    setCloseMode("dismiss");
+    setMenuState({ open: true, mobile: isMobile });
+  };
 
   const closeMenu = useCallback(() => {
     setMenuState({ open: false, mobile: isMobile });
     requestAnimationFrame(() => menuButtonRef.current?.focus());
   }, [isMobile]);
 
+  // The navigate close ends when the transition cover is opaque: unmount the
+  // overlay there. If no cover ever arrives (the navigation was refused or
+  // never left the page) the watchdog closes the menu normally instead.
+  useEffect(() => {
+    if (closeMode !== "navigate" || !menuOpen) return;
+    if (!transitionReady) {
+      closeMenu();
+      return;
+    }
+    const watchdog = window.setTimeout(closeMenu, MENU_EXIT_COVER_MS + NAV_WATCHDOG_MS);
+    return () => window.clearTimeout(watchdog);
+  }, [closeMode, menuOpen, transitionReady, closeMenu]);
+
   useEffect(() => {
     if (!menuOpen) return;
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeMenu();
+      if (e.key === "Escape" && !menuNavigating) closeMenu();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [menuOpen, closeMenu]);
+  }, [menuOpen, menuNavigating, closeMenu]);
 
   // The desktop menu's own close animation doubles as the transition's exit
   // cover: menu-composed mode waits out the tuned close window, then navigates
@@ -163,17 +188,28 @@ export function Navbar() {
     ? undefined
     : ({ coverMode: "menu-composed", preDelayMs: MENU_EXIT_COVER_MS } as const);
 
-  const handleNavigate = (href: string) => {
-    closeMenu();
-    transitionRouter.push(href, menuNavOptions);
+  // Desktop: the menu's inward close is the first act of the transition, so
+  // the overlay stays mounted and the provider decides when it goes (effect
+  // above). Mobile, and any push the provider declines, close the menu as a
+  // plain dismiss.
+  const navigateFromMenu = (href: string) => {
+    const covered = !isMobile && href.split(/[?#]/)[0] !== pathname;
+    if (!covered) {
+      closeMenu();
+      transitionRouter.push(href, menuNavOptions);
+      return;
+    }
+    setCloseMode("navigate");
+    if (!transitionRouter.push(href, menuNavOptions)) closeMenu();
   };
+
+  const handleNavigate = (href: string) => navigateFromMenu(href);
 
   const scrollHeroTop = () => scrollToTop(lenis, false);
 
   const goToBuild = () => {
     if (menuOpen) {
-      closeMenu();
-      transitionRouter.push("/build", menuNavOptions);
+      navigateFromMenu("/build");
     } else {
       transitionRouter.push("/build");
     }
@@ -186,8 +222,7 @@ export function Navbar() {
       if (menuOpen) closeMenu();
       scrollToTop(lenis, false);
     } else if (menuOpen) {
-      closeMenu();
-      transitionRouter.push("/order", menuNavOptions);
+      navigateFromMenu("/order");
     } else {
       transitionRouter.push("/order");
     }
@@ -205,10 +240,10 @@ export function Navbar() {
   const handleTitleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     if (menuOpen) {
-      closeMenu();
+      if (pathname === "/") closeMenu();
       // Already home: no navigation, just wait out the menu close, then scroll.
       if (pathname === "/") setTimeout(scrollHeroTop, MENU_EXIT_COVER_MS);
-      else transitionRouter.push("/", menuNavOptions);
+      else navigateFromMenu("/");
     } else if (pathname === "/") {
       scrollHeroTop();
     } else {
@@ -281,6 +316,11 @@ export function Navbar() {
             padding: "0.85rem var(--nav-padding-x, 7vw)",
             pointerEvents: "auto",
             color: colorForT(1),
+            // Logo and icons fade with the menu chrome during a navigate
+            // close, so the viewport resolves to a flat field before the
+            // cover takes over. Restored under the cover, where it is unseen.
+            opacity: menuNavigating ? 0 : 1,
+            transition: "opacity 200ms ease-in",
           }}
         >
           {/* Menu toggle: left */}
@@ -290,7 +330,11 @@ export function Navbar() {
               type="button"
               aria-label={menuOpen ? "Close menu" : "Open menu"}
               aria-expanded={menuOpen}
-              onClick={() => (menuOpen ? closeMenu() : openMenu())}
+              onClick={() => {
+                if (menuNavigating) return;
+                if (menuOpen) closeMenu();
+                else openMenu();
+              }}
               style={{
                 ...iconButtonStyle,
                 fontFamily: "var(--font-body)",
@@ -344,7 +388,9 @@ export function Navbar() {
                   alt="MERŌS"
                   width={1376}
                   height={1376}
+                  sizes="32px"
                   priority
+                  {...CRITICAL_IMAGE}
                   style={{
                     width: "100%",
                     height: "100%",
@@ -359,7 +405,9 @@ export function Navbar() {
                   aria-hidden
                   width={1376}
                   height={1376}
+                  sizes="32px"
                   priority
+                  {...CRITICAL_IMAGE}
                   style={{
                     position: "absolute",
                     inset: 0,
@@ -462,6 +510,7 @@ export function Navbar() {
             <NavMenuOverlay
               key="nav-overlay"
               open={menuOpen}
+              closeMode={closeMode}
               onClose={closeMenu}
               onNavigate={handleNavigate}
               links={NAV_LINKS}

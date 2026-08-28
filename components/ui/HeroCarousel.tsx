@@ -56,12 +56,16 @@ export function HeroCarousel({ gap, tileHeight }: { gap: string; tileHeight: str
               marginRight: gap,
             }}
           >
+            {/* Lazy: below 1024px the carousel is display:none, and a lazy
+                image that never intersects is never requested. On desktop
+                the row sits in the first viewport, so it loads at once. */}
             <Image
               src={img.src}
               alt={img.alt}
               fill
               className="object-cover"
               sizes="20vh"
+              loading="lazy"
             />
           </div>
         ))}

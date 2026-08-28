@@ -49,7 +49,10 @@ export function PageCover({ phase, coverMode }: PageCoverProps) {
         position: "fixed",
         inset: 0,
         zIndex: COVER_Z,
-        background: "var(--color-cream)",
+        // The nav menu's panels close inward to a solid field; a cover of the
+        // same colour makes the handoff between them invisible. Link-driven
+        // transitions keep the cream fade.
+        background: coverMode === "menu-composed" ? "var(--nav-overlay-bg)" : "var(--color-cream)",
         pointerEvents: "auto",
       }}
     />

@@ -1,0 +1,303 @@
+{
+  "origin": "http://localhost:3011",
+  "measuredAt": "2026-08-28T16:10:11.856Z",
+  "results": [
+    {
+      "profile": "desktop",
+      "route": "/",
+      "lcp": 2180,
+      "cls": 0,
+      "fcp": 40,
+      "load": 75.40000000037253,
+      "transferKb": 1362,
+      "imageCount": 32,
+      "imageKb": 1015,
+      "largest": [
+        {
+          "name": "/img/images-web/Transparent/Silk.a8085add-828.webp",
+          "kb": 90
+        },
+        {
+          "name": "/img/images-web/Transparent/Crunch.a018522e-828.webp",
+          "kb": 82
+        },
+        {
+          "name": "/img/images-web/Transparent/Bloom.5f315812-828.webp",
+          "kb": 79
+        },
+        {
+          "name": "/img/images-web/Transparent/Moment.0133e07a-828.webp",
+          "kb": 74
+        },
+        {
+          "name": "/img/images-web/Hero/Gallery-5-hero-cropped.590f1020-828.webp",
+          "kb": 73
+        }
+      ]
+    },
+    {
+      "profile": "iphone-fast-4g",
+      "route": "/",
+      "lcp": 3344,
+      "cls": 0,
+      "fcp": 180,
+      "load": 1397.4000000003725,
+      "transferKb": 665,
+      "imageCount": 15,
+      "imageKb": 318,
+      "largest": [
+        {
+          "name": "/img/images-web/Hero/Gallery-5-hero-cropped.590f1020-1440.webp",
+          "kb": 134
+        },
+        {
+          "name": "/_next/static/chunks/796-a40d98300c38975d.js",
+          "kb": 71
+        },
+        {
+          "name": "/_next/static/chunks/4bd1b696-c023c6e3521b1417.js",
+          "kb": 53
+        },
+        {
+          "name": "/_next/static/chunks/255-62902f04efbdd792.js",
+          "kb": 46
+        },
+        {
+          "name": "/img/logos/name-dark.e2ae037b-1080.webp",
+          "kb": 41
+        }
+      ]
+    },
+    {
+      "profile": "iphone-slow-4g",
+      "route": "/",
+      "lcp": 5520,
+      "cls": 0,
+      "fcp": 592,
+      "load": 3568.5999999996275,
+      "transferKb": 665,
+      "imageCount": 15,
+      "imageKb": 318,
+      "largest": [
+        {
+          "name": "/img/images-web/Hero/Gallery-5-hero-cropped.590f1020-1440.webp",
+          "kb": 134
+        },
+        {
+          "name": "/_next/static/chunks/796-a40d98300c38975d.js",
+          "kb": 71
+        },
+        {
+          "name": "/_next/static/chunks/4bd1b696-c023c6e3521b1417.js",
+          "kb": 53
+        },
+        {
+          "name": "/_next/static/chunks/255-62902f04efbdd792.js",
+          "kb": 46
+        },
+        {
+          "name": "/img/logos/name-dark.e2ae037b-1080.webp",
+          "kb": 41
+        }
+      ]
+    },
+    {
+      "profile": "desktop",
+      "route": "/order",
+      "lcp": 28,
+      "cls": 0,
+      "fcp": 28,
+      "load": 59.39999999944121,
+      "transferKb": 490,
+      "imageCount": 9,
+      "imageKb": 171,
+      "largest": [
+        {
+          "name": "/_next/static/chunks/796-a40d98300c38975d.js",
+          "kb": 71
+        },
+        {
+          "name": "/_next/static/chunks/4bd1b696-c023c6e3521b1417.js",
+          "kb": 53
+        },
+        {
+          "name": "/_next/static/chunks/255-62902f04efbdd792.js",
+          "kb": 46
+        },
+        {
+          "name": "/_next/static/media/13971731025ec697-s.woff2",
+          "kb": 36
+        },
+        {
+          "name": "/img/images-web/Bowls/Silk-1.68d3d8f5-640.webp",
+          "kb": 30
+        }
+      ]
+    },
+    {
+      "profile": "iphone-fast-4g",
+      "route": "/order",
+      "lcp": 528,
+      "cls": 0,
+      "fcp": 180,
+      "load": 1147.5,
+      "transferKb": 539,
+      "imageCount": 7,
+      "imageKb": 219,
+      "largest": [
+        {
+          "name": "/_next/static/chunks/796-a40d98300c38975d.js",
+          "kb": 71
+        },
+        {
+          "name": "/_next/static/chunks/4bd1b696-c023c6e3521b1417.js",
+          "kb": 53
+        },
+        {
+          "name": "/img/images-web/Bowls/Silk-1.68d3d8f5-828.webp",
+          "kb": 46
+        },
+        {
+          "name": "/_next/static/chunks/255-62902f04efbdd792.js",
+          "kb": 46
+        },
+        {
+          "name": "/img/images-web/Bowls/Crunch-1.153f5457-828.webp",
+          "kb": 43
+        }
+      ]
+    },
+    {
+      "profile": "iphone-slow-4g",
+      "route": "/order",
+      "lcp": 1060,
+      "cls": 0,
+      "fcp": 576,
+      "load": 3029.5,
+      "transferKb": 539,
+      "imageCount": 7,
+      "imageKb": 219,
+      "largest": [
+        {
+          "name": "/_next/static/chunks/796-a40d98300c38975d.js",
+          "kb": 71
+        },
+        {
+          "name": "/_next/static/chunks/4bd1b696-c023c6e3521b1417.js",
+          "kb": 53
+        },
+        {
+          "name": "/img/images-web/Bowls/Silk-1.68d3d8f5-828.webp",
+          "kb": 46
+        },
+        {
+          "name": "/_next/static/chunks/255-62902f04efbdd792.js",
+          "kb": 46
+        },
+        {
+          "name": "/img/images-web/Bowls/Crunch-1.153f5457-828.webp",
+          "kb": 43
+        }
+      ]
+    },
+    {
+      "profile": "desktop",
+      "route": "/build",
+      "lcp": 1640,
+      "cls": 0.007655242626886145,
+      "fcp": 28,
+      "load": 59.09999999962747,
+      "transferKb": 327,
+      "imageCount": 2,
+      "imageKb": 6,
+      "largest": [
+        {
+          "name": "/_next/static/chunks/796-a40d98300c38975d.js",
+          "kb": 71
+        },
+        {
+          "name": "/_next/static/chunks/4bd1b696-c023c6e3521b1417.js",
+          "kb": 53
+        },
+        {
+          "name": "/_next/static/chunks/255-62902f04efbdd792.js",
+          "kb": 46
+        },
+        {
+          "name": "/_next/static/media/13971731025ec697-s.woff2",
+          "kb": 36
+        },
+        {
+          "name": "/_next/static/chunks/c15bf2b0-52e8419f34af26ab.js",
+          "kb": 20
+        }
+      ]
+    },
+    {
+      "profile": "iphone-fast-4g",
+      "route": "/build",
+      "lcp": 2300,
+      "cls": 0,
+      "fcp": 168,
+      "load": 720.5,
+      "transferKb": 333,
+      "imageCount": 2,
+      "imageKb": 12,
+      "largest": [
+        {
+          "name": "/_next/static/chunks/796-a40d98300c38975d.js",
+          "kb": 71
+        },
+        {
+          "name": "/_next/static/chunks/4bd1b696-c023c6e3521b1417.js",
+          "kb": 53
+        },
+        {
+          "name": "/_next/static/chunks/255-62902f04efbdd792.js",
+          "kb": 46
+        },
+        {
+          "name": "/_next/static/media/13971731025ec697-s.woff2",
+          "kb": 36
+        },
+        {
+          "name": "/_next/static/chunks/c15bf2b0-52e8419f34af26ab.js",
+          "kb": 20
+        }
+      ]
+    },
+    {
+      "profile": "iphone-slow-4g",
+      "route": "/build",
+      "lcp": 3560,
+      "cls": 0.0007726181021584019,
+      "fcp": 572,
+      "load": 1962.2999999998137,
+      "transferKb": 333,
+      "imageCount": 2,
+      "imageKb": 12,
+      "largest": [
+        {
+          "name": "/_next/static/chunks/796-a40d98300c38975d.js",
+          "kb": 71
+        },
+        {
+          "name": "/_next/static/chunks/4bd1b696-c023c6e3521b1417.js",
+          "kb": 53
+        },
+        {
+          "name": "/_next/static/chunks/255-62902f04efbdd792.js",
+          "kb": 46
+        },
+        {
+          "name": "/_next/static/media/13971731025ec697-s.woff2",
+          "kb": 36
+        },
+        {
+          "name": "/_next/static/chunks/c15bf2b0-52e8419f34af26ab.js",
+          "kb": 20
+        }
+      ]
+    }
+  ]
+}

@@ -169,6 +169,143 @@
 /* Which skeleton variant is visible is resolved purely by media query, not
    JS viewport state: CSS applies before hydration, so there's no flash of
    the wrong layout on load. Breakpoint matches HeroSection's useIsMobile(1023). */
+/* Hero: one DOM for both layouts (HeroSection.tsx). Desktop is an editorial
+   split, portrait on the right half, logo and CTAs on the left, carousel
+   across the bottom. Below 1024px the portrait goes full bleed under a scrim
+   with the logo centred and the CTAs pinned to the bottom edge. Media queries
+   rather than a JS breakpoint so the server HTML is right for every viewport
+   and no layout moves after hydration. */
+.hero {
+  position: relative;
+  width: 100%;
+  height: 100svh;
+  overflow: hidden;
+  background: var(--color-cream);
+  display: flex;
+  flex-direction: column;
+}
+
+.hero-body {
+  position: relative;
+  flex: 1 1 0%;
+  min-height: 0;
+}
+
+.hero-portrait {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 50%;
+  height: 100%;
+}
+
+.hero-scrim {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.48);
+}
+
+.hero-lead {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 50%;
+  height: 100%;
+}
+
+/* Centred in the band between the nav's bottom edge (72px, matches
+   NAV_HEIGHT_PX in Navbar.tsx) and the carousel's top, not in the section. */
+.hero-logo {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + 36px);
+  transform: translate(-50%, -50%);
+  width: clamp(200px, 28vw, 440px);
+}
+
+.hero-logo-light,
+.hero-ctas-light {
+  display: none;
+}
+
+.hero-ctas {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+}
+
+.hero-ctas-dark {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.hero-carousel {
+  position: relative;
+  flex-shrink: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+@media (max-width: 1023px) {
+  .hero-portrait {
+    left: 0;
+    width: 100%;
+  }
+
+  .hero-scrim {
+    display: block;
+  }
+
+  .hero-lead {
+    width: 100%;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 1.5rem;
+  }
+
+  .hero-logo {
+    position: static;
+    transform: none;
+    width: clamp(220px, 72vw, 420px);
+  }
+
+  .hero-logo-dark,
+  .hero-ctas-dark {
+    display: none;
+  }
+
+  .hero-logo-light {
+    display: block;
+  }
+
+  .hero-ctas {
+    left: 0;
+    right: 0;
+    bottom: clamp(1.5rem, 5vh, 2.5rem);
+    transform: none;
+    padding: 0 1.5rem;
+  }
+
+  .hero-ctas-light {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+
+  .hero-carousel {
+    display: none;
+  }
+}
+
 .preloader-skeleton-desktop {
   flex: 1 1 0%;
   min-height: 0;

@@ -8,6 +8,8 @@ import ScrollTrigger from "gsap/ScrollTrigger";
 import { useLenis } from "@/components/animation/LenisProvider";
 import { splitDeck } from "@/lib/ourStory/splitDeck";
 
+import { useRevealReady } from "@/lib/useRevealReady";
+
 gsap.registerPlugin(ScrollTrigger);
 
 // ─── Content ─────────────────────────────────────────────────────────────────
@@ -445,6 +447,10 @@ export function OurStorySection() {
   const sectionRef = useRef<HTMLElement>(null);
   const compositionRef = useRef<HTMLDivElement>(null);
   const stackRef = useRef<HTMLDivElement>(null);
+  // The whole composition holds at opacity 0 until every card photo has
+  // decoded. The scroll-scrubbed fan keeps running underneath; only its
+  // visibility waits.
+  const compositionShow = useRevealReady(compositionRef, "0px");
   const railRef = useRef<HTMLDivElement>(null);
   const railFillRef = useRef<HTMLDivElement>(null);
   const pointRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -959,6 +965,10 @@ export function OurStorySection() {
               ? "mt-10 flex flex-col"
               : "my-auto grid grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-12"
           }
+          style={{
+            opacity: compositionShow ? 1 : 0,
+            transition: "opacity 1.2s cubic-bezier(0.22, 1, 0.36, 1)",
+          }}
         >
           {/* Headline stack */}
           <div ref={stackRef} className="relative">

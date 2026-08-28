@@ -1,20 +1,28 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
+import { MENU_PANEL_MS, REDUCED_MOTION_MS } from "@/lib/motion";
 
 // Desktop-only. The mobile menu is MobileNavPanel.tsx (content-height drop
 // panel); Navbar.tsx picks between the two on the 768px breakpoint.
 
-const FRAME_DURATION = 0.7;
+const FRAME_DURATION = MENU_PANEL_MS / 1000;
 const FRAME_EASE = [0.76, 0, 0.24, 1] as const;
 const LINK_STAGGER = 0.06;
 const LINK_BASE_DELAY = 0.35;
+const CHROME_FADE = 0.2; // links and note fading out ahead of a navigate close
 const OVERLAY_Z = 115;
 
 // Hole as fractions of the viewport: change these to resize the center panel.
 const HOLE_W_FRAC = 0.32; // 32vw
 const HOLE_H_FRAC = 0.62; // 62vh
+
+// How the overlay leaves. "dismiss" (Escape, the toggle, clicking the window)
+// retreats the panels to the edges and hands the page back. "navigate" closes
+// them inward until they meet, so the viewport becomes a solid field the
+// page transition's cover can take over without a visible seam.
+export type NavMenuCloseMode = "dismiss" | "navigate";
 
 interface NavLink {
   label: string;
@@ -26,10 +34,14 @@ interface OverlayDims {
   halfH: number;
   holeW: number;
   holeH: number;
+  fullHalfW: number;
+  fullHalfH: number;
 }
 
 function computeDims(): OverlayDims {
-  if (typeof window === "undefined") return { halfW: 0, halfH: 0, holeW: 0, holeH: 0 };
+  if (typeof window === "undefined") {
+    return { halfW: 0, halfH: 0, holeW: 0, holeH: 0, fullHalfW: 0, fullHalfH: 0 };
+  }
   const holeW = window.innerWidth * HOLE_W_FRAC;
   const holeH = window.innerHeight * HOLE_H_FRAC;
   return {
@@ -37,11 +49,15 @@ function computeDims(): OverlayDims {
     halfH: (window.innerHeight - holeH) / 2,
     holeW,
     holeH,
+    // Opposite panels meet in the middle: exactly half the viewport each.
+    fullHalfW: window.innerWidth / 2,
+    fullHalfH: window.innerHeight / 2,
   };
 }
 
 interface NavMenuOverlayProps {
   open: boolean;
+  closeMode: NavMenuCloseMode;
   onClose: () => void;
   onNavigate: (href: string) => void;
   links: NavLink[];
@@ -50,12 +66,15 @@ interface NavMenuOverlayProps {
 
 export function NavMenuOverlay({
   open,
+  closeMode,
   onClose,
   onNavigate,
   links,
   rightContent,
 }: NavMenuOverlayProps) {
   const firstLinkRef = useRef<HTMLAnchorElement>(null);
+  const reduced = useReducedMotion() ?? false;
+  const navigating = closeMode === "navigate";
 
   // Pixel panel sizes: Framer Motion cannot interpolate CSS calc() from 0,
   // which caused the right-panel flash on the previous build. Computed
@@ -78,6 +97,7 @@ export function NavMenuOverlay({
 
   const handleLinkClick = (e: React.MouseEvent, href: string) => {
     e.preventDefault();
+    if (navigating) return; // a second click during the close would restart it
     onNavigate(href);
   };
 
@@ -91,12 +111,24 @@ export function NavMenuOverlay({
     width: "fit-content",
   };
 
+  // Reduced motion collapses the choreography to a short plain fade.
+  const frame = reduced
+    ? { duration: REDUCED_MOTION_MS / 1000, ease: "linear" as const }
+    : { duration: FRAME_DURATION, ease: FRAME_EASE };
+  const chromeOut = { duration: reduced ? REDUCED_MOTION_MS / 1000 : CHROME_FADE, ease: "easeIn" as const };
+  // A navigate close ends under the transition cover, so the AnimatePresence
+  // exit that follows the unmount must not play a retreat the user could see
+  // as the cover lifts.
+  const exitFrame = navigating ? { duration: 0 } : frame;
+
   // ── Desktop: four panels around a transparent window ─────────────────────
-  const { halfW, halfH, holeW, holeH } = dims;
+  const { halfW, halfH, holeW, holeH, fullHalfW, fullHalfH } = dims;
   const panelBg: React.CSSProperties = {
     background: "var(--nav-overlay-bg)",
     pointerEvents: "auto",
   };
+  const sideW = navigating ? fullHalfW : halfW;
+  const bandH = navigating ? fullHalfH : halfH;
 
   return (
     <>
@@ -132,7 +164,7 @@ export function NavMenuOverlay({
             left: halfW,
             width: holeW,
             height: holeH,
-            pointerEvents: "auto",
+            pointerEvents: navigating ? "none" : "auto",
             cursor: "pointer",
             zIndex: 2,
           }}
@@ -141,9 +173,9 @@ export function NavMenuOverlay({
         {/* Left panel: nav links, slides in from left edge */}
         <motion.div
           initial={{ width: 0 }}
-          animate={{ width: halfW }}
-          exit={{ width: 0 }}
-          transition={{ duration: FRAME_DURATION, ease: FRAME_EASE }}
+          animate={{ width: sideW }}
+          exit={{ width: 0, transition: exitFrame }}
+          transition={frame}
           style={{
             position: "absolute",
             top: 0,
@@ -172,14 +204,18 @@ export function NavMenuOverlay({
                 href={link.href}
                 className="nav-overlay-link"
                 onClick={(e) => handleLinkClick(e, link.href)}
-                initial={{ opacity: 0, x: -24 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -24, transition: { duration: 0.2, ease: "easeIn" } }}
-                transition={{
-                  delay: LINK_BASE_DELAY + i * LINK_STAGGER,
-                  duration: 0.55,
-                  ease: [0.16, 1, 0.3, 1],
-                }}
+                initial={{ opacity: 0, x: reduced ? 0 : -24 }}
+                animate={navigating ? { opacity: 0, x: reduced ? 0 : -24 } : { opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: reduced ? 0 : -24, transition: chromeOut }}
+                transition={
+                  navigating
+                    ? chromeOut
+                    : {
+                        delay: reduced ? 0 : LINK_BASE_DELAY + i * LINK_STAGGER,
+                        duration: reduced ? REDUCED_MOTION_MS / 1000 : 0.55,
+                        ease: [0.16, 1, 0.3, 1],
+                      }
+                }
                 style={{
                   ...linkStyle,
                   fontSize: "clamp(2rem, 4.2vw, 3.25rem)",
@@ -195,9 +231,9 @@ export function NavMenuOverlay({
         {/* Right panel: optional secondary content, slides in from right edge */}
         <motion.div
           initial={{ width: 0 }}
-          animate={{ width: halfW }}
-          exit={{ width: 0 }}
-          transition={{ duration: FRAME_DURATION, ease: FRAME_EASE }}
+          animate={{ width: sideW }}
+          exit={{ width: 0, transition: exitFrame }}
+          transition={frame}
           style={{
             position: "absolute",
             top: 0,
@@ -212,7 +248,9 @@ export function NavMenuOverlay({
           }}
         >
           {/* Inner wrapper preserves padding without leaking outside overflow:hidden */}
-          <div
+          <motion.div
+            animate={{ opacity: navigating ? 0 : 1 }}
+            transition={chromeOut}
             style={{
               flexShrink: 0,
               width: halfW,
@@ -223,15 +261,15 @@ export function NavMenuOverlay({
             }}
           >
             {rightContent}
-          </div>
+          </motion.div>
         </motion.div>
 
         {/* Top panel: slides down from top */}
         <motion.div
           initial={{ height: 0 }}
-          animate={{ height: halfH }}
-          exit={{ height: 0 }}
-          transition={{ duration: FRAME_DURATION, ease: FRAME_EASE }}
+          animate={{ height: bandH }}
+          exit={{ height: 0, transition: exitFrame }}
+          transition={frame}
           style={{
             position: "absolute",
             top: 0,
@@ -245,9 +283,9 @@ export function NavMenuOverlay({
         {/* Bottom panel: slides up from bottom */}
         <motion.div
           initial={{ height: 0 }}
-          animate={{ height: halfH }}
-          exit={{ height: 0 }}
-          transition={{ duration: FRAME_DURATION, ease: FRAME_EASE }}
+          animate={{ height: bandH }}
+          exit={{ height: 0, transition: exitFrame }}
+          transition={frame}
           style={{
             position: "absolute",
             bottom: 0,
@@ -257,8 +295,6 @@ export function NavMenuOverlay({
             ...panelBg,
           }}
         />
-
-
       </div>
     </>
   );

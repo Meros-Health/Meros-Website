@@ -1,0 +1,399 @@
+{
+  "images": {
+    "/images-web/Bowls/Bloom-1.jpg": {
+      "hash": "7b13f4fd",
+      "width": 1024,
+      "height": 683
+    },
+    "/images-web/Bowls/Bloom-2.jpg": {
+      "hash": "b222b9b4",
+      "width": 1024,
+      "height": 683
+    },
+    "/images-web/Bowls/Crunch-1.jpg": {
+      "hash": "153f5457",
+      "width": 1024,
+      "height": 683
+    },
+    "/images-web/Bowls/Crunch-2.jpg": {
+      "hash": "db91f8e5",
+      "width": 1024,
+      "height": 683
+    },
+    "/images-web/Bowls/Crunch-3.jpg": {
+      "hash": "49c42422",
+      "width": 1024,
+      "height": 683
+    },
+    "/images-web/Bowls/Crunch-4.jpg": {
+      "hash": "49a157b4",
+      "width": 1024,
+      "height": 696
+    },
+    "/images-web/Bowls/Hand-Bowl-1.jpg": {
+      "hash": "03d18bab",
+      "width": 1024,
+      "height": 1535
+    },
+    "/images-web/Bowls/Hand-Bowl-2.jpg": {
+      "hash": "a590a01f",
+      "width": 1024,
+      "height": 1535
+    },
+    "/images-web/Bowls/Hand-Bowl-3.jpg": {
+      "hash": "dd7b77e9",
+      "width": 1024,
+      "height": 1531
+    },
+    "/images-web/Bowls/Hand-Bowl-4.jpg": {
+      "hash": "ba4c50d5",
+      "width": 1024,
+      "height": 1535
+    },
+    "/images-web/Bowls/Hand-Bowl-5.jpg": {
+      "hash": "02b84633",
+      "width": 1024,
+      "height": 1535
+    },
+    "/images-web/Bowls/Moment-1.jpg": {
+      "hash": "fb9551e3",
+      "width": 1024,
+      "height": 683
+    },
+    "/images-web/Bowls/Moment-2.jpg": {
+      "hash": "099ced46",
+      "width": 1024,
+      "height": 683
+    },
+    "/images-web/Bowls/Plain-1.jpg": {
+      "hash": "b5a2a3bb",
+      "width": 1024,
+      "height": 683
+    },
+    "/images-web/Bowls/Silk-1.jpg": {
+      "hash": "68d3d8f5",
+      "width": 1024,
+      "height": 683
+    },
+    "/images-web/Bowls/Silk-2.jpg": {
+      "hash": "2df366aa",
+      "width": 1024,
+      "height": 683
+    },
+    "/images-web/Bowls/Tropic-1.jpg": {
+      "hash": "a708be92",
+      "width": 1024,
+      "height": 683
+    },
+    "/images-web/Bowls/Tropic-2.jpg": {
+      "hash": "de099485",
+      "width": 1024,
+      "height": 682
+    },
+    "/images-web/Gallery/Gallery-1.jpg": {
+      "hash": "07ef3c6e",
+      "width": 1024,
+      "height": 683
+    },
+    "/images-web/Gallery/Gallery-2.jpg": {
+      "hash": "8e4213f9",
+      "width": 1024,
+      "height": 683
+    },
+    "/images-web/Gallery/Gallery-3.jpg": {
+      "hash": "c54e1a49",
+      "width": 1024,
+      "height": 683
+    },
+    "/images-web/Gallery/Gallery-4.jpg": {
+      "hash": "b83cc3ed",
+      "width": 1024,
+      "height": 683
+    },
+    "/images-web/Gallery/Gallery-5.jpg": {
+      "hash": "96576342",
+      "width": 1024,
+      "height": 682
+    },
+    "/images-web/Gallery/Gallery-6.jpg": {
+      "hash": "6c2d360e",
+      "width": 1024,
+      "height": 683
+    },
+    "/images-web/Gallery/Gallery-7.jpg": {
+      "hash": "bc7083c3",
+      "width": 1024,
+      "height": 683
+    },
+    "/images-web/Gallery/Gallery-8.jpg": {
+      "hash": "2b2a0d03",
+      "width": 1024,
+      "height": 683
+    },
+    "/images-web/Hero/Gallery-4-hero.jpg": {
+      "hash": "38b0cd7e",
+      "width": 2560,
+      "height": 1707
+    },
+    "/images-web/Hero/Gallery-5-hero-cropped.jpg": {
+      "hash": "590f1020",
+      "width": 2880,
+      "height": 1680
+    },
+    "/images-web/Hero/Gallery-5-hero.jpg": {
+      "hash": "1c05d307",
+      "width": 2880,
+      "height": 1919
+    },
+    "/images-web/Hero/Gallery-8-hero-web.jpg": {
+      "hash": "09e0f9b2",
+      "width": 2880,
+      "height": 1922
+    },
+    "/images-web/Hero/Gallery-8-hero.jpg": {
+      "hash": "79746619",
+      "width": 6819,
+      "height": 4550
+    },
+    "/images-web/Hero/Overlay.png": {
+      "hash": "2b584303",
+      "width": 4096,
+      "height": 2160
+    },
+    "/images-web/Hero/Underlay.png": {
+      "hash": "c27fe02c",
+      "width": 4096,
+      "height": 2160
+    },
+    "/images-web/Instagram/bowls/bloom.png": {
+      "hash": "301c833d",
+      "width": 1080,
+      "height": 1350
+    },
+    "/images-web/Instagram/bowls/cabana.png": {
+      "hash": "c1a5dc7e",
+      "width": 1080,
+      "height": 1350
+    },
+    "/images-web/Instagram/bowls/crunch.png": {
+      "hash": "077fc473",
+      "width": 1080,
+      "height": 1350
+    },
+    "/images-web/Instagram/bowls/focus.png": {
+      "hash": "7956807a",
+      "width": 1080,
+      "height": 1350
+    },
+    "/images-web/Instagram/bowls/moment.png": {
+      "hash": "cb57a657",
+      "width": 1080,
+      "height": 1350
+    },
+    "/images-web/Instagram/bowls/silk.png": {
+      "hash": "5f4fe5ed",
+      "width": 1080,
+      "height": 1350
+    },
+    "/images-web/Instagram/smoothies/crave.png": {
+      "hash": "4f731f8f",
+      "width": 1080,
+      "height": 1350
+    },
+    "/images-web/Instagram/smoothies/recovery.png": {
+      "hash": "8042b178",
+      "width": 1080,
+      "height": 1350
+    },
+    "/images-web/Instagram/smoothies/rise.png": {
+      "hash": "eb8d1e2d",
+      "width": 1080,
+      "height": 1350
+    },
+    "/images-web/Instagram/smoothies/tropic.png": {
+      "hash": "f011efbc",
+      "width": 1080,
+      "height": 1350
+    },
+    "/images-web/Smoothies/cabana-1.jpg": {
+      "hash": "c6c0d0fe",
+      "width": 1024,
+      "height": 683
+    },
+    "/images-web/Smoothies/cabana-2.jpg": {
+      "hash": "4e60b8c0",
+      "width": 1024,
+      "height": 684
+    },
+    "/images-web/Smoothies/crave-1.jpg": {
+      "hash": "940be8e3",
+      "width": 1024,
+      "height": 683
+    },
+    "/images-web/Smoothies/crave-2.jpg": {
+      "hash": "fb54df04",
+      "width": 1024,
+      "height": 683
+    },
+    "/images-web/Smoothies/focus-1.jpg": {
+      "hash": "61366eb5",
+      "width": 1024,
+      "height": 682
+    },
+    "/images-web/Smoothies/focus-2.jpg": {
+      "hash": "41a72eb3",
+      "width": 1024,
+      "height": 683
+    },
+    "/images-web/Smoothies/Hand-Smoothie-1.jpg": {
+      "hash": "9890050a",
+      "width": 1024,
+      "height": 1535
+    },
+    "/images-web/Smoothies/Hand-Smoothie-2.jpg": {
+      "hash": "f4741886",
+      "width": 1024,
+      "height": 1535
+    },
+    "/images-web/Smoothies/Hand-Smoothie-3.jpg": {
+      "hash": "5a58a0bd",
+      "width": 1024,
+      "height": 1535
+    },
+    "/images-web/Smoothies/Hand-Smoothie-4.jpg": {
+      "hash": "c28908af",
+      "width": 1024,
+      "height": 1535
+    },
+    "/images-web/Smoothies/Hand-Smoothie-5.jpg": {
+      "hash": "cfe7ae4b",
+      "width": 1024,
+      "height": 1535
+    },
+    "/images-web/Smoothies/Hand-Smoothie-6.jpg": {
+      "hash": "e5189aea",
+      "width": 1024,
+      "height": 1535
+    },
+    "/images-web/Smoothies/recovery-1.jpg": {
+      "hash": "6eb52dd2",
+      "width": 1024,
+      "height": 684
+    },
+    "/images-web/Smoothies/recovery-2.jpg": {
+      "hash": "c6ac640f",
+      "width": 1024,
+      "height": 683
+    },
+    "/images-web/Smoothies/rise-1.jpg": {
+      "hash": "1f0f5a95",
+      "width": 1024,
+      "height": 683
+    },
+    "/images-web/Smoothies/rise-2.jpg": {
+      "hash": "57a46ecd",
+      "width": 1024,
+      "height": 683
+    },
+    "/images-web/Transparent/Bloom.png": {
+      "hash": "5f315812",
+      "width": 1080,
+      "height": 1080
+    },
+    "/images-web/Transparent/Cabana.png": {
+      "hash": "741f0c67",
+      "width": 1080,
+      "height": 1080
+    },
+    "/images-web/Transparent/Crave.png": {
+      "hash": "7472da05",
+      "width": 1080,
+      "height": 1080
+    },
+    "/images-web/Transparent/Crunch.png": {
+      "hash": "a018522e",
+      "width": 1080,
+      "height": 1080
+    },
+    "/images-web/Transparent/Focus.png": {
+      "hash": "4c8463ef",
+      "width": 1080,
+      "height": 1080
+    },
+    "/images-web/Transparent/Moment.png": {
+      "hash": "0133e07a",
+      "width": 1080,
+      "height": 1080
+    },
+    "/images-web/Transparent/Plain.png": {
+      "hash": "69a741d2",
+      "width": 1080,
+      "height": 1080
+    },
+    "/images-web/Transparent/Recovery.png": {
+      "hash": "f1c1d18a",
+      "width": 1080,
+      "height": 1080
+    },
+    "/images-web/Transparent/Rise.png": {
+      "hash": "f0c8cfad",
+      "width": 1080,
+      "height": 1080
+    },
+    "/images-web/Transparent/Silk.png": {
+      "hash": "a8085add",
+      "width": 1080,
+      "height": 1080
+    },
+    "/images-web/Transparent/Tropic.png": {
+      "hash": "3c96d717",
+      "width": 1080,
+      "height": 1080
+    },
+    "/logos/logo-dark.png": {
+      "hash": "740ef3dc",
+      "width": 1376,
+      "height": 1376
+    },
+    "/logos/logo-light.png": {
+      "hash": "380698f3",
+      "width": 1376,
+      "height": 1376
+    },
+    "/logos/logo-terracotta.png": {
+      "hash": "6ccad7c1",
+      "width": 1376,
+      "height": 1376
+    },
+    "/logos/MEROS-dark.png": {
+      "hash": "b81126e4",
+      "width": 2038,
+      "height": 555
+    },
+    "/logos/MEROS-light.png": {
+      "hash": "9b5c0f0f",
+      "width": 2038,
+      "height": 555
+    },
+    "/logos/MEROS-terracotta.png": {
+      "hash": "90dc9642",
+      "width": 2038,
+      "height": 555
+    },
+    "/logos/name-dark.png": {
+      "hash": "e2ae037b",
+      "width": 2038,
+      "height": 820
+    },
+    "/logos/name-light.png": {
+      "hash": "79e08c08",
+      "width": 2038,
+      "height": 820
+    },
+    "/logos/name-terracotta.png": {
+      "hash": "9658db91",
+      "width": 2038,
+      "height": 820
+    }
+  }
+}

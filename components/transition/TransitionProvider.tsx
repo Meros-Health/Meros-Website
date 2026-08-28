@@ -13,7 +13,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useReducedMotion } from "framer-motion";
 import { usePreloadReady } from "@/components/ui/Preloader";
 import { PageCover } from "./PageCover";
-import { ROUTE_CRITICAL_ASSETS } from "@/lib/routeAssets";
+import { waitForCriticalImages } from "@/lib/criticalImages";
 import {
   ENTRANCE_MS,
   EXIT_MS,
@@ -21,7 +21,6 @@ import {
   MENU_EXIT_COVER_MS,
   NAV_WATCHDOG_MS,
   REDUCED_MOTION_MS,
-  preloadImage,
 } from "@/lib/motion";
 
 // Coordinated page transitions: exit cover over the outgoing page, navigate
@@ -181,12 +180,14 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
       pendingRef.current = null;
       setPhase("holding");
 
+      // The new route has rendered under the cover by now, so its critical
+      // images are in the document and already fetching.
       const reduced = reducedRef.current;
-      const assets = reduced ? [] : ROUTE_CRITICAL_ASSETS[pathname] ?? [];
+      const images = reduced ? Promise.resolve() : waitForCriticalImages();
       const holdTimer = new Promise<void>((resolve) =>
         window.setTimeout(resolve, reduced ? 0 : HOLD_MS)
       );
-      Promise.all([...assets.map(preloadImage), holdTimer]).then(() => {
+      Promise.all([images, holdTimer]).then(() => {
         if (transitionIdRef.current !== id) return;
         releaseCover(id);
       });

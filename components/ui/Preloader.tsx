@@ -2,14 +2,10 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { useLenis } from "@/components/animation/LenisProvider";
-import {
-  HERO_RIGHT_IMAGE_SRC,
-  HERO_LOGO_DARK_SRC,
-  HERO_LOGO_LIGHT_SRC,
-} from "@/lib/heroAssets";
+import { waitForCriticalImages } from "@/lib/criticalImages";
 
 // ── Tunables ──────────────────────────────────────────────────────────────
-const MIN_DISPLAY_MS = 500; // floor so the skeleton never flashes for a single frame
+const MIN_DISPLAY_MS = 300; // floor so the skeleton never flashes for a single frame
 const FADE_OUT_MS = 600;    // overlay opacity transition, kept in sync with the inline style below
 
 // Default true so anything consuming this outside a <Preloader> (or during
@@ -21,35 +17,22 @@ export function usePreloadReady() {
   return useContext(PreloadReadyContext);
 }
 
-function preloadImage(src: string): Promise<void> {
-  return new Promise((resolve) => {
-    const img = new window.Image();
-    img.onload = () => resolve();
-    img.onerror = () => resolve(); // a failed asset shouldn't hold the whole site hostage
-    img.src = src;
-  });
-}
-
 export function Preloader({ children }: { children: React.ReactNode }) {
   const lenis = useLenis();
   const [ready, setReady] = useState(false);
   const [mounted, setMounted] = useState(true);
 
-  // Preload the hero's critical assets once, independent of Lenis being ready.
+  // Wait for the route's critical images once, independent of Lenis being ready.
   useEffect(() => {
     let cancelled = false;
     const minDelay = new Promise<void>((resolve) => setTimeout(resolve, MIN_DISPLAY_MS));
     const fontsReady = document.fonts ? document.fonts.ready : Promise.resolve();
 
-    // Gate only on the hero's above-the-fold assets. Carousel imagery is left
-    // to lazy-load so the gate never stalls on the full image set.
-    Promise.all([
-      preloadImage(HERO_RIGHT_IMAGE_SRC),
-      preloadImage(HERO_LOGO_DARK_SRC),
-      preloadImage(HERO_LOGO_LIGHT_SRC),
-      fontsReady,
-      minDelay,
-    ]).then(() => {
+    // Gate only on the images the current route marked critical (the hero on
+    // "/", the first menu cards on "/order"). Everything else lazy-loads, so
+    // the gate never stalls on the full image set, and a route with nothing
+    // marked pays only the floor.
+    Promise.all([waitForCriticalImages(), fontsReady, minDelay]).then(() => {
       if (!cancelled) setReady(true);
     });
 

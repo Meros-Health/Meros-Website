@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 import { CTAButton } from "@/components/ui/CTAButton";
+import { useRevealReady } from "@/lib/useRevealReady";
 import { useCartStore } from "@/store/cartStore";
 import { EMPTY_NUTRITION } from "@/lib/menu/nutrition";
 import {
@@ -38,11 +39,12 @@ function priceNote(category: SignatureCategory): string {
 // ─── Motion ───────────────────────────────────────────────────────────────────
 // House entrance curve; rows cascade in visual order, hairlines draw left to
 // right. Item swaps on the stage are interactive feedback, so they use the
-// snappier curve the Pairings carousel uses.
+// snappier curve the Pairings carousel uses. Every reveal waits on its own
+// images having decoded (useRevealReady), never on scroll position alone.
 
 const REVEAL_EASE = [0.22, 1, 0.36, 1] as const;
 const SWAP_EASE = [0.16, 1, 0.3, 1] as const;
-const ENTER_VIEWPORT = { once: true, margin: "-100px" } as const;
+const ENTER_MARGIN = "-100px";
 const NAV_HEIGHT_PX = 72; // matches Navbar.tsx / HeroSection.tsx
 const HAIRLINE = "0.5px solid rgba(41,45,42,0.15)";
 const ROW_TINT = "rgba(41,45,42,0.05)";
@@ -192,6 +194,7 @@ function MenuRow({
               width={1080}
               height={1080}
               sizes="64px"
+              loading="lazy"
               style={{ width: "100%", height: "auto" }}
             />
           </div>
@@ -253,12 +256,14 @@ function MenuGroup({
   variants: MenuVariants;
   reduced: boolean;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const show = useRevealReady(ref, ENTER_MARGIN);
   return (
     <motion.div
+      ref={ref}
       variants={variants.group}
       initial={reduced ? false : "hidden"}
-      whileInView="show"
-      viewport={ENTER_VIEWPORT}
+      animate={reduced || show ? "show" : "hidden"}
     >
       <motion.div variants={variants.rise} className="flex items-baseline justify-between gap-4 pb-3 px-4 lg:px-5">
         <span className="font-body-caps text-midnight/50 text-[10px] tracking-[0.30em]">{label}</span>
@@ -285,24 +290,28 @@ function MenuGroup({
 
 // ─── Stage (desktop only) ─────────────────────────────────────────────────────
 // Every item's PNG is stacked in the same box and cross-faded by opacity, so
-// every image is fetched up front and a hover never waits on the network.
+// every image is fetched as the stage nears the viewport and a hover never
+// waits on the network. Below lg the stage is display:none, so the lazy
+// images are never requested there.
 
 function MenuStage({ active, reduced }: { active: SignatureItem; reduced: boolean }) {
   const swap = reduced
     ? { duration: 0 }
     : { duration: 0.5, ease: SWAP_EASE };
+  const ref = useRef<HTMLDivElement>(null);
+  const show = useRevealReady(ref, ENTER_MARGIN);
 
   return (
     <motion.div
+      ref={ref}
       className="sticky"
       style={{ top: `calc(${NAV_HEIGHT_PX}px + 2rem)` }}
       initial={reduced ? false : { opacity: 0 }}
-      whileInView={{ opacity: 1 }}
-      viewport={ENTER_VIEWPORT}
+      animate={{ opacity: reduced || show ? 1 : 0 }}
       transition={{ duration: reduced ? 0 : 1.2, ease: REVEAL_EASE, delay: reduced ? 0 : 0.3 }}
     >
       <div className="relative w-full aspect-square">
-        {ALL_ITEMS.map((item, i) => {
+        {ALL_ITEMS.map((item) => {
           const isActive = item.id === active.id;
           return (
             <motion.div
@@ -320,7 +329,7 @@ function MenuStage({ active, reduced }: { active: SignatureItem; reduced: boolea
                 width={1080}
                 height={1080}
                 sizes="(min-width: 1024px) 40vw, 0px"
-                loading={i === 0 ? "eager" : "lazy"}
+                loading="lazy"
                 style={{ width: "100%", height: "auto" }}
               />
             </motion.div>
@@ -356,17 +365,19 @@ export function SignatureMenuSection() {
   const variants = makeVariants(reduced);
   const [activeId, setActiveId] = useState(BOWLS[0].id);
   const active = ALL_ITEMS.find((item) => item.id === activeId) ?? BOWLS[0];
+  const headerRef = useRef<HTMLDivElement>(null);
+  const headerShow = useRevealReady(headerRef, ENTER_MARGIN);
 
   return (
     <section className="relative w-full bg-cream px-section-x py-section overflow-x-clip">
       <div className="mx-auto w-full max-w-[min(100%,90rem)]">
         {/* Header */}
         <motion.div
+          ref={headerRef}
           className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between lg:gap-12"
           variants={variants.header}
           initial={reduced ? false : "hidden"}
-          whileInView="show"
-          viewport={ENTER_VIEWPORT}
+          animate={reduced || headerShow ? "show" : "hidden"}
         >
           <div className="flex flex-col">
             <motion.span

@@ -4,6 +4,7 @@ import { useRef } from "react";
 import Image from "next/image";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { CTAButton } from "@/components/ui/CTAButton";
+import { useRevealReady } from "@/lib/useRevealReady";
 
 // Two static promo panels, vertical rectangles, replacing the old
 // dual-marquee gallery. Each is a dimmed full-bleed image with a centered
@@ -41,6 +42,9 @@ function GalleryPanel({ panel }: { panel: (typeof PANELS)[number] }) {
     offset: ["start end", "end start"],
   });
   const y = useTransform(scrollYProgress, [0, 1], [`-${PARALLAX_RUNWAY}`, PARALLAX_RUNWAY]);
+  // The photo fades up only once it has decoded; until then the panel is a
+  // dark field with its eyebrow and button, never a half-loaded image.
+  const show = useRevealReady(panelRef, "0px");
 
   return (
     <div
@@ -61,7 +65,13 @@ function GalleryPanel({ panel }: { panel: (typeof PANELS)[number] }) {
         same runway so it always fully covers the panel at both scroll
         extremes.
       */}
-      <motion.div aria-hidden style={{ position: "absolute", inset: 0, y }}>
+      <motion.div
+        aria-hidden
+        initial={{ opacity: 0 }}
+        animate={{ opacity: show ? 1 : 0 }}
+        transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+        style={{ position: "absolute", inset: 0, y }}
+      >
         <div
           style={{
             position: "absolute",

@@ -1,22 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 
 /**
- * SSR-safe mobile detection. Always returns `false` on the server and on the
- * first client render (so hydration matches), then syncs to the real media
- * query in an effect.
+ * Mobile detection that is right from the first client render. The server has
+ * no viewport, so it answers `false`; React then re-renders with the real
+ * media query synchronously during hydration, before the hydrated tree
+ * paints, so nothing flips in a later effect.
+ *
+ * The server HTML is still the desktop branch, so anything whose *layout*
+ * depends on this shifts once JS arrives. Use CSS media queries for layout
+ * and keep this for behaviour: timing, which handlers to attach, which menu
+ * component to mount.
  */
 export function useIsMobile(breakpoint = 768) {
-  const [matches, setMatches] = useState(false);
+  const query = `(max-width: ${breakpoint}px)`;
 
-  useEffect(() => {
-    const mq = window.matchMedia(`(max-width: ${breakpoint}px)`);
-    setMatches(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setMatches(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, [breakpoint]);
+  const subscribe = useCallback(
+    (onChange: () => void) => {
+      const mq = window.matchMedia(query);
+      mq.addEventListener("change", onChange);
+      return () => mq.removeEventListener("change", onChange);
+    },
+    [query]
+  );
+  const getSnapshot = useCallback(() => window.matchMedia(query).matches, [query]);
 
-  return matches;
+  return useSyncExternalStore(subscribe, getSnapshot, () => false);
 }

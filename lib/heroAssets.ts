@@ -1,6 +1,6 @@
-// Single source of truth for the hero's critical, above-the-fold assets.
-// HeroSection renders them; Preloader preloads them, and keeping the list here
-// stops the two from drifting apart.
+// The hero's above-the-fold assets. HeroSection renders them as `priority`
+// images marked CRITICAL_IMAGE (lib/criticalImages.ts), which is what the
+// Preloader and the page transition wait on.
 
 // Right-half portrait (desktop) / full-bleed background (mobile). Pick a frame
 // with a light, low-detail top so the layered title stays legible over it.

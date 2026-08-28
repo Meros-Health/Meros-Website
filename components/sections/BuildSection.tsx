@@ -6,6 +6,7 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import ScrollTrigger from "gsap/ScrollTrigger";
 import { CTAButton } from "@/components/ui/CTAButton";
+import { useRevealReady } from "@/lib/useRevealReady";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -85,6 +86,11 @@ export function BuildSection() {
   const useScrollAnimation = layoutMode === "scroll";
   const useMobileReveal = layoutMode === "static" && !prefersReducedMotion;
   const revealHiddenStyle = useMobileReveal ? { opacity: 0 } : undefined;
+
+  // Each layout reveals only once its bowls have decoded. The refs belong to
+  // different branches, so each gate is armed only while its branch is mounted.
+  const rowShow = useRevealReady(sectionRef, "0px", useScrollAnimation);
+  const staticShow = useRevealReady(staticSectionRef, "0px", layoutMode === "static");
 
   // ── Desktop / tablet: continuous carousel + per-window parallax ───────────
   useGSAP(
@@ -177,7 +183,7 @@ export function BuildSection() {
   // ── Mobile: one-time stagger reveal on scroll into view ───────────────────
   useGSAP(
     () => {
-      if (!useMobileReveal || !staticSectionRef.current) return;
+      if (!useMobileReveal || !staticShow || !staticSectionRef.current) return;
 
       const targets = [
         staticEyebrowRef.current,
@@ -200,7 +206,7 @@ export function BuildSection() {
         },
       });
     },
-    { scope: staticSectionRef, dependencies: [useMobileReveal] }
+    { scope: staticSectionRef, dependencies: [useMobileReveal, staticShow] }
   );
 
   // ── Static layout: mobile, reduced-motion, and initial pending paint ───────
@@ -238,8 +244,9 @@ export function BuildSection() {
               alt={STATIC_BOWL.alt}
               width={BOWL_SIZE}
               height={BOWL_SIZE}
+              sizes="min(72vw, 18rem)"
+              loading="lazy"
               style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
-              priority
             />
           </div>
 
@@ -322,6 +329,8 @@ export function BuildSection() {
           style={{
             width: "100%",
             marginTop: "clamp(2.5rem, 6vh, 4.5rem)",
+            opacity: rowShow ? 1 : 0,
+            transition: "opacity 1.2s cubic-bezier(0.22, 1, 0.36, 1)",
           }}
         >
           <div
@@ -369,6 +378,7 @@ export function BuildSection() {
                   alt={w.alt}
                   width={BOWL_SIZE}
                   height={BOWL_SIZE}
+                  sizes={`calc(${BOWL_OVERFLOW} * ${CARD_HEIGHT})`}
                   loading="eager"
                   style={{
                     width: "100%",
