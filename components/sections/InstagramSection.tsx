@@ -8,7 +8,7 @@ import { INSTAGRAM_POSTS, INSTAGRAM_HANDLE, INSTAGRAM_URL } from "@/lib/instagra
 export function InstagramSection() {
   return (
     <section className="w-full bg-cream py-16 md:py-24">
-      {/* Instagram profile card — compact, centered */}
+      {/* Instagram profile card: compact, centered */}
       <div className="mx-auto w-full max-w-[540px] px-0 sm:px-4">
 
         {/* ── Profile header ────────────────────────────────────────── */}
@@ -134,7 +134,7 @@ function GridTile({ post, index }: GridTileProps) {
         }}
       />
 
-      {/* Hover overlay — desktop only */}
+      {/* Hover overlay: desktop only */}
       <div
         className="hidden sm:flex absolute inset-0 flex-col items-center justify-center gap-3"
         style={{

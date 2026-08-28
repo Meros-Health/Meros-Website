@@ -11,7 +11,7 @@ export function SectionBand({ children, className = "" }: SectionBandProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [revealed, setRevealed] = useState(false);
 
-  // Plain IntersectionObserver instead of framer-motion's whileInView — Lenis's
+  // Plain IntersectionObserver instead of framer-motion's whileInView, because Lenis's
   // scroll handling confuses framer's own offset calculation and the reveal
   // silently never fires.
   useEffect(() => {

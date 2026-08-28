@@ -12,7 +12,7 @@ const LINK_STAGGER = 0.06;
 const LINK_BASE_DELAY = 0.35;
 const OVERLAY_Z = 115;
 
-// Hole as fractions of the viewport — change these to resize the center panel.
+// Hole as fractions of the viewport: change these to resize the center panel.
 const HOLE_W_FRAC = 0.32; // 32vw
 const HOLE_H_FRAC = 0.62; // 62vh
 
@@ -108,7 +108,7 @@ export function NavMenuOverlay({
           pointerEvents: "none",
         }}
       >
-        {/* Blur layer — sits behind the panels, blurs the website through the window */}
+        {/* Blur layer: sits behind the panels, blurs the website through the window */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -123,7 +123,7 @@ export function NavMenuOverlay({
           }}
         />
 
-        {/* Window click-to-close — transparent hit area over the center hole */}
+        {/* Window click-to-close: transparent hit area over the center hole */}
         <div
           onClick={onClose}
           style={{
@@ -138,7 +138,7 @@ export function NavMenuOverlay({
           }}
         />
 
-        {/* Left panel — nav links, slides in from left edge */}
+        {/* Left panel: nav links, slides in from left edge */}
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: halfW }}
@@ -192,7 +192,7 @@ export function NavMenuOverlay({
           </nav>
         </motion.div>
 
-        {/* Right panel — optional secondary content, slides in from right edge */}
+        {/* Right panel: optional secondary content, slides in from right edge */}
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: halfW }}
@@ -226,7 +226,7 @@ export function NavMenuOverlay({
           </div>
         </motion.div>
 
-        {/* Top panel — slides down from top */}
+        {/* Top panel: slides down from top */}
         <motion.div
           initial={{ height: 0 }}
           animate={{ height: halfH }}
@@ -242,7 +242,7 @@ export function NavMenuOverlay({
           }}
         />
 
-        {/* Bottom panel — slides up from bottom */}
+        {/* Bottom panel: slides up from bottom */}
         <motion.div
           initial={{ height: 0 }}
           animate={{ height: halfH }}

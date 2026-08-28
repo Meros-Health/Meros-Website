@@ -14,7 +14,7 @@ export function useLenis() {
   return useContext(LenisContext);
 }
 
-// Site-wide scroll feel — single place to tune calmness.
+// Site-wide scroll feel: single place to tune calmness.
 // lerp replaces duration/easing for wheel smoothing (per Lenis docs).
 const SCROLL_CONFIG = {
   lerp: 0.12,

@@ -6,14 +6,14 @@
 //   - Instagram Basic Display API  → requires Facebook Developer app + OAuth
 //
 // The post shape below matches what both services return, so the section
-// component won't need to change — only this data source does.
+// component won't need to change, only this data source does.
 
 export type InstagramPost = {
   id: string;
   imageUrl: string;
   /** Short caption shown on hover. Keep under ~120 chars. */
   caption: string;
-  /** Full Instagram post URL — links the tile when clicked. */
+  /** Full Instagram post URL: links the tile when clicked. */
   permalink: string;
   /** Optional: rendered as subtle overlay on hover if present. */
   likes?: number;

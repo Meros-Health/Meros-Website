@@ -73,7 +73,7 @@ export function CartDrawer() {
             }}
           />
 
-          {/* Panel — slides in from the right */}
+          {/* Panel: slides in from the right */}
           <motion.div
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
@@ -155,7 +155,7 @@ export function CartDrawer() {
               )}
             </div>
 
-            {/* Footer — subtotal + checkout */}
+            {/* Footer: subtotal + checkout */}
             <div className="px-6 py-5" style={{ borderTop: "0.5px solid rgba(41,45,42,0.12)" }}>
               <div className="flex justify-between pb-4">
                 <span className="font-body-caps text-[11px] text-midnight">Subtotal</span>

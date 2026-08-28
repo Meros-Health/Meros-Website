@@ -5,7 +5,7 @@ import Image from "next/image";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { CTAButton } from "@/components/ui/CTAButton";
 
-// Two static promo panels — vertical rectangles — replacing the old
+// Two static promo panels, vertical rectangles, replacing the old
 // dual-marquee gallery. Each is a dimmed full-bleed image with a centered
 // eyebrow + CTA layered over it.
 const PANELS = [
@@ -29,7 +29,7 @@ const PANELS = [
 const PANEL_GAP = "clamp(0.85rem, 1.4vw, 1.4rem)";
 const PANEL_OVERLAY = "rgba(0,0,0,0.54)";
 
-// Extra vertical runway the zoomed image has to travel within its panel —
+// Extra vertical runway the zoomed image has to travel within its panel:
 // bigger number = more noticeable parallax, but must stay small enough that
 // the oversized image still fully covers the panel at every scroll position.
 const PARALLAX_RUNWAY = "18%";

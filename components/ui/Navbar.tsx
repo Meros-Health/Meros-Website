@@ -28,7 +28,7 @@ const HEADER_ENTRANCE = {
 };
 
 // The nav bar is a flat cream panel at every breakpoint and every scroll
-// position. Icon/logo colour still crossfades, but only for the menu — see
+// position. Icon/logo colour still crossfades, but only for the menu; see
 // chromeTRef / applyChromeState.
 const MENU_FADE_MS = 150;
 const BAND_RGB = "255, 247, 240"; // --color-cream
@@ -69,7 +69,7 @@ export function Navbar() {
   const chromeRef = useRef<HTMLDivElement>(null);
   const logoLightRef = useRef<HTMLImageElement>(null);
   const logoDarkRef = useRef<HTMLImageElement>(null);
-  // Icon/logo color is dark by default, always — unrelated to scroll. It
+  // Icon/logo color is dark by default, always, and unrelated to scroll. It
   // only switches to light while the menu is open (see the menuOpen effect).
   const chromeTRef = useRef(1);
   const menuOpenRef = useRef(menuOpen);
@@ -231,7 +231,7 @@ export function Navbar() {
 
   return (
     <>
-      {/* Background layer — sits behind the menu overlay so its dark panels
+      {/* Background layer: sits behind the menu overlay so its dark panels
           cover this rectangle entirely while the menu is open. */}
       <motion.div
         aria-hidden
@@ -258,7 +258,7 @@ export function Navbar() {
         />
       </motion.div>
 
-      {/* Content layer — always above the menu overlay, so icons/logo stay
+      {/* Content layer: always above the menu overlay, so icons/logo stay
           visible and clickable regardless of menu state. */}
       <motion.header
         initial={HEADER_ENTRANCE.initial}
@@ -283,7 +283,7 @@ export function Navbar() {
             color: colorForT(1),
           }}
         >
-          {/* Menu toggle — left */}
+          {/* Menu toggle: left */}
           <div style={{ flex: 1, minWidth: 0, display: "flex", justifyContent: "flex-start" }}>
             <button
               ref={menuButtonRef}
@@ -311,7 +311,7 @@ export function Navbar() {
             </button>
           </div>
 
-          {/* MERŌS wordmark — center */}
+          {/* MERŌS wordmark: center */}
           <div style={{ flex: 1, minWidth: 0, display: "flex", justifyContent: "center" }}>
             <Link
               href="/"
@@ -373,7 +373,7 @@ export function Navbar() {
             </Link>
           </div>
 
-          {/* Build + Menu + Cart — right */}
+          {/* Build + Menu + Cart: right */}
           <div
             style={{
               flex: 1,

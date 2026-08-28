@@ -10,7 +10,7 @@
     --color-grapefruit: #d78e77;
     --color-blue: #a4bfe1;
 
-    /* ── Nav frame (mapped to brand tokens — never hardcode here) ── */
+    /* ── Nav frame (mapped to brand tokens, never hardcode here) ── */
     --nav-overlay-bg:     #292D2A;
     --nav-overlay-text:   #FFF7F0;
     --nav-accent:         var(--color-grapefruit);
@@ -30,7 +30,7 @@
     --font-body:      var(--font-dm-sans), system-ui, sans-serif;
 
     /* ── Build a Bowl: ingredient tile type scale ──
-       Single source of truth for IngredientCard text/padding — edit here,
+       Single source of truth for IngredientCard text/padding: edit here,
        it propagates to every ingredient tile. Desktop values in the
        @media block below get a bigger bump than mobile (more room to use). */
     --ingredient-name-size: 0.9375rem;   /* 14px → 15px, mobile */
@@ -42,7 +42,7 @@
     /* ── Menu card ("Our Menu" order page) type scale ──
        cqw-based: driven by the card's own (container-query) width, not the
        viewport, so desktop cards (wider, up to the max-width cap) render
-       larger than mobile ones automatically — no separate breakpoint needed. */
+       larger than mobile ones automatically, with no separate breakpoint needed. */
     --menu-card-max-width: 560px;
     --menu-card-name-size: clamp(1.15rem, 7cqw, 2rem);
     --menu-card-price-size: clamp(0.75rem, 3.2cqw, 1rem);
@@ -51,6 +51,11 @@
     --menu-card-padding: clamp(1rem, 4.5cqw, 1.75rem);
     --menu-card-gap: clamp(0.5rem, 2.5cqw, 0.875rem);
     --menu-grid-row-gap: clamp(1.5rem, 4vw, 3rem);
+    --menu-grid-col-gap: clamp(1rem, 2.5vw, 2rem);
+    /* Grid width at which a second column starts being worth it. Two cards plus
+       the gap leaves each one just over 300px, which is where the card's own
+       container queries still render comfortably. */
+    --menu-grid-two-col-at: 640px;
   }
 
   @media (min-width: 768px) {
@@ -66,9 +71,9 @@
   /* ── Squared brand: no rounded corners anywhere ──────────────────
      Single source of enforcement for the whole site. Overrides Tailwind
      radius utilities, inline `borderRadius` styles, and images alike.
-     Do not add rounding at the component level — it will be neutralized.
+     Do not add rounding at the component level; it will be neutralized.
      Opt-in exception: `.allow-round` (e.g. Instagram avatar ring).
-     clip-path is intentional — it is not covered by the border-radius reset,
+     clip-path is intentional: it is not covered by the border-radius reset,
      so the circle cannot lose a specificity fight with the universal rule. */
   *,
   *::before,
@@ -84,15 +89,15 @@
   }
 
   html {
-    /* Lenis overrides scroll behavior — do not set scroll-behavior: smooth here */
+    /* Lenis overrides scroll behavior, so do not set scroll-behavior: smooth here */
     background-color: var(--color-cream);
     color: var(--color-midnight);
-    /* Site-wide minimum viewport — no section targets below this width */
+    /* Site-wide minimum viewport: no section targets below this width */
     min-width: 322px;
     /* Reserve the scrollbar gutter at all times so locking scroll (nav overlay,
        Lenis stop) never removes the scrollbar and shifts the layout/viewport. */
     scrollbar-gutter: stable;
-    /* Never allow horizontal scroll — some laptop widths (~1440–1512px) can see a
+    /* Never allow horizontal scroll: some laptop widths (~1440-1512px) can see a
        few pixels of overflow from nowrap headlines + gutter math in dev. */
     overflow-x: clip;
   }
@@ -121,7 +126,7 @@
   }
 }
 
-/* ── Gallery marquee — always-running CSS animation (not scroll-driven).
+/* ── Gallery marquee: always-running CSS animation (not scroll-driven).
    The track contains 2× the images; -50% translate = exactly one full set.
    The loop is seamless because the second half is identical to the first. */
 @keyframes gallery-marquee {
@@ -143,7 +148,7 @@
   }
 }
 
-/* ── Preloader skeleton — pulsing placeholder blocks shown while hero
+/* ── Preloader skeleton: pulsing placeholder blocks shown while hero
    assets load. Opacity-only so it reads as a "breathing" frame, not a shimmer. */
 @keyframes skeleton-pulse {
   0%, 100% { opacity: 0.35; }
@@ -162,7 +167,7 @@
 }
 
 /* Which skeleton variant is visible is resolved purely by media query, not
-   JS viewport state — CSS applies before hydration, so there's no flash of
+   JS viewport state: CSS applies before hydration, so there's no flash of
    the wrong layout on load. Breakpoint matches HeroSection's useIsMobile(1023). */
 .preloader-skeleton-desktop {
   flex: 1 1 0%;
@@ -190,7 +195,7 @@
   }
 }
 
-/* Nav icons hidden on mobile purely via media query — matches Navbar's
+/* Nav icons hidden on mobile purely via media query, matching Navbar's
    useIsMobile() default 768px breakpoint. !important overrides the button's
    inline display so this resolves at first paint, not after hydration. */
 @media (max-width: 768px) {
@@ -219,7 +224,7 @@
     letter-spacing: 0.10em;
   }
 
-  /* Heading scale — H1 stays per-section clamp(); H2/H3 differ by size only. */
+  /* Heading scale: H1 stays per-section clamp(); H2/H3 differ by size only. */
   .heading-2 {
     font-family: var(--font-montage-serif), Georgia, serif;
     font-weight: 400;
@@ -245,7 +250,7 @@
   }
 
   /* ── DM Sans utilities ────────────────────────────────────────── */
-  /* Subtext, labels, UI copy — the "Nike and modern" layer. */
+  /* Subtext, labels, UI copy: the "Nike and modern" layer. */
   .font-body-caps {
     font-family: var(--font-dm-sans), system-ui, sans-serif;
     font-weight: 300;
@@ -259,8 +264,45 @@
     letter-spacing: 0.02em;
   }
 
-  /* Legacy aliases — kept so existing components don't break while
+  /* Legacy aliases: kept so existing components don't break while
      we migrate naming. Remove once all sections are built. */
   .font-subhead-caps  { @apply font-body-caps; }
   .font-subhead-mixed { @apply font-body-mixed; }
+}
+
+/* ── Our Menu grid ────────────────────────────────────────────────────────────
+   Two cards per row wherever the grid is wide enough, one when it is not, and
+   never three.
+
+   This is a container query, not a media query, and that distinction is the
+   whole point. The grid does not occupy the viewport: on wide screens a sticky
+   section title sits beside it and takes several hundred pixels, so the same
+   1280px viewport can leave the grid either 1100px or 560px depending on
+   layout. A viewport breakpoint gets that wrong in both directions, which it
+   did: 1280 rendered one card per row while 1920 rendered three.
+
+   Querying the grid's own width instead means the column count follows the
+   space actually available, whatever the surrounding layout does with it.
+
+   The wrapper is the container and the grid is its child, because an element
+   cannot query its own size to style itself. max-width caps the row at two
+   cards; a third makes each card narrower than its type scale reads well at. */
+.menu-grid-wrap {
+  container-type: inline-size;
+  min-width: 0;
+  flex: 1;
+  max-width: calc(var(--menu-card-max-width) * 2 + var(--menu-grid-col-gap));
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  column-gap: var(--menu-grid-col-gap);
+  row-gap: var(--menu-grid-row-gap);
+}
+
+@container (min-width: 640px) {
+  .menu-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }

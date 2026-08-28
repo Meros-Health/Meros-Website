@@ -112,7 +112,7 @@ export function Footer() {
         <div className="flex flex-col gap-4">
           {/* Profile header */}
           <div className="flex items-center gap-3">
-            {/* Avatar — Instagram-style gradient ring */}
+            {/* Avatar: Instagram-style gradient ring */}
             <a
               href={INSTAGRAM_URL}
               target="_blank"

@@ -1,5 +1,5 @@
 // Single source of truth for the hero's critical, above-the-fold assets.
-// HeroSection renders them; Preloader preloads them — keeping the list here
+// HeroSection renders them; Preloader preloads them, and keeping the list here
 // stops the two from drifting apart.
 
 // Right-half portrait (desktop) / full-bleed background (mobile). Pick a frame
@@ -8,7 +8,7 @@
 // This is `Gallery-5-hero.jpg` with the bottom 12.5% removed (2880x1919 →
 // 2880x1680); the uncropped master is still beside it. The frame is taller
 // than it is wide, so `object-cover` scales the image by height and the whole
-// of it is visible vertically — which meant a quarter of the frame was empty
+// of it is visible vertically, which meant a quarter of the frame was empty
 // countertop while the nav band covered the top row of bowls. Cutting the dead
 // space lets object-cover scale up, so the bowls fill the frame instead.
 // Trimming further starts clipping the rims off the side bowls.

@@ -4,16 +4,16 @@ import { LegalShell, LegalSection, LegalList } from "@/components/legal/LegalPag
 
 // TODO(stripe): when Stripe is integrated into checkout, update this policy:
 //   1. Add Stripe to "Service Providers" (payment processing, card data handled
-//      by Stripe — we never see full card numbers; link to stripe.com/privacy).
+//      by Stripe: we never see full card numbers; link to stripe.com/privacy).
 //   2. Mention that payment info is collected at checkout and processed by Stripe.
 //   3. Bump the effective date below.
 // Same applies if we ever add analytics (e.g. Cloudflare Web Analytics, GA) or
-// an email service (e.g. Resend) — each new processor gets listed here.
+// an email service (e.g. Resend); each new processor gets listed here.
 
 const EFFECTIVE_DATE = "July 7, 2026";
 
 export const metadata = pageMetadata({
-  title: "Privacy Policy — MERŌS",
+  title: "Privacy Policy - MERŌS",
   description: "How MERŌS collects, uses, and protects your personal information.",
   path: "/privacy",
 });
@@ -101,7 +101,7 @@ export default function PrivacyPage() {
           Your cart is saved in your own browser&rsquo;s local storage so it isn&rsquo;t
           lost between visits, and your most recent order confirmation is kept in session
           storage so it survives a page refresh. This information stays on your device
-          &mdash; it is not transmitted to us until you place an order &mdash; and you can
+          (it is not transmitted to us until you place an order) and you can
           clear it at any time through your browser settings.
         </p>
       </LegalSection>
@@ -126,7 +126,7 @@ export default function PrivacyPage() {
               ).
             </span>,
             <span key="ig">
-              Links to our Instagram profile &mdash; following them takes you to Instagram,
+              Links to our Instagram profile. Following them takes you to Instagram,
               which is governed by Meta&rsquo;s privacy policy.
             </span>,
           ]}
@@ -141,7 +141,7 @@ export default function PrivacyPage() {
           <a href="mailto:info@merosyogurt.com" className="underline hover:text-grapefruit transition-colors">
             info@merosyogurt.com
           </a>
-          , subject to legal or contractual restrictions &mdash; for example, we may need
+          , subject to legal or contractual restrictions, for example we may need
           to retain records of a completed order for accounting purposes. Withdrawing
           consent may mean we cannot fulfill an order in progress.
         </p>
@@ -204,8 +204,8 @@ export default function PrivacyPage() {
 
       <LegalSection heading="Changes to This Policy">
         <p>
-          If we change how we handle personal information &mdash; for example, when we add
-          online payment processing &mdash; we will update this policy and revise the
+          If we change how we handle personal information (for example, when we add
+          online payment processing), we will update this policy and revise the
           effective date at the top of this page.
         </p>
         <p>

@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 // disallows /checkout already; this is the second lock, for crawlers that
 // reach the URL from a link rather than from the crawl.
 export const metadata: Metadata = {
-  title: "Checkout — MERŌS",
+  title: "Checkout - MERŌS",
   robots: { index: false, follow: false },
   alternates: { canonical: "/checkout" },
 };

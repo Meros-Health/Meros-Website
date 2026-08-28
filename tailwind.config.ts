@@ -6,7 +6,7 @@ const config: Config = {
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
-    // No default max-width container — sections are full-bleed by default.
+    // No default max-width container; sections are full-bleed by default.
     // Opt into a constrained width per-section by composing max-w-* + mx-auto.
     container: {
       center: false,
@@ -43,7 +43,7 @@ const config: Config = {
         "body-normal": "400",
       },
 
-      // ── Border radius (squared brand — no rounded corners) ───────────
+      // ── Border radius (squared brand, no rounded corners) ───────────
       // Brand rule: zero rounding anywhere. These semantic tokens are kept
       // so existing `rounded-*` utilities resolve, but they all collapse to
       // 0. The global reset in globals.css is the hard enforcement layer.

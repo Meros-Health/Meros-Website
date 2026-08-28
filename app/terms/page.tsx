@@ -3,14 +3,14 @@ import Link from "next/link";
 import { LegalShell, LegalSection, LegalList } from "@/components/legal/LegalPage";
 
 // TODO(stripe): when Stripe is integrated into checkout, update these terms:
-//   1. Update "Orders & Payment" — payment is charged at checkout via Stripe,
+//   1. Update "Orders & Payment": payment is charged at checkout via Stripe,
 //      and describe the refund mechanism (refund to original payment method).
 //   2. Bump the effective date below.
 
 const EFFECTIVE_DATE = "July 7, 2026";
 
 export const metadata = pageMetadata({
-  title: "Terms of Service — MERŌS",
+  title: "Terms of Service - MERŌS",
   description: "The terms that govern your use of the MERŌS website and ordering.",
   path: "/terms",
 });
@@ -40,14 +40,14 @@ export default function TermsPage() {
         <p>
           Submitting an order through the website is an offer to purchase. An order is not
           confirmed until we accept it, and we may decline or cancel an order at our
-          discretion &mdash; for example, if an item is unavailable or the order appears
+          discretion, for example if an item is unavailable or the order appears
           fraudulent. If we cancel an order you have already paid for, we will refund it in
           full.
         </p>
         <p>
           All prices are in Canadian dollars and may change at any time without notice.
           Applicable taxes are added where required. We make every effort to keep menu
-          items, descriptions, and prices accurate, but errors can occur &mdash; if we
+          items, descriptions, and prices accurate, but errors can occur. If we
           discover a pricing error affecting your order, we will contact you before
           proceeding.
         </p>
@@ -61,8 +61,8 @@ export default function TermsPage() {
       <LegalSection heading="Refunds">
         <p>
           Because our products are fresh and perishable, all sales are final once an order
-          has been prepared. If something is wrong with your order &mdash; a missing item,
-          an incorrect item, or a quality issue &mdash; contact us at{" "}
+          has been prepared. If something is wrong with your order (a missing item,
+          an incorrect item, or a quality issue), contact us at{" "}
           <a href="mailto:info@merosyogurt.com" className="underline hover:text-grapefruit transition-colors">
             info@merosyogurt.com
           </a>{" "}
@@ -82,7 +82,7 @@ export default function TermsPage() {
           builder) is approximate, based on standard serving sizes, and provided for
           general guidance only. It is not medical or dietary advice. If you have a food
           allergy, intolerance, or medical dietary requirement, please speak with our staff
-          before ordering &mdash; do not rely solely on the website.
+          before ordering. Do not rely solely on the website.
         </p>
       </LegalSection>
 
@@ -101,8 +101,8 @@ export default function TermsPage() {
 
       <LegalSection heading="Our Content">
         <p>
-          Everything on this website &mdash; the MERŌS name and logo, text, photography,
-          design, and code &mdash; belongs to us or our licensors. You may not copy,
+          Everything on this website (the MERŌS name and logo, text, photography,
+          design, and code) belongs to us or our licensors. You may not copy,
           reproduce, or use it commercially without our written permission.
         </p>
       </LegalSection>
@@ -134,7 +134,7 @@ export default function TermsPage() {
       <LegalSection heading="Events Beyond Our Control">
         <p>
           We are not responsible for delays or failures in preparing or fulfilling orders
-          caused by events beyond our reasonable control &mdash; including supplier
+          caused by events beyond our reasonable control, including supplier
           shortages, power or internet outages, extreme weather, labour disruptions, or
           government orders. If such an event prevents us from fulfilling a paid order, we
           will refund it.
@@ -173,7 +173,7 @@ export default function TermsPage() {
 
       <LegalSection heading="Changes to These Terms">
         <p>
-          We may update these Terms from time to time &mdash; for example, when we add
+          We may update these Terms from time to time, for example when we add
           online payment. The version posted on this page, with its effective date, is the
           one that applies. Continued use of the website after a change means you accept
           the updated Terms.

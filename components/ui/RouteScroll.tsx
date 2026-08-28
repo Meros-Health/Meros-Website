@@ -23,7 +23,7 @@ export function RouteScroll() {
     }
   }, []);
 
-  // Route load — wait one frame for the new route's DOM to mount, then resolve
+  // Route load: wait one frame for the new route's DOM to mount, then resolve
   // the scroll target from the current hash. Re-runs once `lenis` is ready so
   // the very first load uses the smooth-scroll instance rather than a fallback.
   useEffect(() => {

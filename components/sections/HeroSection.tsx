@@ -14,16 +14,16 @@ import {
 } from "@/lib/heroAssets";
 
 // ── Entrance timing ──────────────────────────────────────────────────────
-// Three-beat sequence: (1) left column — title — fades in, (2) right
+// Three-beat sequence: (1) the left column, the title, fades in, (2) right
 // image fades in, (3) a cream cover panel sitting over the carousel slides
 // off to the right, revealing it left-to-right.
-// Every knob for the whole sequence lives here — tweak freely.
+// Every knob for the whole sequence lives here; tweak freely.
 const TIMING = {
   ease: [0.16, 1, 0.3, 1] as number[],
-  leftColumn: { delay: 0.5, duration: 3.0 }, // step 1 — title
-  ctas: { delay: 1.3, duration: 2.5 }, // step 1b — actions under the title
-  image: { delay: 0.75, duration: 2.25 }, // step 2 — right image
-  carousel: { delay: 1.5, duration: 2.0 }, // step 3 — carousel cover slide-off
+  leftColumn: { delay: 0.5, duration: 3.0 }, // step 1: title
+  ctas: { delay: 1.3, duration: 2.5 }, // step 1b: actions under the title
+  image: { delay: 0.75, duration: 2.25 }, // step 2: right image
+  carousel: { delay: 1.5, duration: 2.0 }, // step 3: carousel cover slide-off
 } as const;
 
 const fadeIn: Variants = {
@@ -31,7 +31,7 @@ const fadeIn: Variants = {
   visible: { opacity: 1 },
 };
 
-// Cover panel slide-off — same "hidden"/"visible" variant idiom as every
+// Cover panel slide-off: same "hidden"/"visible" variant idiom as every
 // other hero element, driven by the same `animate` string, so it honors
 // TIMING.carousel.delay/duration exactly like everything else does.
 const slideOff: Variants = {
@@ -41,7 +41,7 @@ const slideOff: Variants = {
 
 // One shared gutter used everywhere: between carousel tiles, between the right
 // image and the carousel, and between the carousel and the hero's bottom edge.
-// Fixed nav band height (measured) — used to center the title in the visible
+// Fixed nav band height (measured), used to center the title in the visible
 // band between the nav's bottom and the carousel's top rather than the section.
 const NAV_HEIGHT_PX = 72;
 const HERO_GAP = "clamp(0.85rem, 1.4vw, 1.4rem)";
@@ -53,7 +53,7 @@ export function HeroSection() {
   const ready = usePageReady();
   const isMobile = useIsMobile(1023); // < 1024px → simplified layout
   const animate = ready ? "visible" : "hidden";
-  // One-shot cover panel over the carousel — slides off once, then is
+  // One-shot cover panel over the carousel: slides off once, then is
   // removed from the DOM for good (nothing left animating or painting).
   const [carouselCoverGone, setCarouselCoverGone] = useState(false);
 
@@ -61,7 +61,7 @@ export function HeroSection() {
   if (isMobile) {
     return (
       <section
-        aria-label="MERŌS — House of Yogurt"
+        aria-label="MERŌS House of Yogurt"
         style={{ position: "relative", width: "100%", height: "100svh", overflow: "hidden" }}
       >
         <motion.div
@@ -99,7 +99,7 @@ export function HeroSection() {
           >
             <Image
               src={HERO_LOGO_LIGHT_SRC}
-              alt="MERŌS — House of Yogurt"
+              alt="MERŌS House of Yogurt"
               width={2038}
               height={820}
               priority
@@ -108,7 +108,7 @@ export function HeroSection() {
           </motion.div>
         </div>
 
-        {/* CTAs — pinned to the bottom edge of the hero image, not under the logo */}
+        {/* CTAs: pinned to the bottom edge of the hero image, not under the logo */}
         <motion.div
           initial="hidden"
           animate={animate}
@@ -134,7 +134,7 @@ export function HeroSection() {
   // ── Desktop: editorial split on a cream canvas ─────────────────────────
   return (
     <section
-      aria-label="MERŌS — House of Yogurt"
+      aria-label="MERŌS House of Yogurt"
       style={{
         position: "relative",
         width: "100%",
@@ -145,7 +145,7 @@ export function HeroSection() {
         flexDirection: "column",
       }}
     >
-      {/* Content region — bowl+CTAs (left), title (center), image (right half) */}
+      {/* Content region: bowl+CTAs (left), title (center), image (right half) */}
       <div style={{ position: "relative", flex: "1 1 0%", minHeight: 0 }}>
         {/* Right half: static portrait */}
         <motion.div
@@ -169,7 +169,7 @@ export function HeroSection() {
 
           {/* Left half: MERŌS logo centered, CTAs centered at the bottom */}
         <div style={{ position: "absolute", left: 0, top: 0, width: "50%", height: "100%" }}>
-          {/* Logo — centered in the left half, within the nav → carousel band */}
+          {/* Logo: centered in the left half, within the nav → carousel band */}
           <motion.div
             initial="hidden"
             animate={animate}
@@ -185,7 +185,7 @@ export function HeroSection() {
           >
             <Image
               src={HERO_LOGO_DARK_SRC}
-              alt="MERŌS — House of Yogurt"
+              alt="MERŌS House of Yogurt"
               width={2038}
               height={820}
               priority
@@ -193,7 +193,7 @@ export function HeroSection() {
             />
           </motion.div>
 
-          {/* CTAs — bottom of the left half, bottom-aligned with the right image */}
+          {/* CTAs: bottom of the left half, bottom-aligned with the right image */}
           <motion.div
             initial="hidden"
             animate={animate}

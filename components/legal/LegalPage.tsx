@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 /**
  * Shared shell + typography for legal pages (/privacy, /terms).
- * Server components — no client JS needed here.
+ * Server components: no client JS needed here.
  */
 
 export function LegalShell({

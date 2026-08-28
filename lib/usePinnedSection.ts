@@ -12,7 +12,7 @@ interface PinnedSectionOptions {
   pinDuration?: string;
   /** ScrollTrigger start. Default "top top" */
   start?: string;
-  /** Scrub value — true for 1:1, number for smoothing lag. Default 1 */
+  /** Scrub value: true for 1:1, number for smoothing lag. Default 1 */
   scrub?: boolean | number;
   /** Callback receiving progress [0–1] on each scroll update */
   onProgress?: (progress: number) => void;
@@ -26,7 +26,7 @@ interface PinnedSectionResult {
 
 /**
  * Attaches a GSAP ScrollTrigger pin+scrub to the returned containerRef.
- * Drop onto any section component — no per-section GSAP config needed.
+ * Drop onto any section component; no per-section GSAP config needed.
  *
  * Usage:
  *   const { containerRef } = usePinnedSection({ pinDuration: "+=300%" });

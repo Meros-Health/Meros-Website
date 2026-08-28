@@ -10,7 +10,7 @@ import {
 
 // ── Tunables ──────────────────────────────────────────────────────────────
 const MIN_DISPLAY_MS = 500; // floor so the skeleton never flashes for a single frame
-const FADE_OUT_MS = 600;    // overlay opacity transition — kept in sync with the inline style below
+const FADE_OUT_MS = 600;    // overlay opacity transition, kept in sync with the inline style below
 
 // Default true so anything consuming this outside a <Preloader> (or during
 // its own unmount) never gets stuck waiting on a gate that isn't there.
@@ -94,7 +94,7 @@ export function Preloader({ children }: { children: React.ReactNode }) {
         >
           {/* Both variants render on the server and client alike; CSS media
               queries (not JS viewport state) decide which is visible, so the
-              correct one is on screen from first paint — no post-hydration flash. */}
+              correct one is on screen from first paint, with no post-hydration flash. */}
           <div className="preloader-skeleton-desktop">
             <div style={{ flex: "1 1 0%", minHeight: 0, display: "flex", gap: "clamp(0.85rem, 1.4vw, 1.4rem)" }}>
               <div
@@ -130,7 +130,7 @@ export function Preloader({ children }: { children: React.ReactNode }) {
             />
           </div>
 
-          {/* Mobile hero has no split/carousel layout — just a centered title. */}
+          {/* Mobile hero has no split/carousel layout, just a centered title. */}
           <div className="preloader-skeleton-mobile">
             <div
               className="skeleton-pulse"

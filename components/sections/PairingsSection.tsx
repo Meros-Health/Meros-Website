@@ -10,7 +10,7 @@ import { EMPTY_NUTRITION } from "@/lib/menu/nutrition";
 import { formatPrice } from "@/lib/menu/calcBowlPrice";
 import { getSignaturePrice, getSizeLabel, listBowls, listSmoothies } from "@/lib/menu/signatures";
 
-// ─── Carousel data — from lib/menu/menu.json via signatures.ts ────────────────
+// ─── Carousel data: from lib/menu/menu.json via signatures.ts ────────────────
 
 interface CarouselItem {
   id: string;
@@ -30,7 +30,7 @@ const PAIR_CAPTION = `${getSizeLabel("bowl", PAIR_BOWL_SIZE)} bowl + ${getSizeLa
 const BOWL_WIDTH = 400;
 const SMOOTHIE_WIDTH = 360;
 
-// ─── Pair CTA sizing — "Add Pair to Cart" and "Browse Our Full Menu" render at
+// ─── Pair CTA sizing: "Add Pair to Cart" and "Browse Our Full Menu" render at
 // identical width/padding/font so they read as one button pair that differs
 // only in colour scheme, not in size or shape ────────────────────────────────
 const PAIR_CTA_WIDTH_DESKTOP = "clamp(150px, 23cqi, 260px)";
@@ -45,7 +45,7 @@ const PAIR_CTA_FONT_WEIGHT = 300;
 
 // ─── Design-size coordinate system (880 wide). Rendered as % of stage. ────────
 // Heights are sized so the stage box hugs the artwork (small symmetric inset,
-// no large dead bands) — the visible gap above/below the stage is then owned
+// no large dead bands), so the visible gap above/below the stage is then owned
 // by real margins/paddings in the section, not by empty box.
 
 const DESIGN_W = 880;
@@ -60,7 +60,7 @@ const MOBILE_IMAGE_SCALE = 1.15;
 // Labels share one left edge, right of the images, on desktop; their vertical
 // center (and the decorative lines) is derived from the image centers at
 // render time. On mobile the labels live below the stage instead, so the
-// images are simply centered as a group — labelLeft is unused there.
+// images are simply centered as a group; labelLeft is unused there.
 const LAYOUTS = {
   mobile: {
     back:      { left: 128, top:  24, zIndex: 1 },
@@ -117,13 +117,13 @@ function dropLeadingThe(name: string) {
 type Direction = 1 | -1;
 
 const SWAP_EASE = [0.16, 1, 0.3, 1] as const;
-// Smooth, gently-settling ease-out for the scroll-entrance reveals — softer
+// Smooth, gently-settling ease-out for the scroll-entrance reveals, softer
 // than the snappier SWAP_EASE (which the carousel swaps still use) so the
 // title/images/labels glide in slowly and luxuriously instead of snapping.
 const REVEAL_EASE = [0.22, 1, 0.36, 1] as const;
-// Desktop stage entrance — left/right columns converge inward first, then
+// Desktop stage entrance: left/right columns converge inward first, then
 // the center images fade in over the top of that motion (see PairingsSection).
-const FLANK_TRAVEL = 20; // px — left/right column slide distance
+const FLANK_TRAVEL = 20; // px: left/right column slide distance
 const FLANK_ENTER_TRANSITION = { duration: 1.2, ease: REVEAL_EASE };
 const IMAGE_ENTER_TRANSITION = { duration: 1.0, ease: REVEAL_EASE };
 const SWAP_TRANSITION = { duration: 0.65, ease: SWAP_EASE };
@@ -171,12 +171,12 @@ const imageVariantsReduced: Variants = {
   exit: { opacity: 0 },
 };
 
-// ─── Section entrance — each piece reveals on its own scroll-into-view ────────
+// ─── Section entrance: each piece reveals on its own scroll-into-view ────────
 // Independent whileInView triggers (not one shared trigger on the whole,
-// tall section) so each element animates when *it* is actually visible —
+// tall section) so each element animates when *it* is actually visible,
 // title, then images, then the arrow controls/CTA, in natural scroll order.
 const ENTER_VIEWPORT = { once: true, margin: "-100px" } as const;
-// Fires later than ENTER_VIEWPORT — the reveal waits until the element is
+// Fires later than ENTER_VIEWPORT: the reveal waits until the element is
 // ~30% of the viewport up from the bottom, so the fade is actually seen
 // mid-screen instead of flashing past at the very bottom edge.
 const ENTER_VIEWPORT_DELAYED = { once: true, margin: "-30%" } as const;
@@ -261,7 +261,7 @@ function ArrowButton({
   );
 }
 
-// ─── Mobile controls — eyebrow + title + arrows, side by side below the stage ─
+// ─── Mobile controls: eyebrow + title + arrows, side by side below the stage ─
 
 function MobileCarouselControls({
   role,
@@ -278,7 +278,7 @@ function MobileCarouselControls({
 }) {
   return (
     <div className="flex flex-col items-center gap-1.5 w-full">
-      {/* Static eyebrow — the item name itself replaces "The", so this column's
+      {/* Static eyebrow: the item name itself replaces "The", so this column's
           width never changes based on which item is selected */}
       <span className="font-body-caps text-midnight/50 text-[9px] tracking-[0.25em]">
         THE
@@ -295,7 +295,7 @@ function MobileCarouselControls({
   );
 }
 
-// ─── ItemCarousel — one infinite carousel (image + label + arrows) ────────────
+// ─── ItemCarousel: one infinite carousel (image + label + arrows) ────────────
 
 function ItemCarousel({
   role,
@@ -342,7 +342,7 @@ function ItemCarousel({
 
   return (
     <>
-      {/* Image slot — fixed position/size; children stack absolutely so both
+      {/* Image slot: fixed position/size; children stack absolutely so both
           the outgoing and incoming item are visible mid-swap. On desktop this
           owns its own scroll-entrance fade (beat 2 of the stage choreography);
           on mobile it stays inert and the STAGE_CLASS wrapper's own animation
@@ -382,7 +382,7 @@ function ItemCarousel({
           </motion.div>
         </AnimatePresence>
 
-        {/* Rolling neighbor preload — eager (not display:none) so the incoming
+        {/* Rolling neighbor preload: eager (not display:none) so the incoming
             image is already fetched before an arrow is clicked */}
         {neighbors.map((n) => (
           <Image
@@ -405,9 +405,9 @@ function ItemCarousel({
         ))}
       </motion.div>
 
-      {/* Title + arrows, left-aligned in one container — desktop only; on
+      {/* Title + arrows, left-aligned in one container, desktop only; on
           mobile the title/arrows render below the stage instead. This is
-          the "left column" of the stage choreography — slides in from the
+          the "left column" of the stage choreography: slides in from the
           left in lockstep with the same block on the other ItemCarousel. */}
       {showLabel && (
         // Anchoring (static translateY centering on the hairline) lives on this
@@ -597,7 +597,7 @@ export function PairingsSection() {
               viewport={ENTER_VIEWPORT_DELAYED}
             >
               {/* Decorative full-bleed hairlines through each image's vertical
-                  center — behind the artwork (images sit at zIndex 1/2), and the
+                  center, behind the artwork (images sit at zIndex 1/2), and the
                   section's overflow-x-clip contains the 100vw bleed. On desktop
                   these fade in with the image beat; on mobile they ride the
                   wrapper's own animation above. */}
@@ -654,7 +654,7 @@ export function PairingsSection() {
                 prefersReducedMotion={prefersReducedMotion}
               />
 
-              {/* Desktop-only right column — anchored to the same two hairlines
+              {/* Desktop-only right column: anchored to the same two hairlines
                   the left labels hang off. Pair Total rests just above the top
                   line; the two CTAs sit centered in the gap between the lines.
                   On mobile these render in normal flow below the stage instead.
@@ -663,7 +663,7 @@ export function PairingsSection() {
               {isDesktop && (
                 <>
                   {/* Static anchoring transform on a plain wrapper, reveal on
-                      the inner motion.div — see the left-label comment */}
+                      the inner motion.div; see the left-label comment */}
                   <div
                     className="absolute"
                     style={{

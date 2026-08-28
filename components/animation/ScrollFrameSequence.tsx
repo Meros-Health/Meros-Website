@@ -106,7 +106,7 @@ export function ScrollFrameSequence({
     };
   }, [frameDir, frameCount, buildPath, drawFrame]);
 
-  // Wire ScrollTrigger scrub — skipped entirely if prefers-reduced-motion
+  // Wire ScrollTrigger scrub, skipped entirely if prefers-reduced-motion
   useGSAP(
     () => {
       if (loadState !== "ready" || prefersReducedMotion) return;
@@ -128,7 +128,7 @@ export function ScrollFrameSequence({
         },
       });
 
-      // Suppress unused-variable warning — proxy is intentionally kept for
+      // Suppress unused-variable warning: proxy is intentionally kept for
       // potential future gsap.to() tween-based scrubbing
       void proxy;
 

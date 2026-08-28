@@ -41,7 +41,7 @@ next-env.d.ts
 # cursor
 .cursor/
 
-# Paid / licensed brand assets — keep local only, never commit.
+# Paid / licensed brand assets: keep local only, never commit.
 # Drop files into these folders for local dev and deploy builds.
 /public/fonts/*
 !/public/fonts/.gitkeep
@@ -53,7 +53,7 @@ next-env.d.ts
 !/public/images-web/**
 !/public/logos/**
 
-# Internal brand documents — sensitive, never commit to public repo.
+# Internal brand documents: sensitive, never commit to public repo.
 /documents/
 
 # Internal store operations, SOPs, and compliance records. Never commit to public repo.
@@ -62,7 +62,7 @@ next-env.d.ts
 # Catch-all for any .env variant not covered above
 .env*
 
-# graphify — local knowledge-graph cache and build artifacts, never commit
+# graphify: local knowledge-graph cache and build artifacts, never commit
 /graphify-out/
 
 # cloudflare / opennext build artifacts

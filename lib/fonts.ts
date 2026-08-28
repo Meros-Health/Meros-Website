@@ -17,7 +17,7 @@ export const montageSerif = localFont({
 });
 
 // ── Secondary: Aetheria ───────────────────────────────────────────────────────
-// Accent / editorial text. Use sparingly — pull quotes, product callouts.
+// Accent / editorial text. Use sparingly: pull quotes, product callouts.
 // .woff is the highest-quality web format available for this family.
 export const aetheria = localFont({
   src: [
@@ -34,7 +34,7 @@ export const aetheria = localFont({
 
 // ── Tertiary: DM Sans Light ───────────────────────────────────────────────────
 // Subtext, labels, UI copy. Self-hosted via next/font/google (no CDN call at runtime).
-// Chosen over Satoshi for its slightly squarer geometric construction — reads
+// Chosen over Satoshi for its slightly squarer geometric construction, which reads
 // more "Nike/athletic brand" in light weight alongside a display serif.
 // To swap in real Satoshi: replace this with a localFont() pointing to Satoshi-Light.woff2.
 export const dmSans = DM_Sans({

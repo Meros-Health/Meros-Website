@@ -9,7 +9,7 @@ type CTAVariant = "light" | "dark";
 
 interface CTAButtonProps {
   children: React.ReactNode;
-  /** Required — every CTA is explicitly light or dark. */
+  /** Required: every CTA is explicitly light or dark. */
   variant: CTAVariant;
   href?: string;
   onClick?: () => void;

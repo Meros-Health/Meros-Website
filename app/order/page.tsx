@@ -63,19 +63,19 @@ function MenuCard({ item, priority = false }: { item: SignatureItem; priority?: 
         maxWidth: "var(--menu-card-max-width)",
       }}
     >
-      {/* Square-cropped image — always rendered at ~half a 2-column grid, at every breakpoint */}
+      {/* Square-cropped image: always rendered at ~half a 2-column grid, at every breakpoint */}
       <div className="relative w-full aspect-square overflow-hidden">
         <Image
           src={item.images.photo}
           alt={item.name}
           fill
-          sizes="(max-width: 640px) 92vw, 560px"
+          sizes="(max-width: 767px) 92vw, (max-width: 1279px) 45vw, 560px"
           priority={priority}
           className="object-cover object-center"
         />
       </div>
 
-      {/* Info — sized off the card's own (container-query) width, not the viewport, so
+      {/* Info: sized off the card's own (container-query) width, not the viewport, so
           text always fits 2-up regardless of how much room the sidebar title leaves it */}
       <div
         className="flex flex-1 flex-col min-w-0"
@@ -125,11 +125,19 @@ function MenuCard({ item, priority = false }: { item: SignatureItem; priority?: 
 
 // ── Menu section ─────────────────────────────────────────────────────────────
 //
-// Layout strategy: the item grid is always 1 column, at every breakpoint —
-// each card gets the full row (capped at --menu-card-max-width), so text and
-// image can render larger than a 2-up grid would allow.
-//   - Wide (md+):   flex-row — title on the left, grid fills the remaining width.
-//   - Mobile (<md): flex-col — title stacks above the full-width grid.
+// Layout strategy: prefer two cards per row, fall back to one when that would
+// crowd them. The grid uses auto-fit against --menu-card-min-width rather than
+// a breakpoint, so the second column appears exactly when there is room for it
+// and collapses on its own when there is not. max-width caps it at two, since
+// a third column on a wide monitor makes the cards smaller than they read well
+// at. The cards are container-query sized, so a half-width card scales its own
+// type down without any viewport media query.
+//   - 2xl and up: flex-row, title sticky on the left, grid beside it. There is
+//                 still room for two cards next to a title at this width.
+//   - Below 2xl:  flex-col, title stacked, so the grid gets the full content
+//                 width. This is what lets 1280 and horizontal tablets go 2-up;
+//                 with the title beside it, 1280 left the grid under 640px and
+//                 collapsed to a single column.
 
 function MenuSection({
   id,
@@ -155,11 +163,11 @@ function MenuSection({
       style={{ borderTop: "0.5px solid rgba(41,45,42,0.12)" }}
     >
       <div
-        className="flex flex-col md:flex-row md:items-start"
+        className="flex flex-col 2xl:flex-row 2xl:items-start"
         style={{ gap: "clamp(2rem, 4vw, 4.5rem)" }}
       >
         {/* Title */}
-        <div className="md:sticky md:top-28 md:shrink-0">
+        <div className="2xl:sticky 2xl:top-28 2xl:shrink-0">
           <Title
             className="font-headline text-midnight leading-[0.9] uppercase"
             style={{ fontSize: "clamp(2.5rem, 4.5vw, 4.25rem)" }}
@@ -170,14 +178,13 @@ function MenuSection({
           </Title>
         </div>
 
-        {/* Grid — always 1 column; each card is capped at --menu-card-max-width */}
-        <div
-          className="min-w-0 flex-1 grid grid-cols-1"
-          style={{ gap: "var(--menu-grid-row-gap)" }}
-        >
-          {items.map((item, i) => (
-            <MenuCard key={item.id} item={item} priority={priorityFirstImage && i === 0} />
-          ))}
+        {/* Grid: two columns wherever they fit, one when they do not, never three */}
+        <div className="menu-grid-wrap">
+          <div className="menu-grid">
+            {items.map((item, i) => (
+              <MenuCard key={item.id} item={item} priority={priorityFirstImage && i === 0} />
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -189,7 +196,7 @@ function MenuSection({
 export default function OrderPage() {
   return (
     <main>
-      {/* ── Page title — top of the page every fresh load lands on ── */}
+      {/* ── Page title: top of the page every fresh load lands on ── */}
       <section className="px-[7vw] pt-36 pb-4">
         <EntranceReveal index={0}>
           <h1

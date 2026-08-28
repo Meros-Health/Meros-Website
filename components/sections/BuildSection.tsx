@@ -16,7 +16,7 @@ const BOWL_SIZE = 1080;
 // continuous carousel driven by a single gsap.ticker loop. That loop advances the
 // row rightward at a constant speed AND applies the per-window parallax (bowl lag)
 // every frame. Because the parallax reads each window's live rect, it is identical
-// in mechanism to the old scroll-driven version — only the row driver changed.
+// in mechanism to the old scroll-driven version; only the row driver changed.
 const CAROUSEL_SPEED_PX_PER_SEC = 48; // slower = more premium (brand motion guidance)
 const PARALLAX_STRENGTH = 0.16; // bowl lag depth; higher = slower bowl, more drama
 const BOWL_OVERFLOW = 1.6; // bowl box width as a fraction of window width (room to lag)
@@ -34,7 +34,7 @@ const WINDOWS: { src: string; alt: string }[] = [
 ];
 
 // Doubled so one full set can scroll off-screen while the identical second set
-// fills the viewport — seamless loop at translateX(-setWidth) (same technique as
+// fills the viewport: seamless loop at translateX(-setWidth) (same technique as
 // HeroCarousel / the gallery-marquee CSS). 6 large square cards (up to 540px each)
 // exceed the viewport width, so a single doubling is enough to never show the end.
 const REPEATED_WINDOWS = [...WINDOWS, ...WINDOWS];
@@ -119,7 +119,7 @@ export function BuildSection() {
       const applyParallax = () => {
         // Per-window parallax: the bowl lags its frame based on where that frame
         // currently sits relative to viewport center (locomotive-style). Measuring
-        // the parent window's post-transform rect is safe — the bowl's own x never
+        // the parent window's post-transform rect is safe: the bowl's own x never
         // feeds back into it. Identical to the previous scroll-driven version.
         for (let i = 0; i < windows.length; i++) {
           const rect = windows[i].getBoundingClientRect();
@@ -272,7 +272,7 @@ export function BuildSection() {
           alignItems: "center",
         }}
       >
-        {/* Title stack — static block above the carousel */}
+        {/* Title stack: static block above the carousel */}
         <div
           style={{
             display: "flex",

@@ -32,7 +32,7 @@ export const NUTRITION_SEGMENT_GROUPS: Record<NutritionSegmentGroup, string> = {
   mineral: "Minerals & vitamins",
 };
 
-/** Keys shown on the allocation ring (excludes calories — shown in the center). */
+/** Keys shown on the allocation ring (excludes calories, which are shown in the center). */
 export type NutritionSegmentId = Exclude<keyof NutritionFacts, "calories">;
 
 export type NutritionSegmentConfig = {
