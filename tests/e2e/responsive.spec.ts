@@ -102,6 +102,46 @@ test("primary calls to action are large enough to tap", async ({ page }, testInf
     expect(box, `Add to Cart #${i} has no layout box`).not.toBeNull();
     expect(box!.height, `Add to Cart #${i} is ${Math.round(box!.height)}px tall`).toBeGreaterThanOrEqual(MIN);
   }
+
+  // S1-14: the add dialog's controls, then the drawer's, then the ledger "+".
+  const atLeast = async (locator: ReturnType<Page["locator"]>, min: number, label: string) => {
+    const boxes = await locator.evaluateAll((els) => els.filter((el) => (el as HTMLElement).offsetParent !== null).map((el) => el.getBoundingClientRect()));
+    expect(boxes.length, `${label}: nothing visible`).toBeGreaterThan(0);
+    for (const b of boxes) {
+      expect(Math.round(b.height), `${label} is ${Math.round(b.height)}px tall`).toBeGreaterThanOrEqual(min);
+      expect(Math.round(b.width), `${label} is ${Math.round(b.width)}px wide`).toBeGreaterThanOrEqual(Math.min(min, 40));
+    }
+  };
+  await buttons.first().click();
+  const modal = page.getByRole("dialog", { name: "The Moment" });
+  await expect(modal).toBeVisible();
+  await atLeast(modal.getByRole("group", { name: "Size" }).getByRole("button"), MIN, "size toggle");
+  await atLeast(modal.getByRole("group", { name: "Yogurt" }).getByRole("button"), MIN, "yogurt toggle");
+  await atLeast(modal.locator("section[role='group'] button"), 40, "chip");
+  await atLeast(modal.getByRole("button", { name: "Add to cart" }), MIN, "Add to cart");
+  await atLeast(modal.getByRole("button", { name: "Cancel" }), MIN, "Cancel");
+  await atLeast(modal.getByRole("button", { name: "Close" }), MIN, "Close");
+  await modal.getByRole("group", { name: "Size" }).getByRole("button", { name: "Medium" }).click();
+  await modal.getByRole("group", { name: "Yogurt" }).getByRole("button", { name: "Plain" }).click();
+  await modal.getByRole("button", { name: "Add to cart" }).click();
+  await expect(modal).toBeHidden();
+
+  await page.getByRole("button", { name: /^Cart \(/ }).click();
+  const drawer = page.getByRole("dialog", { name: "Cart" });
+  await expect(drawer).toBeVisible();
+  await atLeast(drawer.getByRole("button", { name: /quantity/ }), MIN, "quantity stepper");
+  await atLeast(drawer.getByRole("button", { name: /^Edit/ }), MIN, "Edit");
+  await atLeast(drawer.getByRole("button", { name: "Remove" }), MIN, "Remove");
+  await atLeast(drawer.getByRole("button", { name: "Close cart" }), MIN, "Close cart");
+  await atLeast(drawer.getByRole("button", { name: "Checkout" }), MIN, "Checkout");
+  await page.keyboard.press("Escape");
+
+  await page.goto("/");
+  await waitForPageReady(page);
+  const plus = page.getByRole("button", { name: "Add The Moment to cart" });
+  await plus.first().scrollIntoViewIfNeeded();
+  await page.waitForTimeout(1500);
+  await atLeast(plus, MIN, "ledger +");
 });
 
 test("the nav menu opens, and closing it hands the page back", async ({ page }) => {
