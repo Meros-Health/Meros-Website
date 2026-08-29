@@ -115,8 +115,14 @@ if [ "$HOST" = "merosyogurt.com" ]; then
   case "$mx" in *mail.protection.outlook.com*) ok "MX -> $mx" ;; *) bad "MX" "got: ${mx:-none}" ;; esac
   dkim=$(dig +short CNAME litesrv._domainkey."$HOST")
   case "$dkim" in *mlsend.com*) ok "MailerLite DKIM -> $dkim" ;; *) bad "MailerLite DKIM" "got: ${dkim:-none}" ;; esac
+  for sel in selector1 selector2; do
+    msdkim=$(dig +short CNAME "$sel"._domainkey."$HOST")
+    case "$msdkim" in *dkim.mail.microsoft*) ok "Microsoft 365 DKIM $sel -> $msdkim" ;; *) bad "Microsoft 365 DKIM $sel" "got: ${msdkim:-none}" ;; esac
+  done
   spf=$(dig +short TXT "$HOST" | grep -c 'v=spf1')
   [ "$spf" -eq 1 ] && ok "exactly one SPF record" || bad "SPF" "found $spf SPF records, must be exactly 1"
+  spfrec=$(dig +short TXT "$HOST" | grep 'v=spf1')
+  case "$spfrec" in *spf.protection.outlook.com*) ok "SPF includes Outlook" ;; *) bad "SPF includes Outlook" "got: ${spfrec:-none}" ;; esac
   dmarc=$(dig +short TXT _dmarc."$HOST" | grep -c 'v=DMARC1')
   [ "$dmarc" -eq 1 ] && ok "DMARC present" || bad "DMARC" "found $dmarc DMARC records"
 fi
