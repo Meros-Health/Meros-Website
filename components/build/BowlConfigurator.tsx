@@ -19,9 +19,12 @@ interface BowlConfiguratorProps {
     title: string;
     description: string;
   };
+  /** Rendered between the header and the builder. Create mode uses it for the
+      `?add=` prefill notice; edit mode passes nothing. */
+  notice?: React.ReactNode;
 }
 
-export function BowlConfigurator({ mode, editLineId, editLineExists = true, header }: BowlConfiguratorProps) {
+export function BowlConfigurator({ mode, editLineId, editLineExists = true, header, notice }: BowlConfiguratorProps) {
   const [mobileExpanded, setMobileExpanded] = useState(false);
 
   return (
@@ -45,6 +48,8 @@ export function BowlConfigurator({ mode, editLineId, editLineExists = true, head
           <p className="font-body-mixed text-sm text-juniper mt-4 max-w-lg">{header.description}</p>
         </EntranceReveal>
       </header>
+
+      {notice}
 
       <div className="xl:hidden mb-6">
         <MacroDashboard

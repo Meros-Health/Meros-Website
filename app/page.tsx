@@ -11,6 +11,7 @@ import { OurStorySection } from "@/components/sections/OurStorySection";
 // import { PairingsSection } from "@/components/sections/PairingsSection";
 import { GallerySection } from "@/components/sections/GallerySection";
 import { BuildSection } from "@/components/sections/BuildSection";
+import { StacksSection } from "@/components/sections/StacksSection";
 import { SectionBand } from "@/components/ui/SectionBand";
 
 export const metadata = pageMetadata({
@@ -38,6 +39,10 @@ export default function HomePage() {
 
       <div id="build">
         <BuildSection />
+      </div>
+
+      <div id="stacks">
+        <StacksSection />
       </div>
 
       {/* Disabled: Featured Pairing section (see commented import above).
