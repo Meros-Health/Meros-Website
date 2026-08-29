@@ -19,6 +19,9 @@ const config: Config = {
         cream: "#FFF7F0",
         midnight: "#292D2A",
         grapefruit: "#D78E77",
+        // Copy-only grapefruit: 4.55:1 on cream (AA for small text). Fills,
+        // borders and the nav accent keep the brand grapefruit.
+        "grapefruit-text": "#AD5B44",
       },
 
       // ── Typography ────────────────────────────────────────────────────

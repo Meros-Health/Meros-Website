@@ -8,6 +8,7 @@
     --color-cream: #fff7f0;
     --color-midnight: #292d2a;
     --color-grapefruit: #d78e77;
+    --color-grapefruit-text: #ad5b44; /* copy on cream, 4.55:1; fills keep --color-grapefruit */
     --color-blue: #a4bfe1;
 
     /* ── Nav frame (mapped to brand tokens, never hardcode here) ── */

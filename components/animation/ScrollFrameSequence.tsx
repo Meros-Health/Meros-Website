@@ -150,7 +150,7 @@ export function ScrollFrameSequence({
 
       {loadState === "error" && (
         <div className="flex h-full w-full items-center justify-center bg-cream">
-          <span className="font-subhead-caps text-grapefruit text-sm">
+          <span className="font-subhead-caps text-grapefruit-text text-sm">
             Frame sequence unavailable
           </span>
         </div>

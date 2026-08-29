@@ -98,7 +98,7 @@ export function BuildFooter() {
       <div className="flex-1" />
 
       {addedFeedback ? (
-        <span className="font-body-caps text-[10px] tracking-widest text-grapefruit">
+        <span className="font-body-caps text-[10px] tracking-widest text-grapefruit-text">
           Added to cart
         </span>
       ) : canAdd ? (
