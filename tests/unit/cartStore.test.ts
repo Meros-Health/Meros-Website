@@ -448,8 +448,65 @@ describe("signature yogurt", () => {
     expect("base" in bowl).toBe(false);
     expect(bowl.unitPrice).toBe(12);
     expect(smoothie.base).toBe("vanilla-greek-yogurt");
-    // Never had one, so nothing changed: no notice.
-    expect(store.getState().notice).toBeNull();
+    // C3-03: the bowl never had one and the drawer prompts for it, so no
+    // notice for it; the smoothie came back on a default the customer never
+    // chose, and is told once.
+    const messages = store.getState().notice!.map((c) => c.message);
+    expect(messages).toEqual(["The Rise · 24 oz is now on Vanilla Greek Yogurt. Edit it to choose another yogurt."]);
+  });
+
+  it("C3-03: the legacy-line notice shows once; the next load, with the yogurt persisted, is silent", async () => {
+    seedCart([signatureLine("smoothie", "rise", "standard", 15, { base: undefined })]);
+    const first = await loadWithMenu();
+    expect(first.cartStore.useCartStore.getState().notice).toHaveLength(1);
+    // The store writes the migrated line back on its next change; simulate
+    // that write and reload.
+    first.cartStore.useCartStore.getState().dismissNotice();
+    first.cartStore.useCartStore.getState().updateQuantity("smoothie", 2);
+    const second = await loadWithMenu();
+    expect(second.cartStore.useCartStore.getState().items[0].base).toBe("vanilla-greek-yogurt");
+    expect(second.cartStore.useCartStore.getState().notice).toBeNull();
+  });
+
+  it("C3-08: a tampered base is described, never printed, and an empty one is not reported", async () => {
+    seedCart([
+      { ...noBase("empty"), base: "" },
+      { ...noBase("topping"), base: "strawberries" },
+      { ...signatureLine("smoothie", "rise", "standard", 15), base: "mangoes" },
+    ]);
+    const { cartStore } = await loadWithMenu();
+    const state = cartStore.useCartStore.getState();
+    expect(state.items.map((i) => i.base)).toEqual([undefined, undefined, "vanilla-greek-yogurt"]);
+    const messages = (state.notice ?? []).map((c) => c.message);
+    expect(messages).toEqual([
+      "Your previous yogurt is no longer available. Choose a yogurt for The Moment · Medium.",
+      "Your previous yogurt is no longer available; The Rise · 24 oz is now on Vanilla Greek Yogurt.",
+    ]);
+  });
+
+  it("S2-06: an edit naming a yogurt the Base step does not offer is refused on a smoothie as on a bowl", async () => {
+    const { cartStore } = await loadWithMenu();
+    const store = cartStore.useCartStore;
+    store.getState().addItem({ ...signatureLine("s", "rise", "standard", 15), lineId: undefined, base: "vanilla-greek-yogurt" } as never);
+    const [smoothie] = store.getState().items;
+    expect(store.getState().updateSignatureLine(smoothie.lineId, { sizeId: "standard", base: "nope", mods: { additions: [], removals: [] } })).toBe("invalid");
+    expect(store.getState().items[0].base).toBe("vanilla-greek-yogurt");
+    expect(store.getState().updateSignatureLine("gone", { sizeId: "standard", mods: { additions: [], removals: [] } })).toBe("missing");
+  });
+
+  it("S1-06: addFromModal at the cap reports at-max and leaves the dialog open; raiseNotice shows in the drawer", async () => {
+    const { cartStore } = await loadWithMenu();
+    const store = cartStore.useCartStore;
+    const line = { ...signatureLine("m", "moment", "medium", 12), lineId: undefined, quantity: 99 } as never;
+    expect(store.getState().addItem(line)).toBe("added");
+    store.getState().openAdd("moment");
+    expect(store.getState().addFromModal({ ...signatureLine("m", "moment", "medium", 12), lineId: undefined } as never)).toBe("at-max");
+    expect(store.getState().addingProductId).toBe("moment");
+    expect(store.getState().lastModalAdd).toBeNull();
+    store.getState().raiseNotice([{ kind: "dropped", message: "The Moment · Medium was removed from your cart before your changes could be saved." }]);
+    expect(store.getState().notice).toHaveLength(1);
+    store.getState().closeAdd();
+    expect(store.getState().addingProductId).toBeNull();
   });
 
   it("drops a yogurt the Base step no longer offers and says so", async () => {

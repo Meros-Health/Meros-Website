@@ -70,7 +70,7 @@ export function PrefillNotice() {
       }}
     >
       <div className="flex flex-wrap items-baseline gap-3">
-        <span className="font-body-caps text-[10px] tracking-[0.20em] text-grapefruit">
+        <span className="font-body-caps text-[10px] tracking-[0.20em] text-grapefruit-text">
           {ingredient.name} added
         </span>
         <span className="font-body-mixed text-[13px] text-juniper">

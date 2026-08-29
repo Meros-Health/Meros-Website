@@ -18,7 +18,7 @@ import {
   sanitizeSignatureMods,
   type SignatureMods,
 } from "@/lib/menu/signatureMods";
-import { sanitizeBaseId } from "@/lib/menu/signatureBase";
+import { isBaseIngredient, isBaseOffered, sanitizeBaseId } from "@/lib/menu/signatureBase";
 import {
   getDefaultSizeId,
   getSignatureItem,
@@ -106,6 +106,8 @@ interface CartState {
    */
   lastModalAdd: { productId: string; seq: number } | null;
   dismissNotice: () => void;
+  /** Show a notice the drawer did not derive itself (the edit modal saving into a line that is gone). */
+  raiseNotice: (changes: CartChange[]) => void;
   addItem: (item: Omit<CartItem, "lineId">) => AddResult;
   removeItem: (lineId: string) => void;
   updateQuantity: (lineId: string, quantity: number) => void;
@@ -301,6 +303,16 @@ function ingredientTitle(id: string): string {
   return getIngredient(id)?.name ?? titleFromId(id);
 }
 
+/**
+ * The name of a persisted yogurt id: the registry name while it is known, its
+ * title while it still reads as a yogurt after leaving the registry, and a
+ * description for anything else (a tampered or unrelated id), so the notice
+ * never prints a topping or an empty string as if it were a yogurt.
+ */
+function yogurtTitle(id: string): string {
+  return isBaseIngredient(id) ? ingredientTitle(id) : "Your previous yogurt";
+}
+
 function removedMessage(names: string[], lineName: string): string {
   const verb = names.length === 1 ? "is" : "are";
   const past = names.length === 1 ? "was" : "were";
@@ -347,13 +359,25 @@ function diffLine(raw: UnknownRecord, item: CartItem): CartChange[] {
 
   if (item.kind === "signature") {
     // A yogurt that left the menu: say what replaced it, or that a choice is
-    // now needed. A line that never had one is not a change.
-    if (typeof raw.base === "string" && raw.base !== item.base) {
+    // now needed. The old id is named only when it still resolves to a
+    // yogurt the registry knows; anything else (a tampered or unknown id)
+    // is described, never printed. An empty string is not a choice at all.
+    if (typeof raw.base === "string" && raw.base !== "" && raw.base !== item.base) {
+      const was = yogurtTitle(raw.base);
       changes.push({
         kind: "base-changed",
         message: item.base
-          ? `${ingredientTitle(raw.base)} is no longer available; ${item.name} is now on ${ingredientTitle(item.base)}.`
-          : `${ingredientTitle(raw.base)} is no longer available. Choose a yogurt for ${item.name}.`,
+          ? `${was} is no longer available; ${item.name} is now on ${ingredientTitle(item.base)}.`
+          : `${was} is no longer available. Choose a yogurt for ${item.name}.`,
+      });
+    }
+    // A line saved before the yogurt was a choice, on an item that now has a
+    // default: it comes back on that default, and the customer is told once
+    // (the write that follows persists `base`, so the next load is silent).
+    if (raw.base === undefined && item.base) {
+      changes.push({
+        kind: "base-changed",
+        message: `${item.name} is now on ${ingredientTitle(item.base)}. Edit it to choose another yogurt.`,
       });
     }
     // A removal that no longer applies changes nothing the customer pays for,
@@ -417,6 +441,7 @@ export const useCartStore = create<CartState>()(
       addSession: 0,
       lastModalAdd: null,
       dismissNotice: () => set({ notice: null }),
+      raiseNotice: (changes) => set({ notice: changes.length > 0 ? changes : null }),
 
       addItem: (item) => {
         const { items } = get();
@@ -546,7 +571,10 @@ export const useCartStore = create<CartState>()(
         const mods = sanitizeSignatureMods(catalogItem, edit.mods);
         // An edit that says nothing about the yogurt keeps the line's. A bowl
         // cannot be saved back without one; the modal disables Save until one
-        // is chosen, this is the backstop.
+        // is chosen, this is the backstop. A yogurt the Base step does not
+        // offer is refused on every item rather than quietly swapped for the
+        // default, so a smoothie and a bowl answer the same way.
+        if (edit.base !== undefined && !isBaseOffered(edit.base)) return "invalid";
         const baseId = sanitizeBaseId(catalogItem, edit.base ?? current.base);
         if (baseId === undefined) return "invalid";
         const fields = signatureLineFields(catalogItem, edit.sizeId, mods, baseId);
@@ -601,14 +629,13 @@ export const useCartStore = create<CartState>()(
       closeAdd: () => set({ addingProductId: null }),
       addFromModal: (item) => {
         const result = get().addItem(item);
-        // At the 99 cap nothing was added, so the modal closes without a
-        // confirmation, the same as a direct "+" press.
+        // Only a real add closes the dialog. At the 99 cap, or when the menu
+        // moved under the open dialog, nothing was added and the dialog stays
+        // up to say so; closing silently read as a broken button.
+        if (result !== "added") return result;
         set((state) => ({
           addingProductId: null,
-          lastModalAdd:
-            result === "added"
-              ? { productId: item.productId, seq: (state.lastModalAdd?.seq ?? 0) + 1 }
-              : state.lastModalAdd,
+          lastModalAdd: { productId: item.productId, seq: (state.lastModalAdd?.seq ?? 0) + 1 },
         }));
         return result;
       },

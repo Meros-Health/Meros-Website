@@ -35,3 +35,12 @@ export function toCheckoutLines(items: CartItem[]): CheckoutLine[] {
     unitPrice: item.unitPrice,
   }));
 }
+
+/**
+ * Signature lines with no yogurt chosen (saved before the yogurt became a
+ * choice, or whose yogurt left the menu). The server refuses them with the
+ * `base` code; the drawer and the checkout page say so before that.
+ */
+export function linesMissingBase(items: CartItem[]): CartItem[] {
+  return items.filter((item) => item.kind === "signature" && !item.base);
+}

@@ -33,13 +33,16 @@ const WINDOWS: { src: string; alt: string }[] = [
   { src: "/images-web/Transparent/Crunch.png", alt: "" },
 ];
 
-// Doubled so one full set can scroll off-screen while the identical second set
-// fills the viewport: seamless loop at translateX(-setWidth) (same technique as
-// HeroCarousel / the gallery-marquee CSS). 5 large square cards (up to 540px each,
-// about 2800px with gaps) exceed any common viewport width, so a single doubling
-// is enough to never show the end. (The Bloom left the strip with the 2026-08-28
-// menu change; its successor, The Seasonal, has no photography.)
-const REPEATED_WINDOWS = [...WINDOWS, ...WINDOWS];
+// Repeated so one full set can scroll off-screen while the identical sets
+// behind it fill the viewport: seamless loop at translateX(-setWidth) (same
+// technique as HeroCarousel / the gallery-marquee CSS). The tail is never
+// exposed as long as (SET_REPEAT - 1) sets are at least as wide as the
+// viewport. One set of 5 cards is about 2810px at the 540px cap, which a
+// 3440px ultrawide exceeded with two sets (the loop seam showed every cycle),
+// so three sets cover up to 5620px. (The Bloom left the strip with the
+// 2026-08-28 menu change; its successor, The Seasonal, has no photography.)
+export const SET_REPEAT = 3;
+const REPEATED_WINDOWS = Array.from({ length: SET_REPEAT }, () => WINDOWS).flat();
 
 const STATIC_BOWL = {
   src: "/images-web/Transparent/Moment.png",
@@ -111,14 +114,14 @@ export function BuildSection() {
       );
 
       let vw = window.innerWidth;
-      let setWidth = 0; // width of one full set of cards (row is doubled → scrollWidth / 2)
+      let setWidth = 0; // width of one full set of cards (row holds SET_REPEAT sets)
       // Row starts shifted left by one set so the second (identical) copy fills
       // the viewport; it glides rightward and wraps by exactly one set width.
       let rowX = 0;
 
       const measure = () => {
         vw = window.innerWidth;
-        setWidth = row.scrollWidth / 2;
+        setWidth = row.scrollWidth / SET_REPEAT;
         // Keep rowX within one set after a resize so the wrap stays seamless.
         if (setWidth > 0) rowX = -setWidth + (((rowX % setWidth) + setWidth) % setWidth);
       };
@@ -145,7 +148,7 @@ export function BuildSection() {
       const tick = (_time: number, deltaMs: number) => {
         if (setWidth <= 0) return;
         rowX += CAROUSEL_SPEED_PX_PER_SEC * (deltaMs / 1000);
-        if (rowX >= 0) rowX -= setWidth; // seamless wrap (content is doubled)
+        if (rowX >= 0) rowX -= setWidth; // seamless wrap (content repeats)
         setRowX(rowX);
         applyParallax();
       };
@@ -357,7 +360,7 @@ export function BuildSection() {
                 overflow: "hidden",
                 backgroundColor: "var(--color-grapefruit)",
                 // Uniform trailing margin on EVERY card (incl. the last) so the
-                // doubled row is exactly 2× one set → scrollWidth / 2 loops seamlessly.
+                // row is exactly SET_REPEAT sets → scrollWidth / SET_REPEAT loops seamlessly.
                 marginRight: CARD_GAP,
               }}
             >

@@ -23,7 +23,7 @@ export function BuildSizeToggle() {
               type="button"
               aria-pressed={selected}
               onClick={() => setSize(size.id)}
-              className="flex-1 font-body-caps text-[10px] tracking-widest py-2 transition-colors duration-200"
+              className="flex-1 font-body-caps text-[10px] tracking-widest py-2 min-h-11 transition-colors duration-200"
               style={{
                 border: selected
                   ? "0.5px solid var(--color-grapefruit)"

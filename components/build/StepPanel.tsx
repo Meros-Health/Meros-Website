@@ -29,8 +29,8 @@ export function StepPanel() {
       <p
         data-step-instruction
         data-extras-next={extrasNext ? "true" : undefined}
-        className="font-body-mixed text-sm max-w-md transition-colors duration-700 ease-out"
-        style={{ color: extrasNext ? "var(--color-grapefruit)" : "var(--color-juniper)" }}
+        className="font-body-mixed text-sm max-w-md transition-colors duration-700 ease-out motion-reduce:transition-none"
+        style={{ color: extrasNext ? "var(--color-grapefruit-text)" : "var(--color-juniper)" }}
       >
         {getStepInstruction(step)}
       </p>
@@ -49,7 +49,7 @@ export function StepPanel() {
             aria-pressed={isSkipped}
             className="font-body-caps text-[10px] tracking-widest transition-colors"
             style={{
-              color: isSkipped ? "var(--color-grapefruit)" : "var(--color-juniper)",
+              color: isSkipped ? "var(--color-grapefruit-text)" : "var(--color-juniper)",
               borderBottom: isSkipped ? "0.5px solid var(--color-grapefruit)" : "none",
             }}
           >

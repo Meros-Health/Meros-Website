@@ -8,6 +8,7 @@
     --color-cream: #fff7f0;
     --color-midnight: #292d2a;
     --color-grapefruit: #d78e77;
+    --color-grapefruit-text: #ad5b44; /* copy on cream, 4.55:1; fills keep --color-grapefruit */
     --color-blue: #a4bfe1;
 
     /* ── Nav frame (mapped to brand tokens, never hardcode here) ── */
@@ -178,12 +179,12 @@
 .hero {
   position: relative;
   width: 100%;
-  /* Width-derived, not 100svh. Nothing on this site resizes with viewport
-     height any more: the layout is fixed and the viewport is a window onto
-     it, so a short screen scrolls rather than compressing the page. The curve
-     lands on ~892px at 1440 wide, which is what 100svh gave on the laptop
-     this was designed against. */
-  height: clamp(640px, 62vw, 900px);
+  /* The one section that sizes off viewport height. Every other section is
+     width-derived and a short screen scrolls, but the hero has to fill the
+     first screen on every device (a width clamp left a phone with the next
+     section showing under it). svh, not dvh, so the height does not jump
+     when the mobile URL bar collapses. */
+  height: 100svh;
   overflow: hidden;
   background: var(--color-cream);
   display: flex;
@@ -294,7 +295,7 @@
   .hero-ctas {
     left: 0;
     right: 0;
-    bottom: clamp(1.5rem, 4vw, 2.5rem);
+    bottom: clamp(1.5rem, 5vh, 2.5rem);
     transform: none;
     padding: 0 1.5rem;
   }

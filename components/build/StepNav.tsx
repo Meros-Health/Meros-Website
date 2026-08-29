@@ -63,7 +63,7 @@ export function StepNav({ layout = "horizontal" }: StepNavProps) {
               <StepCompletionIcon complete={complete} />
               <span
                 className="font-headline text-[9px] tracking-widest"
-                style={{ color: isActive ? "var(--color-grapefruit)" : "var(--color-juniper)" }}
+                style={{ color: isActive ? "var(--color-grapefruit-text)" : "var(--color-juniper)" }}
               >
                 {getStepNumber(step.id)}
               </span>
@@ -103,7 +103,7 @@ export function StepNav({ layout = "horizontal" }: StepNavProps) {
             <StepCompletionIcon complete={complete} />
             <span
               className="font-headline text-[10px] tracking-widest shrink-0"
-              style={{ color: isActive ? "var(--color-grapefruit)" : "var(--color-juniper)" }}
+              style={{ color: isActive ? "var(--color-grapefruit-text)" : "var(--color-juniper)" }}
             >
               {getStepNumber(step.id)}
             </span>

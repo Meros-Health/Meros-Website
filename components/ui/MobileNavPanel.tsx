@@ -134,7 +134,7 @@ export function MobileNavPanel({ open, onClose, onNavigate, links }: MobileNavPa
         variants={variants.panel}
         style={{
           position: "fixed",
-          top: NAV_BAR_HEIGHT_PX,
+          top: `calc(${NAV_BAR_HEIGHT_PX}px + env(safe-area-inset-top, 0px))`,
           left: 0,
           right: 0,
           zIndex: PANEL_Z,

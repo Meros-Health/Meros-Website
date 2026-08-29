@@ -195,7 +195,7 @@ export function Footer() {
           </div>
 
           {state.status === "success" ? (
-            <div className="flex flex-col gap-2 py-4">
+            <div role="status" className="flex flex-col gap-2 py-4">
               <span className="font-body-caps text-grapefruit text-[9px] tracking-[0.25em]">Thanks</span>
               <p className="font-body-mixed text-cream/55 text-xs">{state.message}</p>
             </div>
@@ -250,7 +250,7 @@ export function Footer() {
               </div>
 
               {state.status === "error" && (
-                <p className="font-body-mixed text-grapefruit text-[10px]">{state.message}</p>
+                <p role="alert" className="font-body-mixed text-grapefruit text-[10px]">{state.message}</p>
               )}
 
               <button

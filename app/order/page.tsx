@@ -85,7 +85,7 @@ function MenuCard({ item, priority = false }: { item: SignatureItem; priority?: 
 
         {/* Tags */}
         <p
-          className="font-body-caps text-grapefruit tracking-widest -mt-0.5"
+          className="font-body-caps text-grapefruit-text tracking-widest -mt-0.5"
           style={{ fontSize: "var(--menu-card-tag-size)" }}
         >
           {item.tags.join(" · ")}

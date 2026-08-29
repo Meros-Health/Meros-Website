@@ -27,8 +27,8 @@ export const INSTAGRAM_URL = "https://instagram.com/merosyogurt";
 export const INSTAGRAM_POSTS: InstagramPost[] = [
   {
     id: "1",
-    imageUrl: "/images-web/Instagram/bowls/bloom.png",
-    caption: "Built different. Every bowl, made in-house.",
+    imageUrl: "/images-web/Bowls/Tropic-2.jpg",
+    caption: "The Tropics. Mango, pineapple, passion fruit, made in-house.",
     permalink: INSTAGRAM_URL,
   },
   {

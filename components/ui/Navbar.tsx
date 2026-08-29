@@ -278,7 +278,9 @@ export function Navbar() {
           top: 0,
           left: 0,
           right: 0,
-          height: NAV_BAR_HEIGHT_PX,
+          // The band grows by the status-bar inset so the cream reaches the
+          // top edge when the page paints behind it (viewport-fit=cover).
+          height: `calc(${NAV_BAR_HEIGHT_PX}px + env(safe-area-inset-top, 0px))`,
           zIndex: HEADER_BG_Z,
           pointerEvents: "none",
         }}
@@ -304,6 +306,9 @@ export function Navbar() {
           top: 0,
           left: 0,
           right: 0,
+          paddingTop: "env(safe-area-inset-top, 0px)",
+          paddingLeft: "env(safe-area-inset-left, 0px)",
+          paddingRight: "env(safe-area-inset-right, 0px)",
           zIndex: HEADER_CONTENT_Z,
           pointerEvents: "none",
         }}

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { SITE_URL } from "@/lib/config";
 import { OG_IMAGE, SITE_NAME } from "@/lib/seo";
@@ -25,6 +25,11 @@ const DESCRIPTION = "Greek yogurt bowls and smoothies, strained and built in-hou
 // canonical would tell crawlers each page's canonical version is the home
 // page. Routes build their own with pageMetadata() in lib/seo.ts. What stays
 // is the fallback any route without its own metadata should still get.
+// viewport-fit=cover lets the page paint behind the notch and the home
+// indicator on iOS; every element fixed to an edge pads itself with the
+// matching env(safe-area-inset-*) so nothing lands under either.
+export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover" };
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: TITLE,

@@ -58,7 +58,7 @@ export function CartLineItem({ item, showActions = true, error }: CartLineItemPr
             <p
               data-line-base
               data-line-base-missing={baseMissing ? "true" : undefined}
-              className={`font-body-mixed text-xs mt-1 leading-relaxed ${baseMissing ? "text-grapefruit" : "text-juniper"}`}
+              className={`font-body-mixed text-xs mt-1 leading-relaxed ${baseMissing ? "text-grapefruit-text" : "text-juniper"}`}
             >
               {baseText}
             </p>
@@ -69,7 +69,7 @@ export function CartLineItem({ item, showActions = true, error }: CartLineItemPr
             </p>
           )}
           {isCustom && item.nutrition.calories > 0 && (
-            <p className="font-body-caps text-[9px] tracking-widest text-grapefruit mt-1.5">
+            <p className="font-body-caps text-[9px] tracking-widest text-grapefruit-text mt-1.5">
               {formatMacroSummary(item.nutrition)}
             </p>
           )}
@@ -79,7 +79,7 @@ export function CartLineItem({ item, showActions = true, error }: CartLineItemPr
         </span>
       </div>
       {error && (
-        <p role="alert" className="font-body-mixed text-grapefruit text-[11px] mt-1.5 leading-relaxed">
+        <p role="alert" className="font-body-mixed text-grapefruit-text text-[11px] mt-1.5 leading-relaxed">
           {error}
         </p>
       )}
