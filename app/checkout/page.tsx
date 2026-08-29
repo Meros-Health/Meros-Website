@@ -8,7 +8,8 @@ import { useCartHydrated } from "@/store/useCartHydrated";
 import { CartLineItem } from "@/components/cart/CartLineItem";
 import { submitCheckout, type CheckoutFormState } from "@/app/actions/checkout";
 import { makeIdempotencyKey } from "@/lib/checkout/idempotency";
-import { toCheckoutLines } from "@/lib/checkout/lines";
+import { linesMissingBase, toCheckoutLines } from "@/lib/checkout/lines";
+import { LINE_MESSAGES, MISSING_BASE_HINT } from "@/lib/checkout/messages";
 import { CHECKOUT_ENABLED } from "@/lib/config";
 
 const LAST_ORDER_KEY = "meros-last-order";
@@ -42,6 +43,20 @@ function clearIdempotencyKey(): void {
 
 // Which errors a cart edit can fix, and which need the current menu.
 const RELOAD_CODES = new Set(["price-changed", "unavailable", "invalid"]);
+
+/**
+ * The stored confirmation is for the customer who reloads (or comes Back to)
+ * the success screen. A fresh visit to /checkout with an empty cart is a new
+ * intent, and goes to the menu.
+ */
+function arrivedByReload(): boolean {
+  try {
+    const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+    return nav?.type === "reload" || nav?.type === "back_forward";
+  } catch {
+    return false;
+  }
+}
 
 function readLastOrder(): CheckoutFormState | null {
   try {
@@ -79,12 +94,18 @@ export default function CheckoutPage() {
     if (!hydrated || state.status === "success") return;
     if (items.length > 0) return;
 
-    // Empty cart: restore the last confirmation (e.g. the user refreshed the
-    // success screen) instead of silently bouncing to the menu.
+    // Empty cart: restore the last confirmation when the user refreshed the
+    // success screen (or came Back to it); a new visit clears it and goes to
+    // the menu.
     const lastOrder = readLastOrder();
-    if (lastOrder) {
+    if (lastOrder && arrivedByReload()) {
       setState(lastOrder);
       return;
+    }
+    try {
+      sessionStorage.removeItem(LAST_ORDER_KEY);
+    } catch {
+      // Nothing to clear.
     }
     router.replace("/order");
   }, [hydrated, items.length, state.status, router]);
@@ -123,6 +144,25 @@ export default function CheckoutPage() {
 
   const lineError = state.status === "error" && state.lineId ? state : null;
   const needsReload = lineError !== null && RELOAD_CODES.has(lineError.code ?? "");
+  // Lines the server would refuse with `base`: marked before any submit, and
+  // the form waits until the cart is fixed.
+  const missingBase = new Set(linesMissingBase(items).map((item) => item.lineId));
+  const messageRef = useRef<HTMLParagraphElement>(null);
+
+  // A form-level error is announced (role="alert") and focus goes to the
+  // field that caused it, or to the message when no field is the cause.
+  useEffect(() => {
+    if (state.status !== "error" || state.lineId) return;
+    const form = formRef.current;
+    if (state.code === "form" && form) {
+      const empty = Array.from(form.querySelectorAll<HTMLInputElement>("input[name]")).find((el) => el.value.trim() === "");
+      if (empty) {
+        empty.focus();
+        return;
+      }
+    }
+    messageRef.current?.focus();
+  }, [state]);
 
   // A line-specific error is about the cart as it was submitted. Once the cart
   // changes (the customer edited or removed the line) the marker is stale.
@@ -149,7 +189,7 @@ export default function CheckoutPage() {
 
       {state.status === "success" ? (
         <div className="mx-auto flex max-w-lg flex-col items-center gap-3 py-16 text-center">
-          <span className="font-body-caps text-grapefruit text-[10px] tracking-[0.25em]">
+          <span className="font-body-caps text-grapefruit-text text-[10px] tracking-[0.25em]">
             Order Received
           </span>
           {state.orderRef && (
@@ -179,7 +219,13 @@ export default function CheckoutPage() {
                   key={item.lineId}
                   item={item}
                   showActions={false}
-                  error={lineError?.lineId === item.lineId ? lineError.message : undefined}
+                  error={
+                    lineError?.lineId === item.lineId
+                      ? lineError.message
+                      : missingBase.has(item.lineId)
+                        ? LINE_MESSAGES.base
+                        : undefined
+                  }
                 />
               ))}
             </ul>
@@ -245,9 +291,23 @@ export default function CheckoutPage() {
               />
             </div>
 
+            {missingBase.size > 0 && state.status !== "error" && (
+              <div className="flex flex-col items-start gap-2">
+                <p data-checkout-hint className="font-body-mixed text-grapefruit-text text-[11px]">{MISSING_BASE_HINT}</p>
+                <button
+                  type="button"
+                  onClick={openCart}
+                  className="font-body-caps text-[10px] tracking-widest text-midnight px-4 py-2 min-h-11 transition-opacity hover:opacity-70"
+                  style={{ border: "0.5px solid rgba(41,45,42,0.28)" }}
+                >
+                  Edit cart
+                </button>
+              </div>
+            )}
+
             {state.status === "error" && (
               <div className="flex flex-col items-start gap-2">
-                <p className="font-body-mixed text-grapefruit text-[11px]">
+                <p ref={messageRef} tabIndex={-1} role="alert" className="font-body-mixed text-grapefruit-text text-[11px] outline-none">
                   {needsReload
                     ? "The menu has changed since you opened this page. Reload to see the current menu, then place your order again."
                     : lineError
@@ -258,7 +318,7 @@ export default function CheckoutPage() {
                   <button
                     type="button"
                     onClick={needsReload ? () => window.location.reload() : openCart}
-                    className="font-body-caps text-[10px] tracking-widest text-midnight px-4 py-2 transition-opacity hover:opacity-70"
+                    className="font-body-caps text-[10px] tracking-widest text-midnight px-4 py-2 min-h-11 transition-opacity hover:opacity-70"
                     style={{ border: "0.5px solid rgba(41,45,42,0.28)" }}
                   >
                     {needsReload ? "Reload" : "Edit cart"}
@@ -269,8 +329,8 @@ export default function CheckoutPage() {
 
             <button
               type="submit"
-              disabled={pending}
-              className="mt-2 self-start font-body-caps text-[10px] tracking-widest text-cream bg-midnight px-8 py-3 hover:opacity-85 transition-opacity duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={pending || missingBase.size > 0}
+              className="mt-2 self-start font-body-caps text-[10px] tracking-widest text-cream bg-midnight px-8 py-3 min-h-11 hover:opacity-85 transition-opacity duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {pending ? "Placing Order..." : "Place Order"}
             </button>

@@ -18,6 +18,7 @@ import { ingredientName } from "@/lib/menu/ingredients";
 import { sanitizeBaseId } from "@/lib/menu/signatureBase";
 import { getSignatureItem, getSizeLabel } from "@/lib/menu/signatures";
 import { MAX_LINES, MAX_QUANTITY } from "@/lib/menu/limits";
+import { LINE_MESSAGES, type LineErrorCode } from "@/lib/checkout/messages";
 import {
   EMAIL_PATTERN,
   MAX_EMAIL_LENGTH,
@@ -54,15 +55,6 @@ const STEP_ID_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
 const SUCCESS_MESSAGE = "Order received! We'll have it ready shortly.";
 
-const LINE_MESSAGES: Record<LineErrorCode, string> = {
-  quantity: "This quantity is not available. Reduce it to 99 or fewer.",
-  unavailable: "This item is no longer available as selected. Remove it and add it again from the current menu.",
-  "price-changed": "Prices have changed since you opened this page. Reload to see the current menu.",
-  base: "Choose a yogurt for this item before ordering.",
-  invalid: "Something went wrong with this item. Remove it and add it again.",
-};
-
-type LineErrorCode = Extract<CheckoutErrorCode, "quantity" | "unavailable" | "price-changed" | "base" | "invalid">;
 
 type IncomingLine = {
   lineId?: unknown;
