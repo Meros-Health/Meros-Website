@@ -93,15 +93,24 @@ function AddIconButton({
       onClick={onClick}
       aria-label={added ? `${name} added to cart` : `Add ${name} to cart`}
       data-added={added ? "true" : undefined}
+      // The button is the 44px touch target; the 32px box inside is the
+      // visual, so the row looks as it did.
       className={`
-        h-8 w-8 items-center justify-center
-        border border-grapefruit
-        transition-[background-color,color,border-color] duration-300
+        group/add h-11 w-11 items-center justify-center
         focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-grapefruit
-        ${added ? "bg-[#fff] text-grapefruit cursor-default" : "bg-grapefruit text-[#fff] hover:bg-grapefruit/75"}
+        ${added ? "cursor-default" : ""}
         ${className}
       `}
     >
+      <span
+        aria-hidden="true"
+        className={`
+          flex h-8 w-8 items-center justify-center
+          border border-grapefruit
+          transition-[background-color,color,border-color] duration-300
+          ${added ? "bg-[#fff] text-grapefruit" : "bg-grapefruit text-[#fff] group-hover/add:bg-grapefruit/75"}
+        `}
+      >
       {added ? (
         <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true">
           <path d="m4.5 10.5 3.5 3.5 7.5-8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -111,6 +120,7 @@ function AddIconButton({
           <path d="M9 3h2v6h6v2h-6v6H9v-6H3V9h6V3Z" fill="currentColor" />
         </svg>
       )}
+      </span>
     </button>
   );
 }
@@ -199,7 +209,7 @@ function MenuRow({
           <h3 className="font-headline text-midnight uppercase tracking-headline leading-none text-[clamp(1.25rem,2vw,1.75rem)]">
             {item.name}
           </h3>
-          <p className="font-body-caps text-grapefruit text-[10px] tracking-[0.22em]">
+          <p className="font-body-caps text-grapefruit-text text-[10px] tracking-[0.22em]">
             {item.tags.join(" · ")}
           </p>
           <p className="font-body-mixed text-juniper text-sm leading-relaxed">{item.ingredients}</p>
@@ -344,7 +354,7 @@ function MenuStage({ active, reduced }: { active: SignatureItem; reduced: boolea
         >
           {active.name}
         </motion.h3>
-        <span className="font-body-caps text-grapefruit text-[10px] tracking-[0.22em]">
+        <span className="font-body-caps text-grapefruit-text text-[10px] tracking-[0.22em]">
           {active.tags.join(" · ")}
         </span>
       </div>
