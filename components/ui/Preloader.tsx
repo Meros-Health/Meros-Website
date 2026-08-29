@@ -105,7 +105,7 @@ export function Preloader({ children }: { children: React.ReactNode }) {
               style={{
                 width: "100%",
                 // Mirrors HeroSection's CAROUSEL_TILE; keep the two in step.
-                height: "clamp(150px, 14vw, 260px)",
+                height: "clamp(150px, 20vh, 260px)",
                 flexShrink: 0,
                 borderRadius: "0.5rem",
                 background: "rgba(41, 45, 42, 0.12)",
