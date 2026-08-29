@@ -15,7 +15,7 @@ export const BUSINESS = {
     neighbourhood: "Yaletown",
     city: "Vancouver",
     region: "BC",
-    postalCode: "V6B 2R5",
+    postalCode: "V6B 6K5",
     country: "CA",
   },
   // 1207 Hamilton Street per OpenStreetMap, 2026-08-28.

@@ -14,9 +14,9 @@ Graph, robots and sitemap in agreement) was sound; this adds what was missing.
   drift.
 - Hours are stored as `{ opens: "08:00", closes: "22:00" }`, seven days,
   confirmed by Thomas on 2026-08-28. `hoursDisplay()` formats the footer line.
-- The geo coordinates are OpenStreetMap's for 1207 Hamilton Street. OSM lists
-  the postal code as V6B 2X6; the footer says V6B 2R5. Worth checking against
-  the lease before the postal code goes into a Google Business Profile.
+- The geo coordinates are OpenStreetMap's for 1207 Hamilton Street. The
+  postal code is V6B 6K5, confirmed by Thomas against the lease on 2026-08-28;
+  OSM's V6B 2X6 for the street address is wrong for the unit.
 - `/order`, `/build`, `/privacy` and `/terms` carry a `BreadcrumbList` back to
   the home page. `components/seo/JsonLd.tsx` renders the blocks server-side.
 
