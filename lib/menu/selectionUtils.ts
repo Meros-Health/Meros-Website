@@ -154,18 +154,20 @@ export function selectionsMatch(a: BowlSelection, b: BowlSelection): boolean {
 }
 
 /**
- * Same product at a different size, or with different additions or removals,
- * is a separate line, so all three must match. `modsKey` comes from
- * getSignatureModsKey; "" means no changes.
+ * Same product at a different size, on a different yogurt, or with different
+ * additions or removals, is a separate line, so all four must match.
+ * `modsKey` comes from getSignatureModsKey; "" means no changes. `baseId`
+ * undefined matches a line with no yogurt chosen yet.
  */
 export function findMatchingSignatureLine<
-  T extends { kind: string; productId: string; size?: { id: string }; mods?: SignatureMods },
->(items: T[], productId: string, sizeId: string | undefined, modsKey: string): T | undefined {
+  T extends { kind: string; productId: string; size?: { id: string }; base?: string; mods?: SignatureMods },
+>(items: T[], productId: string, sizeId: string | undefined, baseId: string | undefined, modsKey: string): T | undefined {
   return items.find(
     (i) =>
       i.kind === "signature" &&
       i.productId === productId &&
       i.size?.id === sizeId &&
+      i.base === baseId &&
       getSignatureModsKey(i.mods) === modsKey
   );
 }

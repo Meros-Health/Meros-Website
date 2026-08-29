@@ -18,8 +18,9 @@ interface CarouselItem {
   src: string;
 }
 
-const BOWLS: CarouselItem[] = listBowls().map((b) => ({ id: b.id, name: b.name, src: b.images.transparent }));
-const SMOOTHIES: CarouselItem[] = listSmoothies().map((s) => ({ id: s.id, name: s.name, src: s.images.transparent }));
+// Items without photography (The Seasonal) have nothing to spin here.
+const BOWLS: CarouselItem[] = listBowls().flatMap((b) => (b.images ? [{ id: b.id, name: b.name, src: b.images.transparent }] : []));
+const SMOOTHIES: CarouselItem[] = listSmoothies().flatMap((s) => (s.images ? [{ id: s.id, name: s.name, src: s.images.transparent }] : []));
 
 // A pair is always the Large bowl plus the single-size smoothie.
 const PAIR_BOWL_SIZE = "medium";

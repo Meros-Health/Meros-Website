@@ -408,3 +408,81 @@ describe("signature additions and removals", () => {
     expect(store.getState().editingLineId).toBeNull();
   });
 });
+
+describe("signature yogurt", () => {
+  const noBase = (lineId: string, extra = {}) => signatureLine(lineId, "moment", "medium", 12, { base: undefined, ...extra });
+  const vegan = (lineId: string, extra = {}) =>
+    signatureLine(lineId, "moment", "medium", 14, { base: "vegan-coconut-yogurt", ...extra });
+
+  it("persists the chosen yogurt, prices its surcharge, and keeps yogurts apart as lines", async () => {
+    seedCart([signatureLine("plain", "moment", "medium", 12), vegan("vegan")]);
+    const { cartStore } = await loadWithMenu();
+    const store = cartStore.useCartStore;
+    expect(store.getState().items.map((i) => [i.base, i.unitPrice])).toEqual([
+      ["plain-greek-yogurt", 12],
+      ["vegan-coconut-yogurt", 14],
+    ]);
+    expect(store.getState().addItem({ ...vegan("x", { unitPrice: 1 }), lineId: undefined } as never)).toBe("added");
+    expect(store.getState().items).toHaveLength(2);
+    expect(store.getState().items[1].quantity).toBe(2);
+    expect(store.getState().items[1].unitPrice).toBe(14);
+    expect((readPersistedItems()[1] as { base?: string }).base).toBe("vegan-coconut-yogurt");
+  });
+
+  it("refuses to add a bowl with no yogurt, and adds a smoothie on its default", async () => {
+    const { cartStore } = await loadWithMenu();
+    const store = cartStore.useCartStore;
+    expect(store.getState().addItem({ ...noBase("a"), lineId: undefined } as never)).toBe("invalid");
+    expect(store.getState().addItem({ ...signatureLine("b", "moment", "medium", 12, { base: "nope" }), lineId: undefined } as never)).toBe("invalid");
+    expect(store.getState().items).toHaveLength(0);
+    expect(store.getState().addItem({ ...signatureLine("c", "rise", "standard", 15, { base: undefined }), lineId: undefined } as never)).toBe("added");
+    expect(store.getState().items[0].base).toBe("vanilla-greek-yogurt");
+    expect(store.getState().items[0].unitPrice).toBe(15);
+  });
+
+  it("rehydrates a bowl persisted without a yogurt as unset, and a smoothie on its default", async () => {
+    seedCart([noBase("bowl"), signatureLine("smoothie", "rise", "standard", 15, { base: undefined })]);
+    const { cartStore } = await loadWithMenu();
+    const store = cartStore.useCartStore;
+    const [bowl, smoothie] = store.getState().items;
+    expect("base" in bowl).toBe(false);
+    expect(bowl.unitPrice).toBe(12);
+    expect(smoothie.base).toBe("vanilla-greek-yogurt");
+    // Never had one, so nothing changed: no notice.
+    expect(store.getState().notice).toBeNull();
+  });
+
+  it("drops a yogurt the Base step no longer offers and says so", async () => {
+    seedCart([vegan("bowl"), signatureLine("smoothie", "rise", "standard", 17, { base: "vegan-coconut-yogurt" })]);
+    const { cartStore } = await loadWithMenu((menu) => {
+      const step = menu.build.steps.find((s: { id: string }) => s.id === "base");
+      step.options = step.options.filter((o: { ingredientId: string }) => o.ingredientId !== "vegan-coconut-yogurt");
+    });
+    const store = cartStore.useCartStore;
+    const [bowl, smoothie] = store.getState().items;
+    expect("base" in bowl).toBe(false);
+    expect(bowl.unitPrice).toBe(12);
+    expect(smoothie.base).toBe("vanilla-greek-yogurt");
+    expect(smoothie.unitPrice).toBe(15);
+    const messages = store.getState().notice!.map((c) => c.message);
+    expect(messages).toContain("Vegan Coconut Yogurt is no longer available. Choose a yogurt for The Moment · Medium.");
+    expect(messages).toContain("Vegan Coconut Yogurt is no longer available; The Rise · 24 oz is now on Vanilla Greek Yogurt.");
+  });
+
+  it("updateSignatureLine changes the yogurt, re-prices, keeps it when unmentioned, and refuses an unknown one on a bowl", async () => {
+    seedCart([signatureLine("a", "moment", "medium", 12)]);
+    const { cartStore } = await loadWithMenu();
+    const store = cartStore.useCartStore;
+    const mods = { additions: [], removals: [] };
+    expect(store.getState().updateSignatureLine("a", { sizeId: "medium", base: "vegan-coconut-yogurt", mods })).toBe("updated");
+    expect(store.getState().items[0].base).toBe("vegan-coconut-yogurt");
+    expect(store.getState().items[0].unitPrice).toBe(14);
+    // Saying nothing about the yogurt keeps it; naming one the menu does not
+    // offer leaves a bowl with nothing, which cannot be saved.
+    expect(store.getState().updateSignatureLine("a", { sizeId: "large", mods })).toBe("updated");
+    expect(store.getState().items[0].base).toBe("vegan-coconut-yogurt");
+    expect(store.getState().items[0].unitPrice).toBe(17);
+    expect(store.getState().updateSignatureLine("a", { sizeId: "medium", base: "nope", mods })).toBe("invalid");
+    expect(store.getState().items[0].base).toBe("vegan-coconut-yogurt");
+  });
+});

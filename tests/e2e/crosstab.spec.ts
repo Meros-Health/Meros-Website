@@ -37,7 +37,15 @@ test("E8: a bowl added in tab A survives a quantity change in stale tab B", asyn
   await cartButton(b).click();
   await expect(drawer(b)).toBeVisible();
 
-  await a.getByRole("button", { name: "Add to Cart" }).first().click();
+  // The first card is a bowl: size and yogurt are chosen in the add modal.
+  const firstCard = a.locator("article").first();
+  await firstCard.getByRole("button", { name: "Add to Cart" }).click();
+  const modal = a.getByRole("dialog", { name: "The Moment" });
+  await expect(modal).toBeVisible();
+  await modal.getByRole("group", { name: "Size" }).getByRole("button", { name: "Medium" }).click();
+  await modal.getByRole("group", { name: "Yogurt" }).getByRole("button", { name: "Plain", exact: true }).click();
+  await modal.getByRole("button", { name: "Add to cart" }).click();
+  await expect(modal).toBeHidden();
   await expect(cartButton(a)).toHaveAttribute("aria-label", "Cart (2 items)");
 
   await expect(cartButton(b)).toHaveAttribute("aria-label", "Cart (2 items)");

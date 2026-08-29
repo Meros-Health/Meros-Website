@@ -20,13 +20,31 @@ export type SignatureItem = {
   /** Board copy, "The" included: "The Moment". */
   name: string;
   tags: string[];
-  /** Ingredient ids from the registry, in printed order. */
+  /** Ingredient ids from the registry, in printed order. Toppings only, never a base. */
   recipe: string[];
   /** Derived from `recipe`: canonical ingredient names, comma separated. */
   ingredients: string;
+  /**
+   * The yogurt this item departs from its category default with, as a Base
+   * step ingredient id. Absent on every item today; lib/menu/signatureBase.ts
+   * resolves the default.
+   */
+  base?: string;
   /** Keyed by size id; bowls carry two sizes, smoothies one. */
   sizes: Record<string, SignatureSizeInfo>;
-  images: { photo: string; transparent: string };
+  /**
+   * Absent on an item that ships without photography (The Seasonal, whose
+   * fruit changes with the season). Every surface then renders a typographic
+   * tile (components/ui/SignatureTile.tsx) in the picture's place.
+   */
+  images?: { photo: string; transparent: string };
+  /**
+   * What is in the case right now. SignatureTile prints it as
+   * "Featuring {seasonNote}", so write it as a lowercase phrase. Only
+   * meaningful on an item without `images`; edit it in menu.json when the
+   * fruit rotates.
+   */
+  seasonNote?: string;
 };
 
 type RawItem = Omit<SignatureItem, "category" | "ingredients">;

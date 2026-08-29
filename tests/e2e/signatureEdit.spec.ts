@@ -7,13 +7,14 @@ const NUTRITION = { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, calcium
 
 type Mods = { additions: string[]; removals: string[] };
 
-function moment(lineId: string, extra: { quantity?: number; unitPrice?: number; mods?: Mods } = {}) {
+function moment(lineId: string, extra: { quantity?: number; unitPrice?: number; base?: string; mods?: Mods } = {}) {
   return {
     lineId,
     kind: "signature",
     productId: "moment",
     name: "The Moment · Medium",
     size: { id: "medium", label: "Medium" },
+    base: "plain-greek-yogurt",
     nutrition: NUTRITION,
     quantity: 1,
     unitPrice: 12,
@@ -21,7 +22,7 @@ function moment(lineId: string, extra: { quantity?: number; unitPrice?: number; 
   };
 }
 
-type Line = { lineId: string; quantity: number; unitPrice: number; size: { id: string }; mods?: Mods };
+type Line = { lineId: string; quantity: number; unitPrice: number; size: { id: string }; base?: string; mods?: Mods };
 
 const drawer = (page: Page) => page.getByRole("dialog", { name: "Cart" });
 const modal = (page: Page) => page.getByRole("dialog", { name: "The Moment" });
@@ -40,9 +41,45 @@ test("opens over the drawer, which stays open underneath", async ({ page }) => {
   await openModal(page);
   await expect(drawer(page)).toBeVisible();
   await expect(modal(page).getByText("In this bowl")).toBeVisible();
-  // The base is listed but cannot be removed.
-  await expect(modal(page).getByText("Plain Greek Yogurt")).toBeVisible();
+  // The yogurt is a choice above the recipe, not a recipe chip.
+  const yogurt = modal(page).getByRole("group", { name: "Yogurt" });
+  await expect(yogurt.getByRole("button", { name: "Plain", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(yogurt.getByRole("button", { name: "Vegan Coconut +$2" })).toHaveAttribute("aria-pressed", "false");
   await expect(modal(page).getByRole("button", { name: "Plain Greek Yogurt" })).toHaveCount(0);
+});
+
+test("swaps the yogurt, prices the surcharge, and saves it to the line", async ({ page }) => {
+  await seedCart(page, [moment("a")]);
+  await openModal(page);
+  await modal(page).getByRole("group", { name: "Yogurt" }).getByRole("button", { name: "Vegan Coconut +$2" }).click();
+  await expect(modal(page).locator("[data-edit-price]")).toContainText("$14.00");
+  await expect(modal(page).locator("[data-edit-price]")).toContainText("(+$2.00)");
+  await modal(page).getByRole("button", { name: "Save" }).click();
+  await expect(modal(page)).toBeHidden();
+  await expect(drawer(page).locator("[data-line-base]")).toHaveText("Vegan Coconut Yogurt");
+  await expect(drawer(page).locator("[data-line-id='a']")).toContainText("$14.00");
+  const cart = (await readCart(page)) as Line[];
+  expect(cart[0].base).toBe("vegan-coconut-yogurt");
+  expect(cart[0].unitPrice).toBe(14);
+});
+
+test("a bowl saved before the yogurt was a choice asks for one before it can be saved", async ({ page }) => {
+  // JSON drops the undefined, so the seeded line has no `base` at all.
+  await seedCart(page, [{ ...moment("a"), base: undefined }]);
+  await page.goto("/order");
+  await waitForPageReady(page);
+  await cartButton(page).click();
+  await expect(drawer(page).locator("[data-line-base-missing]")).toHaveText("Choose your yogurt");
+  await editButton(page).click();
+  await expect(modal(page)).toBeVisible();
+  await expect(modal(page).getByText("Choose one")).toBeVisible();
+  await expect(modal(page).getByRole("button", { name: "Save" })).toBeDisabled();
+  await modal(page).getByRole("group", { name: "Yogurt" }).getByRole("button", { name: "Vanilla", exact: true }).click();
+  await expect(modal(page).getByRole("button", { name: "Save" })).toBeEnabled();
+  await modal(page).getByRole("button", { name: "Save" }).click();
+  await expect(drawer(page).locator("[data-line-base]")).toHaveText("Vanilla Greek Yogurt");
+  const cart = (await readCart(page)) as Line[];
+  expect(cart[0].base).toBe("vanilla-greek-yogurt");
 });
 
 test("adds two, disables the third, removes one, and saves price and text to the line", async ({ page }) => {

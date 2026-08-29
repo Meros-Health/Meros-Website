@@ -18,6 +18,7 @@ import {
   sanitizeSignatureMods,
   type SignatureMods,
 } from "@/lib/menu/signatureMods";
+import { sanitizeBaseId } from "@/lib/menu/signatureBase";
 import {
   getDefaultSizeId,
   getSignatureItem,
@@ -46,6 +47,12 @@ export type CartItem = {
   /** Signature: menu size tier. Custom: build size (Medium / Large). */
   size?: CartItemSize;
   /**
+   * Signature lines only: the chosen yogurt as a Base step ingredient id.
+   * Absent on a bowl the customer has not chosen for yet (bowls have no
+   * default), which the drawer prompts for and checkout refuses.
+   */
+  base?: string;
+  /**
    * Signature lines only: additions and removals as ingredient ids. Absent
    * when nothing was changed, so an untouched line keeps its persisted shape.
    */
@@ -56,17 +63,21 @@ export type CartItem = {
 };
 
 export type UpdateCustomBowlResult = "updated" | "merged" | "missing";
-export type UpdateSignatureLineResult = UpdateCustomBowlResult;
+/** "invalid": a bowl saved with no yogurt chosen. */
+export type UpdateSignatureLineResult = UpdateCustomBowlResult | "invalid";
 
-/** What the edit modal saves for a signature line. Sanitized against the menu on save. */
-export type SignatureLineEdit = { sizeId: string; mods: SignatureMods };
+/**
+ * What the edit modal saves for a signature line. Sanitized against the menu
+ * on save. `base` omitted keeps the line's current yogurt.
+ */
+export type SignatureLineEdit = { sizeId: string; mods: SignatureMods; base?: string };
 
 /** "at-max": the matching line already holds 99. "invalid": the selection cannot be added. */
 export type AddResult = "added" | "at-max" | "invalid";
 
 /** One line of the "your cart was updated" notice shown after a menu change. */
 export type CartChange = {
-  kind: "dropped" | "ingredients-removed" | "size-changed" | "price-changed";
+  kind: "dropped" | "ingredients-removed" | "size-changed" | "base-changed" | "price-changed";
   message: string;
 };
 
@@ -83,6 +94,17 @@ interface CartState {
   editingLineId: string | null;
   /** Bumped by every openEdit, so the modal can key a fresh draft per open; not persisted. */
   editSession: number;
+  /** The signature product open in the add modal (configured before it is in the cart); not persisted. */
+  addingProductId: string | null;
+  /** Bumped by every openAdd, so the modal can key a blank draft per open; not persisted. */
+  addSession: number;
+  /**
+   * The last product the add modal put in the cart, so the "+" that opened
+   * the modal can show its confirmation once the modal has closed. `seq`
+   * distinguishes two adds of the same product. Not persisted, so another tab's
+   * add never lights a button here.
+   */
+  lastModalAdd: { productId: string; seq: number } | null;
   dismissNotice: () => void;
   addItem: (item: Omit<CartItem, "lineId">) => AddResult;
   removeItem: (lineId: string) => void;
@@ -98,6 +120,10 @@ interface CartState {
   closeCart: () => void;
   openEdit: (lineId: string) => void;
   closeEdit: () => void;
+  openAdd: (productId: string) => void;
+  closeAdd: () => void;
+  /** addItem for the add modal's draft: records the add for the opener and closes the modal. */
+  addFromModal: (item: Omit<CartItem, "lineId">) => AddResult;
 }
 
 // Bump only together with a `migrate` branch below. A bump without one makes
@@ -121,18 +147,21 @@ function signatureLineName(name: string, size: CartItemSize | undefined): string
 }
 
 /**
- * Everything a signature line derives from the menu: name, size, price, and
- * the additions and removals it can actually take. Null when the size does
- * not exist for this item. `mods` is set only when something was changed.
+ * Everything a signature line derives from the menu: name, size, yogurt,
+ * price, and the additions and removals it can actually take. Null when the
+ * size does not exist for this item. `baseId` is already sanitized (undefined
+ * only for a bowl with no choice yet); `mods` is set only when something was
+ * changed.
  */
-function signatureLineFields(catalogItem: SignatureItem, sizeId: string, mods: SignatureMods) {
-  const unitPrice = calcSignaturePrice(catalogItem.id, sizeId, mods);
+function signatureLineFields(catalogItem: SignatureItem, sizeId: string, mods: SignatureMods, baseId: string | undefined) {
+  const unitPrice = calcSignaturePrice(catalogItem.id, sizeId, mods, baseId);
   if (unitPrice === undefined) return null;
   const size: CartItemSize = { id: sizeId, label: getSizeLabel(catalogItem.category, sizeId) };
   return {
     productId: catalogItem.id,
     name: signatureLineName(catalogItem.name, size),
     size,
+    ...(baseId !== undefined ? { base: baseId } : {}),
     nutrition: { ...EMPTY_NUTRITION },
     unitPrice,
     ...(hasMods(mods) ? { mods } : {}),
@@ -220,11 +249,15 @@ function readCartItem(raw: unknown, usedIds: Set<string>): CartItem | null {
     const defaultSizeId = getDefaultSizeId(catalogItem.category);
     // Additions the menu no longer offers are dropped here; diffLine reports them.
     const mods = sanitizeSignatureMods(catalogItem, raw.mods);
+    // A yogurt the Base step no longer offers falls back to the item's default,
+    // or to "not chosen" on a bowl; diffLine reports it. A line persisted
+    // before the yogurt became a choice comes back the same way.
+    const baseId = sanitizeBaseId(catalogItem, raw.base);
     let sizeId = rawSizeId ?? defaultSizeId;
-    let fields = signatureLineFields(catalogItem, sizeId, mods);
+    let fields = signatureLineFields(catalogItem, sizeId, mods, baseId);
     if (!fields && sizeId !== defaultSizeId) {
       sizeId = defaultSizeId;
-      fields = signatureLineFields(catalogItem, sizeId, mods);
+      fields = signatureLineFields(catalogItem, sizeId, mods, baseId);
     }
     if (!fields) return null;
     return {
@@ -313,6 +346,16 @@ function diffLine(raw: UnknownRecord, item: CartItem): CartChange[] {
   }
 
   if (item.kind === "signature") {
+    // A yogurt that left the menu: say what replaced it, or that a choice is
+    // now needed. A line that never had one is not a change.
+    if (typeof raw.base === "string" && raw.base !== item.base) {
+      changes.push({
+        kind: "base-changed",
+        message: item.base
+          ? `${ingredientTitle(raw.base)} is no longer available; ${item.name} is now on ${ingredientTitle(item.base)}.`
+          : `${ingredientTitle(raw.base)} is no longer available. Choose a yogurt for ${item.name}.`,
+      });
+    }
     // A removal that no longer applies changes nothing the customer pays for,
     // so only dropped additions are reported.
     const kept = item.mods?.additions ?? [];
@@ -370,6 +413,9 @@ export const useCartStore = create<CartState>()(
       notice: null,
       editingLineId: null,
       editSession: 0,
+      addingProductId: null,
+      addSession: 0,
+      lastModalAdd: null,
       dismissNotice: () => set({ notice: null }),
 
       addItem: (item) => {
@@ -381,14 +427,21 @@ export const useCartStore = create<CartState>()(
           // the menu no longer has is kept as given; rehydration drops it.
           const catalogItem = getSignatureItem(item.productId);
           const mods = catalogItem ? sanitizeSignatureMods(catalogItem, item.mods) : undefined;
+          // The yogurt is the customer's choice. A bowl has no default, so a
+          // bowl arriving without one is refused; the UI asks before it adds.
+          const baseId = catalogItem ? sanitizeBaseId(catalogItem, item.base) : undefined;
+          if (catalogItem && baseId === undefined) return "invalid";
           const fields =
-            catalogItem && mods && item.size ? signatureLineFields(catalogItem, item.size.id, mods) : null;
-          const { mods: _ignored, ...given } = item;
+            catalogItem && mods && item.size ? signatureLineFields(catalogItem, item.size.id, mods, baseId) : null;
+          // What the caller gave, minus the two fields the menu decides.
+          const given: Omit<CartItem, "lineId"> = { ...item };
+          delete given.mods;
+          delete given.base;
           const line: Omit<CartItem, "lineId"> = fields
             ? { ...given, ...fields }
             : { ...given, name: signatureLineName(item.name, item.size) };
 
-          const existing = findMatchingSignatureLine(items, line.productId, line.size?.id, getSignatureModsKey(line.mods));
+          const existing = findMatchingSignatureLine(items, line.productId, line.size?.id, line.base, getSignatureModsKey(line.mods));
           if (existing) {
             if (existing.quantity >= MAX_QUANTITY) return "at-max";
             get().updateQuantity(existing.lineId, existing.quantity + item.quantity);
@@ -491,13 +544,19 @@ export const useCartStore = create<CartState>()(
         if (!catalogItem) return "missing";
 
         const mods = sanitizeSignatureMods(catalogItem, edit.mods);
-        const fields = signatureLineFields(catalogItem, edit.sizeId, mods);
+        // An edit that says nothing about the yogurt keeps the line's. A bowl
+        // cannot be saved back without one; the modal disables Save until one
+        // is chosen, this is the backstop.
+        const baseId = sanitizeBaseId(catalogItem, edit.base ?? current.base);
+        if (baseId === undefined) return "invalid";
+        const fields = signatureLineFields(catalogItem, edit.sizeId, mods, baseId);
         if (!fields) return "missing";
 
         const duplicate = findMatchingSignatureLine(
           items.filter((i) => i.lineId !== lineId),
           catalogItem.id,
           edit.sizeId,
+          baseId,
           getSignatureModsKey(mods)
         );
 
@@ -538,6 +597,21 @@ export const useCartStore = create<CartState>()(
       closeCart: () => set({ isOpen: false }),
       openEdit: (lineId) => set((state) => ({ editingLineId: lineId, editSession: state.editSession + 1 })),
       closeEdit: () => set({ editingLineId: null }),
+      openAdd: (productId) => set((state) => ({ addingProductId: productId, addSession: state.addSession + 1 })),
+      closeAdd: () => set({ addingProductId: null }),
+      addFromModal: (item) => {
+        const result = get().addItem(item);
+        // At the 99 cap nothing was added, so the modal closes without a
+        // confirmation, the same as a direct "+" press.
+        set((state) => ({
+          addingProductId: null,
+          lastModalAdd:
+            result === "added"
+              ? { productId: item.productId, seq: (state.lastModalAdd?.seq ?? 0) + 1 }
+              : state.lastModalAdd,
+        }));
+        return result;
+      },
     }),
     {
       name: "meros-cart",

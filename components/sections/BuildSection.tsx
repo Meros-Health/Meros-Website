@@ -22,7 +22,7 @@ const CAROUSEL_SPEED_PX_PER_SEC = 48; // slower = more premium (brand motion gui
 const PARALLAX_STRENGTH = 0.16; // bowl lag depth; higher = slower bowl, more drama
 const BOWL_OVERFLOW = 1.6; // bowl box width as a fraction of window width (room to lag)
 const WINDOW = { aspectW: 1, aspectH: 1 }; // square frames
-const CARD_HEIGHT = "clamp(320px, 51vh, 540px)"; // taller cards; width derives from aspect
+const CARD_HEIGHT = "clamp(320px, 32vw, 540px)"; // taller cards; width derives from aspect
 const CARD_GAP = "clamp(0.85rem, 1.4vw, 1.4rem)"; // matches HeroCarousel's gap (HERO_GAP) for consistency; uniform trailing margin makes the doubled row loop exactly
 
 const WINDOWS: { src: string; alt: string }[] = [
@@ -30,14 +30,15 @@ const WINDOWS: { src: string; alt: string }[] = [
   { src: "/images-web/Transparent/Tropic.png", alt: "" },
   { src: "/images-web/Transparent/Moment.png", alt: "" },
   { src: "/images-web/Transparent/Silk.png", alt: "" },
-  { src: "/images-web/Transparent/Bloom.png", alt: "" },
   { src: "/images-web/Transparent/Crunch.png", alt: "" },
 ];
 
 // Doubled so one full set can scroll off-screen while the identical second set
 // fills the viewport: seamless loop at translateX(-setWidth) (same technique as
-// HeroCarousel / the gallery-marquee CSS). 6 large square cards (up to 540px each)
-// exceed the viewport width, so a single doubling is enough to never show the end.
+// HeroCarousel / the gallery-marquee CSS). 5 large square cards (up to 540px each,
+// about 2800px with gaps) exceed any common viewport width, so a single doubling
+// is enough to never show the end. (The Bloom left the strip with the 2026-08-28
+// menu change; its successor, The Seasonal, has no photography.)
 const REPEATED_WINDOWS = [...WINDOWS, ...WINDOWS];
 
 const STATIC_BOWL = {
@@ -265,7 +266,7 @@ export function BuildSection() {
     <section
       ref={sectionRef}
       id="st-section"
-      className="relative w-full bg-cream overflow-x-clip pt-20 pb-8"
+      className="relative w-full bg-cream overflow-x-clip py-20"
       aria-label="Build A Bowl"
     >
       {/* Normal document flow: section height derives from its content
@@ -320,7 +321,7 @@ export function BuildSection() {
           </div>
         </div>
 
-        {/* Continuously looping row of soft-blue clipping windows. Fixed
+        {/* Continuously looping row of grapefruit clipping windows. Fixed
             margin-top guarantees breathing room below the button regardless
             of headline/viewport size; the cards' own height then sets the
             rest of the section's height. */}
@@ -328,7 +329,7 @@ export function BuildSection() {
           aria-hidden
           style={{
             width: "100%",
-            marginTop: "clamp(2.5rem, 6vh, 4.5rem)",
+            marginTop: "clamp(2.5rem, 5vw, 4.5rem)",
             opacity: rowShow ? 1 : 0,
             transition: "opacity 1.2s cubic-bezier(0.22, 1, 0.36, 1)",
           }}
@@ -354,7 +355,7 @@ export function BuildSection() {
                 aspectRatio: `${WINDOW.aspectW} / ${WINDOW.aspectH}`,
                 position: "relative",
                 overflow: "hidden",
-                backgroundColor: "var(--color-blue)",
+                backgroundColor: "var(--color-grapefruit)",
                 // Uniform trailing margin on EVERY card (incl. the last) so the
                 // doubled row is exactly 2× one set → scrollWidth / 2 loops seamlessly.
                 marginRight: CARD_GAP,

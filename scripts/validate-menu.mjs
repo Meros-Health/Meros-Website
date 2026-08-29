@@ -103,6 +103,8 @@ ingredients.forEach((ing, i) => {
     fail(`${where}: tags must be an array of strings`);
   }
   if (ing?.description !== undefined && !isNonEmptyString(ing.description)) fail(`${where}: description must be a string`);
+  if (ing?.shortName !== undefined && !isNonEmptyString(ing.shortName)) fail(`${where}: shortName must be a string`);
+  // `group` is checked against build.steps below, once the steps are known.
 
   if (isNonEmptyString(ing?.id)) ingredientIds.add(ing.id);
   if (isNonEmptyString(ing?.name)) {
@@ -203,6 +205,24 @@ steps.forEach((step, i) => {
   });
 });
 
+// ingredient groups -----------------------------------------------------------
+// `group` places an ingredient under a multi-select step for display (the Menu
+// TV's recipe columns) when the step that offers it, if any, is not the one it
+// should read as: toasted almonds are a nut, coconut milk reads as a finish.
+const multiStepIds = new Set(steps.filter((s) => s?.select === "multi").map((s) => s.id));
+const baseIds = new Set();
+for (const step of steps) {
+  if (step?.select !== "one") continue;
+  for (const opt of Array.isArray(step.options) ? step.options : []) baseIds.add(opt?.ingredientId);
+}
+ingredients.forEach((ing, i) => {
+  if (ing?.group === undefined) return;
+  const where = `ingredients[${i}]${ing?.id ? ` (${ing.id})` : ""}`;
+  if (!isNonEmptyString(ing.group) || !multiStepIds.has(ing.group)) {
+    fail(`${where}: group must be the id of a select "multi" build step (${[...multiStepIds].join(", ")})`);
+  }
+});
+
 // signatures ----------------------------------------------------------------
 const signatures = isObj(menu.signatures) ? menu.signatures : {};
 if (!isObj(menu.signatures)) fail("signatures: missing");
@@ -210,6 +230,20 @@ const referencedIds = new Set();
 const signatureIds = [];
 
 const CATEGORY_TIERS = { bowls: "bowl", smoothies: "smoothie" };
+
+// The yogurt is the customer's choice on every signature. A category may name
+// a default (smoothies: vanilla) and an item may override it; neither may
+// appear in a recipe.
+const isBase = (id) => baseIds.has(id);
+const defaultBase = signatures.defaultBase === undefined ? {} : signatures.defaultBase;
+if (!isObj(defaultBase)) fail("signatures.defaultBase: must be an object keyed by category");
+else {
+  for (const [listKey, id] of Object.entries(defaultBase)) {
+    if (!(listKey in CATEGORY_TIERS)) fail(`signatures.defaultBase: unknown category "${listKey}"`);
+    if (!isNonEmptyString(id) || !isBase(id)) fail(`signatures.defaultBase.${listKey}: "${id}" is not an ingredient offered in a select "one" step`);
+  }
+}
+
 for (const [listKey, tierKey] of Object.entries(CATEGORY_TIERS)) {
   const items = Array.isArray(signatures[listKey]) ? signatures[listKey] : [];
   if (!Array.isArray(signatures[listKey])) fail(`signatures.${listKey}: missing`);
@@ -225,6 +259,14 @@ for (const [listKey, tierKey] of Object.entries(CATEGORY_TIERS)) {
     if (!Array.isArray(item?.tags) || !item.tags.every(isNonEmptyString)) fail(`${where}: tags must be an array of strings`);
     if (item?.ingredients !== undefined) fail(`${where}: "ingredients" is no longer supported, use "recipe" (ingredient ids)`);
 
+    if (item?.base !== undefined) {
+      if (!isNonEmptyString(item.base) || !isBase(item.base)) {
+        fail(`${where}: base "${item.base}" is not an ingredient offered in a select "one" step`);
+      } else if (isObj(defaultBase) && defaultBase[listKey] === item.base) {
+        warn(`${where}: base "${item.base}" equals the ${listKey} default; drop it`);
+      }
+    }
+
     if (!Array.isArray(item?.recipe) || item.recipe.length === 0) {
       fail(`${where}: recipe must be a non-empty array of ingredient ids`);
     } else {
@@ -232,6 +274,7 @@ for (const [listKey, tierKey] of Object.entries(CATEGORY_TIERS)) {
       item.recipe.forEach((id, j) => {
         if (!isNonEmptyString(id)) return fail(`${where}.recipe[${j}]: must be a string`);
         if (!ingredientIds.has(id)) fail(`${where}.recipe[${j}]: ingredient "${id}" does not exist`);
+        if (isBase(id)) fail(`${where}.recipe[${j}]: "${id}" is a base; the yogurt is the customer's choice, not part of a recipe (use "base" or signatures.defaultBase)`);
         if (seen.has(id)) fail(`${where}.recipe[${j}]: "${id}" listed twice`);
         seen.add(id);
         referencedIds.add(id);
@@ -259,13 +302,27 @@ for (const [listKey, tierKey] of Object.entries(CATEGORY_TIERS)) {
       }
     }
 
-    if (!isObj(item?.images)) {
-      fail(`${where}: missing images`);
-    } else {
+    // Optional: an item may ship without photography (The Seasonal, by design)
+    // and every surface then draws the typographic tile in the picture's
+    // place. When images are given, both paths must resolve.
+    if (item?.images !== undefined && !isObj(item.images)) {
+      fail(`${where}: images must be an object with photo and transparent paths, or absent`);
+    } else if (isObj(item?.images)) {
       for (const kind of ["photo", "transparent"]) {
         const p = item.images[kind];
         if (!isNonEmptyString(p) || !p.startsWith("/")) fail(`${where}: images.${kind} must be an absolute public path`);
         else if (!existsSync(join(publicDir, p))) fail(`${where}: images.${kind} "${p}" not found under public/`);
+      }
+    }
+
+    // The copy the tile prints in place of a photograph: what is in the case
+    // right now. Only an item without images renders it, so carrying one on a
+    // photographed item is dead data that will silently go stale.
+    if (item?.seasonNote !== undefined) {
+      if (!isNonEmptyString(item.seasonNote)) {
+        fail(`${where}: seasonNote must be a non-empty string, or absent`);
+      } else if (item?.images !== undefined) {
+        fail(`${where}: seasonNote is only rendered for an item without "images"; remove one or the other`);
       }
     }
   });
@@ -285,6 +342,43 @@ checkUnique(signatureIds, "signatures");
 for (const id of ingredientIds) {
   if (!offeredIds.has(id) && !referencedIds.has(id)) {
     warn(`ingredient "${id}" is neither offered in a build step nor used in a recipe`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// The home page Stacks section names four enhancers by id. Those ids live in
+// lib/menu/featuredEnhancers.ts (presentation, deliberately not in this file),
+// so pulling an enhancer here has to fail the build rather than leave a dead
+// card on the home page. Read as text: this script stays dependency-free and
+// cannot import a TypeScript module.
+//
+// Only checked when validating the repo's own menu, since the featured list
+// describes this website and the Menu TV may be pointed at another copy.
+if (menuPath === resolve(join(repoRoot, "lib/menu/menu.json"))) {
+  const featuredPath = join(repoRoot, "lib/menu/featuredEnhancers.ts");
+  if (!existsSync(featuredPath)) {
+    warn("lib/menu/featuredEnhancers.ts is missing; the Stacks section's ids were not checked");
+  } else {
+    const src = readFileSync(featuredPath, "utf8");
+    const featuredIds = [...src.matchAll(/ingredientId:\s*"([^"]+)"/g)].map((m) => m[1]);
+
+    if (featuredIds.length === 0) {
+      warn("no featured enhancer ids found in lib/menu/featuredEnhancers.ts; check the file's shape");
+    }
+
+    const enhancerStep = steps.find((step) => step?.id === "enhancers");
+    const offeredEnhancers = new Set(
+      Array.isArray(enhancerStep?.options) ? enhancerStep.options.map((opt) => opt?.ingredientId) : []
+    );
+
+    for (const id of featuredIds) {
+      if (!offeredEnhancers.has(id)) {
+        fail(`featuredEnhancers.ts features "${id}", which the "enhancers" build step does not offer`);
+      }
+    }
+    if (new Set(featuredIds).size !== featuredIds.length) {
+      fail("featuredEnhancers.ts features the same enhancer more than once");
+    }
   }
 }
 

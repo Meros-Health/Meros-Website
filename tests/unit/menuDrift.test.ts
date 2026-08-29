@@ -34,11 +34,14 @@ describe("menu drift on rehydrate", () => {
     expect(byId["vanilla-three-fruits"].unitPrice).toBe(14);
   });
 
-  it("H1: a required-step ingredient removed drops both plain bowls and says so", async () => {
-    const { items, messages } = await rehydrateSevenLines(requiredIngredientRemoved);
+  it("H1: a required-step ingredient removed drops both plain bowls, unsets the plain signatures, and says so", async () => {
+    const { items, byId, messages } = await rehydrateSevenLines(requiredIngredientRemoved);
     expect(items.map((i) => i.lineId)).toEqual(["vanilla-three-fruits", "vanilla-nuts", "moment-medium", "silk-large", "crunch-medium"]);
-    expect(messages).toHaveLength(2);
-    expect(messages[0]).toMatch(/no longer available and was removed/);
+    expect(messages).toHaveLength(5);
+    expect(messages.filter((m) => /no longer available and was removed/.test(m))).toHaveLength(2);
+    // The three signatures were on Plain: they stay, with no yogurt, and each says so.
+    expect(messages.filter((m) => m.startsWith("Plain Greek Yogurt is no longer available. Choose a yogurt for"))).toHaveLength(3);
+    expect("base" in byId["moment-medium"]).toBe(false);
   });
 
   it("H1: an optional ingredient removed keeps the bowl, drops the topping, re-prices, and says so", async () => {

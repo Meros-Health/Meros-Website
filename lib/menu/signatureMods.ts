@@ -8,13 +8,16 @@
 // `surcharge` on a surcharge-only step. The recipe never counts against a
 // step's `included` allowance; a signature's flat price already covers it.
 //
-// A removal is any recipe ingredient except the base (an ingredient offered in
-// a select:"one" step). Removals are free. Recipe-only ingredients that the
-// builder does not offer (toasted almonds, almond butter) are removable but
-// not addable, since nothing prices them.
+// A removal is any recipe ingredient. Recipes hold toppings only (the
+// validator rejects a base in one; the yogurt is chosen separately, see
+// signatureBase.ts), and the select:"one" guard in isRemovable stays as a
+// backstop. Removals are free. Recipe-only ingredients that the builder does
+// not offer (toasted almonds, almond butter) are removable but not addable,
+// since nothing prices them.
 import { BUILD_CONFIG, getOption, getStepForIngredient, type BuildStep } from "./buildConfig";
 import { extrasCost } from "./calcBowlPrice";
 import { getIngredient, ingredientName, type Ingredient } from "./ingredients";
+import { getBaseSurcharge, isBaseOffered } from "./signatureBase";
 import { getSignaturePrice, type SignatureItem } from "./signatures";
 
 export const MAX_ADDITIONS = 2;
@@ -131,14 +134,23 @@ export function getAdditionPrice(step: BuildStep, ingredientId: string): number 
 }
 
 /**
- * Signature price at a size plus the cost of the additions, grouped by step so
- * a step's bundle applies. Returns undefined (not 0) for an unknown item, an
- * unknown size, or an addition the menu does not offer, so callers reject
- * unknown input instead of treating it as free. Removals cost nothing.
+ * Signature price at a size, plus the chosen yogurt's surcharge (vegan +$2),
+ * plus the cost of the additions grouped by step so a step's bundle applies.
+ * Returns undefined (not 0) for an unknown item, an unknown size, a yogurt
+ * the Base step does not offer, or an addition the menu does not offer, so
+ * callers reject unknown input instead of treating it as free. An undefined
+ * `baseId` (a bowl with no choice yet) adds nothing; resolving the category
+ * default is the caller's job (sanitizeBaseId). Removals cost nothing.
  */
-export function calcSignaturePrice(itemId: string, sizeId: string, mods?: SignatureMods): number | undefined {
+export function calcSignaturePrice(
+  itemId: string,
+  sizeId: string,
+  mods?: SignatureMods,
+  baseId?: string
+): number | undefined {
   const base = getSignaturePrice(itemId, sizeId);
   if (base === undefined) return undefined;
+  if (baseId !== undefined && !isBaseOffered(baseId)) return undefined;
 
   const byStep = new Map<BuildStep, string[]>();
   for (const id of mods?.additions ?? []) {
@@ -149,7 +161,7 @@ export function calcSignaturePrice(itemId: string, sizeId: string, mods?: Signat
     byStep.set(step, list);
   }
 
-  let total = base;
+  let total = base + (baseId !== undefined ? getBaseSurcharge(baseId) : 0);
   for (const [step, ids] of byStep) {
     const pricing = step.pricing;
     if (pricing.mode === "included-then-extra") {

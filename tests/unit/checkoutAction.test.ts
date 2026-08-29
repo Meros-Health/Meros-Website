@@ -50,6 +50,19 @@ describe("submitCheckout: happy path", () => {
     expect(logged.lineCount).toBe(2);
   });
 
+  it("prices the yogurt surcharge and names the yogurt on the order line", async () => {
+    const vegan = { ...momentMedium(), lineId: "vegan", base: "vegan-coconut-yogurt", unitPrice: 14 };
+    const smoothie = { ...signatureLine("smoothie", "rise", "standard", 15), base: undefined };
+    const result = await submit([vegan, smoothie]);
+    expect(result.status).toBe("success");
+    const logged = logSpy.mock.calls[0][1] as { total: number; items: { name: string }[] };
+    expect(logged.total).toBe(29);
+    expect(logged.items.map((i) => i.name)).toEqual([
+      "The Moment · Medium · Vegan Coconut Yogurt",
+      "The Rise · 24 oz · Vanilla Greek Yogurt",
+    ]);
+  });
+
   it("prices the enhancer bundle and extra fruits correctly (B9)", async () => {
     const line = customLine(
       "big",
@@ -229,6 +242,11 @@ describe("F5: validation matrix (confirmed-correct boundaries stay locked)", () 
     ["unknown size", [customLine("z", "huge", { base: ["plain-greek-yogurt"] }, { unitPrice: 12 })], "unavailable"],
     ["signature wrong size", [signatureLine("sm", "rise", "large", 15)], "unavailable"],
     ["unknown product", [signatureLine("np", "nope", "medium", 12)], "unavailable"],
+    ["bowl with no yogurt", [{ ...momentMedium(), base: undefined }], "base"],
+    ["unknown yogurt", [{ ...momentMedium(), base: "nope" }], "unavailable"],
+    ["a topping as the yogurt", [{ ...momentMedium(), base: "mangoes" }], "unavailable"],
+    ["yogurt not a string", [{ ...momentMedium(), base: ["plain-greek-yogurt"] }], "invalid"],
+    ["vegan yogurt at the plain price", [{ ...momentMedium(), base: "vegan-coconut-yogurt" }], "price-changed"],
     ["incomplete bowl", [customLine("i", "medium", { fruits: ["strawberries"] }, { unitPrice: 12 })], "invalid"],
     ["unknown kind", [{ ...momentMedium(), kind: "weird" }], "invalid"],
     ["selection not an object", [{ ...plainMedium(), selection: "x" }], "invalid"],
@@ -309,7 +327,7 @@ describe("signature additions and removals", () => {
     expect(result.status).toBe("success");
     const logged = logSpy.mock.calls[0][1] as { items: Array<{ name: string; unitPrice: number }> };
     expect(logged.items[0].unitPrice).toBe(17);
-    expect(logged.items[0].name).toBe("The Moment · Medium · Add Mangoes, Maca Powder · No House Granola");
+    expect(logged.items[0].name).toBe("The Moment · Medium · Plain Greek Yogurt · Add Mangoes, Maca Powder · No House Granola");
   });
 
   it("accepts an absent or empty mods field as no change", async () => {

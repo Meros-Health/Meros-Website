@@ -17,6 +17,10 @@ export type Ingredient = {
   /** Freeform. Used for UI badges and filters only, never for pricing. */
   tags?: string[];
   description?: string;
+  /** Bases only: the word the board's base line uses ("Vanilla" for "Vanilla Greek Yogurt"). */
+  shortName?: string;
+  /** A select:"multi" step id: where the Menu TV files a recipe-only ingredient. Unused here. */
+  group?: string;
 };
 
 const INGREDIENTS: Ingredient[] = menuData.ingredients as Ingredient[];

@@ -1,19 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
 import { useCartStore } from "@/store/cartStore";
-import { EMPTY_NUTRITION } from "@/lib/menu/nutrition";
 import { AddToCartButton } from "@/components/cart/AddToCartButton";
-import { SizeToggle } from "@/components/ui/SizeToggle";
-import {
-  getDefaultSizeId,
-  getSizeLabel,
-  listBowls,
-  listSmoothies,
-  shortName,
-  type SignatureItem,
-} from "@/lib/menu/signatures";
+import { SignatureTile } from "@/components/ui/SignatureTile";
+import { useAddedBeat } from "@/lib/useAddedBeat";
+import { addSignatureDirect, needsConfiguration, startingPrice } from "@/lib/menu/signatureAdd";
+import { listBowls, listSmoothies, shortName, type SignatureItem } from "@/lib/menu/signatures";
 import { EntranceReveal } from "@/components/transition/EntranceReveal";
 
 // Menu data comes from lib/menu/menu.json via lib/menu/signatures.ts, the
@@ -23,35 +16,20 @@ import { EntranceReveal } from "@/components/transition/EntranceReveal";
 
 function MenuCard({ item, priority = false }: { item: SignatureItem; priority?: boolean }) {
   const addItem = useCartStore((s) => s.addItem);
-  const [sizeId, setSizeId] = useState(() => getDefaultSizeId(item.category));
-  const [added, setAdded] = useState(false);
-  const addedTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // A size can vanish from the menu under a mounted card (I1). No price means
-  // nothing can be added, rather than a $0.00 line the server would reject.
-  const price = item.sizes[sizeId]?.price;
-
-  useEffect(() => {
-    return () => {
-      if (addedTimeout.current) clearTimeout(addedTimeout.current);
-    };
-  }, []);
+  const openAdd = useCartStore((s) => s.openAdd);
+  const { added, flash } = useAddedBeat(item.id);
+  // The card shows where the price starts; size and yogurt (and any changes)
+  // are chosen in the add modal for a bowl. A smoothie has one size and its
+  // default yogurt, so its price is its price and it adds in one press.
+  const starting = startingPrice(item);
 
   const handleAdd = () => {
-    if (price === undefined) return;
-    const result = addItem({
-      kind: "signature",
-      productId: item.id,
-      name: item.name,
-      size: { id: sizeId, label: getSizeLabel(item.category, sizeId) },
-      nutrition: { ...EMPTY_NUTRITION },
-      quantity: 1,
-      unitPrice: price,
-    });
-    // At the 99 cap nothing was added, so no "Added" feedback either.
-    if (result !== "added") return;
-    setAdded(true);
-    if (addedTimeout.current) clearTimeout(addedTimeout.current);
-    addedTimeout.current = setTimeout(() => setAdded(false), 1400);
+    if (added) return;
+    if (needsConfiguration(item)) {
+      openAdd(item.id);
+      return;
+    }
+    if (addSignatureDirect(item, addItem) === "added") flash();
   };
 
   return (
@@ -63,16 +41,22 @@ function MenuCard({ item, priority = false }: { item: SignatureItem; priority?: 
         maxWidth: "var(--menu-card-max-width)",
       }}
     >
-      {/* Square-cropped image: always rendered at ~half a 2-column grid, at every breakpoint */}
+      {/* Square-cropped image: always rendered at ~half a 2-column grid, at every
+          breakpoint. An item without photography gets the typographic tile in
+          the same square. */}
       <div className="relative w-full aspect-square overflow-hidden">
-        <Image
-          src={item.images.photo}
-          alt={item.name}
-          fill
-          sizes="(max-width: 767px) 92vw, (max-width: 1279px) 45vw, 560px"
-          priority={priority}
-          className="object-cover object-center"
-        />
+        {item.images ? (
+          <Image
+            src={item.images.photo}
+            alt={item.name}
+            fill
+            sizes="(max-width: 767px) 92vw, (max-width: 1279px) 45vw, 560px"
+            priority={priority}
+            className="object-cover object-center"
+          />
+        ) : (
+          <SignatureTile item={item} variant="card" />
+        )}
       </div>
 
       {/* Info: sized off the card's own (container-query) width, not the viewport, so
@@ -93,7 +77,9 @@ function MenuCard({ item, priority = false }: { item: SignatureItem; priority?: 
             className="font-body-caps text-juniper shrink-0"
             style={{ fontSize: "var(--menu-card-price-size)" }}
           >
-            {price === undefined ? "Unavailable" : `$${price.toFixed(2)}`}
+            {starting === undefined
+              ? "Unavailable"
+              : `${starting.from ? "From " : ""}$${starting.price.toFixed(2)}`}
           </span>
         </div>
 
@@ -105,7 +91,7 @@ function MenuCard({ item, priority = false }: { item: SignatureItem; priority?: 
           {item.tags.join(" · ")}
         </p>
 
-        {/* Ingredients */}
+        {/* Ingredients: toppings only. The yogurt is chosen in the add modal. */}
         <p
           className="font-body-mixed text-juniper leading-relaxed"
           style={{ fontSize: "var(--menu-card-desc-size)" }}
@@ -113,9 +99,7 @@ function MenuCard({ item, priority = false }: { item: SignatureItem; priority?: 
           {item.ingredients}
         </p>
 
-        {/* Size + add to cart */}
         <div className="mt-auto flex flex-col" style={{ gap: "var(--menu-card-gap)" }}>
-          <SizeToggle category={item.category} value={sizeId} onChange={setSizeId} />
           <AddToCartButton onClick={handleAdd} added={added} />
         </div>
       </div>

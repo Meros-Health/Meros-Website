@@ -12,10 +12,10 @@ const CAROUSEL_IMAGES = [
   { src: "/images-web/Bowls/Silk-1.jpg", alt: "The Silk bowl" },
   { src: "/images-web/Smoothies/crave-1.jpg", alt: "The Crave smoothie" },
   { src: "/images-web/Gallery/Gallery-2.jpg", alt: "Seasonal toppings" },
-  { src: "/images-web/Bowls/Tropic-1.jpg", alt: "The Tropic bowl" },
+  { src: "/images-web/Bowls/Tropic-1.jpg", alt: "The Tropics bowl" },
   { src: "/images-web/Smoothies/recovery-2.jpg", alt: "The Recovery smoothie" },
   { src: "/images-web/Gallery/Gallery-3.jpg", alt: "MERŌS storefront" },
-  { src: "/images-web/Bowls/Bloom-1.jpg", alt: "The Bloom bowl" },
+  { src: "/images-web/Bowls/Tropic-2.jpg", alt: "The Tropics bowl" },
   { src: "/images-web/Smoothies/cabana-1.jpg", alt: "The Cabana smoothie" },
   { src: "/images-web/Gallery/Gallery-5.jpg", alt: "Granola and berries" },
   { src: "/images-web/Bowls/Crunch-1.jpg", alt: "The Crunch bowl" },
@@ -64,7 +64,7 @@ export function HeroCarousel({ gap, tileHeight }: { gap: string; tileHeight: str
               alt={img.alt}
               fill
               className="object-cover"
-              sizes="20vh"
+              sizes="14vw"
               loading="lazy"
             />
           </div>

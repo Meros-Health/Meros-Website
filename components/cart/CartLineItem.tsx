@@ -1,6 +1,7 @@
 import type { CartItem } from "@/store/cartStore";
 import { getCartItemDisplayName } from "@/store/cartStore";
 import { getSelectedIngredients } from "@/lib/menu/calcBowlPrice";
+import { ingredientName } from "@/lib/menu/ingredients";
 import { formatMacroSummary } from "@/lib/menu/nutrition";
 import { normalizeSelection } from "@/lib/menu/selectionUtils";
 import { formatSignatureMods, hasMods } from "@/lib/menu/signatureMods";
@@ -24,6 +25,11 @@ interface CartLineItemProps {
 export function CartLineItem({ item, showActions = true, error }: CartLineItemProps) {
   const isCustom = item.kind === "custom" && item.selection;
   const modsText = item.kind === "signature" && hasMods(item.mods) ? formatSignatureMods(item.mods) : "";
+  // The yogurt under a signature. A bowl persisted before the yogurt became a
+  // choice, or whose yogurt left the menu, has none: say so, since checkout
+  // will not take it until one is chosen (Edit opens the picker).
+  const baseText = item.kind === "signature" ? (item.base ? ingredientName(item.base) : "Choose your yogurt") : "";
+  const baseMissing = item.kind === "signature" && !item.base;
 
   return (
     <li
@@ -46,6 +52,15 @@ export function CartLineItem({ item, showActions = true, error }: CartLineItemPr
           {isCustom && (
             <p className="font-body-mixed text-xs text-juniper mt-1 leading-relaxed">
               {formatCustomBowlIngredients(item)}
+            </p>
+          )}
+          {baseText && (
+            <p
+              data-line-base
+              data-line-base-missing={baseMissing ? "true" : undefined}
+              className={`font-body-mixed text-xs mt-1 leading-relaxed ${baseMissing ? "text-grapefruit" : "text-juniper"}`}
+            >
+              {baseText}
             </p>
           )}
           {modsText && (

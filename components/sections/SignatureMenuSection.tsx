@@ -1,22 +1,15 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 import { CTAButton } from "@/components/ui/CTAButton";
+import { SignatureTile } from "@/components/ui/SignatureTile";
 import { useRevealReady } from "@/lib/useRevealReady";
+import { useAddedBeat } from "@/lib/useAddedBeat";
 import { useCartStore } from "@/store/cartStore";
-import { EMPTY_NUTRITION } from "@/lib/menu/nutrition";
-import {
-  formatSizeStat,
-  getDefaultSizeId,
-  getSizeLabel,
-  getSizeTiers,
-  listBowls,
-  listSmoothies,
-  type SignatureCategory,
-  type SignatureItem,
-} from "@/lib/menu/signatures";
+import { addSignatureDirect, needsConfiguration } from "@/lib/menu/signatureAdd";
+import { formatSizeStat, getSizeTiers, listBowls, listSmoothies, type SignatureCategory, type SignatureItem } from "@/lib/menu/signatures";
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 // Read from lib/menu/menu.json (via signatures.ts): the same file the in-store
@@ -78,6 +71,10 @@ function makeVariants(reduced: boolean) {
 type MenuVariants = ReturnType<typeof makeVariants>;
 
 // ─── Add button (icon) ───────────────────────────────────────────────────────
+// Feedback after a successful add: the box inverts (white with a grapefruit
+// check) for the length of the Added beat, then returns to the orange "+".
+// A bowl's "+" opens the add modal (size and yogurt are required there); a
+// smoothie's "+" adds outright. Either way the beat lands on this button.
 
 function AddIconButton({
   name,
@@ -95,12 +92,13 @@ function AddIconButton({
       type="button"
       onClick={onClick}
       aria-label={added ? `${name} added to cart` : `Add ${name} to cart`}
+      data-added={added ? "true" : undefined}
       className={`
         h-8 w-8 items-center justify-center
-        border border-grapefruit bg-grapefruit text-cream
-        text-[#fff]
-        transition-[opacity,background-color] duration-200 hover:bg-grapefruit/75
+        border border-grapefruit
+        transition-[background-color,color,border-color] duration-300
         focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-grapefruit
+        ${added ? "bg-[#fff] text-grapefruit cursor-default" : "bg-grapefruit text-[#fff] hover:bg-grapefruit/75"}
         ${className}
       `}
     >
@@ -135,35 +133,20 @@ function MenuRow({
   const calories = formatSizeStat(item, "calories");
   const protein = formatSizeStat(item, "protein");
   const addItem = useCartStore((s) => s.addItem);
-  const [added, setAdded] = useState(false);
-  const addedTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (addedTimeout.current) clearTimeout(addedTimeout.current);
-    };
-  }, []);
+  const openAdd = useCartStore((s) => s.openAdd);
+  const { added, flash } = useAddedBeat(item.id);
 
   const handleAdd = () => {
-    const sizeId = getDefaultSizeId(item.category);
-    // A size can vanish from the menu under a mounted row (I1); add nothing
-    // rather than a $0.00 line the server would reject.
-    const unitPrice = item.sizes[sizeId]?.price;
-    if (unitPrice === undefined) return;
-    const result = addItem({
-      kind: "signature",
-      productId: item.id,
-      name: item.name,
-      size: { id: sizeId, label: getSizeLabel(item.category, sizeId) },
-      nutrition: { ...EMPTY_NUTRITION },
-      quantity: 1,
-      unitPrice,
-    });
-    // At the 99 cap nothing was added, so no "Added" feedback either.
-    if (result !== "added") return;
-    setAdded(true);
-    if (addedTimeout.current) clearTimeout(addedTimeout.current);
-    addedTimeout.current = setTimeout(() => setAdded(false), 1400);
+    // A second press during the beat is almost always a double-tap, not a
+    // request for two. Quantity lives in the cart.
+    if (added) return;
+    // Bowls need a size and a yogurt, chosen in the modal, the way the store
+    // takes the order. Smoothies have one size and come with vanilla.
+    if (needsConfiguration(item)) {
+      openAdd(item.id);
+      return;
+    }
+    if (addSignatureDirect(item, addItem) === "added") flash();
   };
 
   return (
@@ -189,15 +172,19 @@ function MenuRow({
             Above lg: the row index. */}
         <div className="lg:hidden flex w-16 flex-col items-center gap-3.5">
           <div className="relative w-16 aspect-square">
-            <Image
-              src={item.images.transparent}
-              alt=""
-              width={1080}
-              height={1080}
-              sizes="64px"
-              loading="lazy"
-              style={{ width: "100%", height: "auto" }}
-            />
+            {item.images ? (
+              <Image
+                src={item.images.transparent}
+                alt=""
+                width={1080}
+                height={1080}
+                sizes="64px"
+                loading="lazy"
+                style={{ width: "100%", height: "auto" }}
+              />
+            ) : (
+              <SignatureTile item={item} variant="thumb" />
+            )}
           </div>
           <AddIconButton name={item.name} added={added} onClick={handleAdd} className="flex" />
         </div>
@@ -321,18 +308,24 @@ function MenuStage({ active, reduced }: { active: SignatureItem; reduced: boolea
               initial={false}
               animate={{ opacity: isActive ? 1 : 0, y: isActive || reduced ? 0 : 8 }}
               transition={swap}
-              style={{ zIndex: isActive ? 1 : 0, pointerEvents: "none" }}
+              // The Seasonal renders a card that turns, so the active item has
+              // to take clicks. Everything else in the stack stays inert.
+              style={{ zIndex: isActive ? 1 : 0, pointerEvents: isActive && !item.images ? "auto" : "none" }}
               aria-hidden={!isActive}
             >
-              <Image
-                src={item.images.transparent}
-                alt={isActive ? active.name : ""}
-                width={1080}
-                height={1080}
-                sizes="(min-width: 1024px) 40vw, 0px"
-                loading="lazy"
-                style={{ width: "100%", height: "auto" }}
-              />
+              {item.images ? (
+                <Image
+                  src={item.images.transparent}
+                  alt={isActive ? active.name : ""}
+                  width={1080}
+                  height={1080}
+                  sizes="(min-width: 1024px) 40vw, 0px"
+                  loading="lazy"
+                  style={{ width: "100%", height: "auto" }}
+                />
+              ) : (
+                <SignatureTile item={item} variant="stage" active={isActive} />
+              )}
             </motion.div>
           );
         })}

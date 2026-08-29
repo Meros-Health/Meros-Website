@@ -14,6 +14,8 @@ export type CheckoutLine = {
   productId: string;
   size?: { id: string };
   selection?: BowlSelection;
+  /** Signature lines only: the chosen yogurt, as a Base step ingredient id. */
+  base?: string;
   /** Signature lines only: additions and removals, as ingredient ids. */
   mods?: SignatureMods;
   quantity: number;
@@ -27,6 +29,7 @@ export function toCheckoutLines(items: CartItem[]): CheckoutLine[] {
     productId: item.productId,
     size: item.size ? { id: item.size.id } : undefined,
     selection: item.selection,
+    base: item.base,
     mods: item.mods,
     quantity: item.quantity,
     unitPrice: item.unitPrice,

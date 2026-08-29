@@ -2,9 +2,12 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { BaseToggle } from "@/components/ui/BaseToggle";
 import { SizeToggle } from "@/components/ui/SizeToggle";
+import { EMPTY_NUTRITION } from "@/lib/menu/nutrition";
 import { formatPrice, formatSurcharge } from "@/lib/menu/calcBowlPrice";
 import { ingredientName } from "@/lib/menu/ingredients";
+import { getDefaultBaseId } from "@/lib/menu/signatureBase";
 import {
   MAX_ADDITIONS,
   MAX_REMOVALS,
@@ -13,14 +16,21 @@ import {
   isRemovable,
   listAddableGroups,
 } from "@/lib/menu/signatureMods";
-import { getSignatureItem, getSignaturePrice, getSizeTiers, type SignatureItem } from "@/lib/menu/signatures";
+import { getSignatureItem, getSignaturePrice, getSizeLabel, getSizeTiers, type SignatureItem } from "@/lib/menu/signatures";
 import { lockScroll } from "@/lib/scrollLock";
 import { useFocusTrap } from "@/lib/useFocusTrap";
-import { useCartStore, type CartItem } from "@/store/cartStore";
+import { useCartStore } from "@/store/cartStore";
 
-// Edits one signature line in place over the cart drawer: size, up to two
-// additions from the builder's steps, up to two recipe ingredients left out.
-// The draft lives here until Save; the store sanitizes and re-prices on save.
+// One dialog, two jobs, the same rules for both:
+//
+// - Add: a bowl's "+" opens it before anything is in the cart. The draft is
+//   blank: the customer must choose a size and a yogurt, then may add up to
+//   MAX_ADDITIONS from the builder's steps and leave out up to MAX_REMOVALS
+//   recipe ingredients. Add puts the line in the cart. (Smoothies never come
+//   here: one size, vanilla by default, they add in one press.)
+// - Edit: a line's Edit button in the cart drawer opens it over the drawer,
+//   loaded with what the line holds. Save writes the draft back; the store
+//   sanitizes and re-prices.
 
 const MODAL_Z = 135; // above the cart drawer (130), below the page transition cover (140)
 const PANEL_DURATION = 0.45;
@@ -29,28 +39,102 @@ const PANEL_EASE = [0.16, 1, 0.3, 1] as const;
 const HAIRLINE = "0.5px solid rgba(41,45,42,0.12)";
 const HAIRLINE_STRONG = "0.5px solid rgba(41,45,42,0.28)";
 
-export function SignatureEditModal() {
-  const editingLineId = useCartStore((s) => s.editingLineId);
-  const item = useCartStore((s) => (s.editingLineId ? s.items.find((i) => i.lineId === s.editingLineId) : undefined));
-  const closeEdit = useCartStore((s) => s.closeEdit);
+type Mode = "add" | "edit";
 
-  const catalogItem = item?.kind === "signature" ? getSignatureItem(item.productId) : undefined;
-  const isOpen = editingLineId !== null && item !== undefined && catalogItem !== undefined;
+type Draft = {
+  sizeId: string | undefined;
+  baseId: string | undefined;
+  additions: string[];
+  removals: string[];
+};
+
+/** A draft the dialog will submit: both required choices made. */
+type CompleteDraft = Draft & { sizeId: string; baseId: string };
+
+export function SignatureModal() {
+  // Edit: driven by the line in the cart.
+  const editingLineId = useCartStore((s) => s.editingLineId);
+  const line = useCartStore((s) => (s.editingLineId ? s.items.find((i) => i.lineId === s.editingLineId) : undefined));
+  const editSession = useCartStore((s) => s.editSession);
+  const closeEdit = useCartStore((s) => s.closeEdit);
+  const updateSignatureLine = useCartStore((s) => s.updateSignatureLine);
+  const editCatalog = line?.kind === "signature" ? getSignatureItem(line.productId) : undefined;
+  const editOpen = editingLineId !== null && line !== undefined && editCatalog !== undefined;
+
+  // Add: driven by the product whose "+" was pressed.
+  const addingProductId = useCartStore((s) => s.addingProductId);
+  const addSession = useCartStore((s) => s.addSession);
+  const closeAdd = useCartStore((s) => s.closeAdd);
+  const addFromModal = useCartStore((s) => s.addFromModal);
+  const addCatalog = addingProductId ? getSignatureItem(addingProductId) : undefined;
+  const addOpen = addingProductId !== null && addCatalog !== undefined;
 
   // The line left the cart (removed here, or in another tab) while the modal
-  // was open: there is nothing to save into, so close.
+  // was open: there is nothing to save into, so close. Likewise a product the
+  // menu no longer has cannot be configured.
   useEffect(() => {
-    if (editingLineId !== null && !isOpen) closeEdit();
-  }, [editingLineId, isOpen, closeEdit]);
-
-  // Keyed per open, so a reopened line starts from what the cart holds rather
-  // than from a draft left behind by a Cancel during the exit animation.
-  const session = useCartStore((s) => s.editSession);
+    if (editingLineId !== null && !editOpen) closeEdit();
+  }, [editingLineId, editOpen, closeEdit]);
+  useEffect(() => {
+    if (addingProductId !== null && !addOpen) closeAdd();
+  }, [addingProductId, addOpen, closeAdd]);
 
   return (
     <AnimatePresence>
-      {isOpen && item && catalogItem && (
-        <EditDialog key={`${item.lineId}:${session}`} item={item} catalogItem={catalogItem} onClose={closeEdit} />
+      {editOpen && line && editCatalog && (
+        // Keyed per open, so a reopened line starts from what the cart holds
+        // rather than from a draft left behind by a Cancel during the exit.
+        <Dialog
+          key={`edit:${line.lineId}:${editSession}`}
+          mode="edit"
+          catalogItem={editCatalog}
+          initial={{
+            sizeId: line.size?.id ?? Object.keys(editCatalog.sizes)[0],
+            // A line persisted before the yogurt became a choice has none; a
+            // bowl then starts unselected and Save waits for a pick.
+            baseId: line.base ?? getDefaultBaseId(editCatalog),
+            additions: line.mods?.additions ?? [],
+            removals: line.mods?.removals ?? [],
+          }}
+          onSubmit={(draft) => {
+            updateSignatureLine(line.lineId, {
+              sizeId: draft.sizeId,
+              base: draft.baseId,
+              mods: { additions: draft.additions, removals: draft.removals },
+            });
+            closeEdit();
+          }}
+          onClose={closeEdit}
+        />
+      )}
+      {addOpen && addCatalog && (
+        <Dialog
+          key={`add:${addCatalog.id}:${addSession}`}
+          mode="add"
+          catalogItem={addCatalog}
+          initial={{ sizeId: undefined, baseId: getDefaultBaseId(addCatalog), additions: [], removals: [] }}
+          onSubmit={(draft) => {
+            const unitPrice = calcSignaturePrice(addCatalog.id, draft.sizeId, draft, draft.baseId);
+            // Guarded by canSubmit; a menu change under the open dialog is the
+            // only way here, and then there is nothing priceable to add.
+            if (unitPrice === undefined) {
+              closeAdd();
+              return;
+            }
+            addFromModal({
+              kind: "signature",
+              productId: addCatalog.id,
+              name: addCatalog.name,
+              size: { id: draft.sizeId, label: getSizeLabel(addCatalog.category, draft.sizeId) },
+              base: draft.baseId,
+              mods: { additions: draft.additions, removals: draft.removals },
+              nutrition: { ...EMPTY_NUTRITION },
+              quantity: 1,
+              unitPrice,
+            });
+          }}
+          onClose={closeAdd}
+        />
       )}
     </AnimatePresence>
   );
@@ -58,13 +142,17 @@ export function SignatureEditModal() {
 
 // ---------------------------------------------------------------------------
 
-function EditDialog({
-  item,
+function Dialog({
+  mode,
   catalogItem,
+  initial,
+  onSubmit,
   onClose,
 }: {
-  item: CartItem;
+  mode: Mode;
   catalogItem: SignatureItem;
+  initial: Draft;
+  onSubmit: (draft: CompleteDraft) => void;
   onClose: () => void;
 }) {
   const reduced = useReducedMotion();
@@ -73,11 +161,10 @@ function EditDialog({
   const recipeId = useId();
   const additionsId = useId();
 
-  const updateSignatureLine = useCartStore((st) => st.updateSignatureLine);
-
-  const [sizeId, setSizeId] = useState(item.size?.id ?? Object.keys(catalogItem.sizes)[0]);
-  const [additions, setAdditions] = useState<string[]>(item.mods?.additions ?? []);
-  const [removals, setRemovals] = useState<string[]>(item.mods?.removals ?? []);
+  const [sizeId, setSizeId] = useState<string | undefined>(initial.sizeId);
+  const [baseId, setBaseId] = useState<string | undefined>(initial.baseId);
+  const [additions, setAdditions] = useState<string[]>(initial.additions);
+  const [removals, setRemovals] = useState<string[]>(initial.removals);
 
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -87,9 +174,10 @@ function EditDialog({
   const hasSizes = getSizeTiers(catalogItem.category).length > 1;
   const noun = catalogItem.category === "bowl" ? "bowl" : "smoothie";
 
-  const basePrice = getSignaturePrice(catalogItem.id, sizeId);
-  const price = calcSignaturePrice(catalogItem.id, sizeId, { additions, removals });
+  const basePrice = sizeId === undefined ? undefined : getSignaturePrice(catalogItem.id, sizeId);
+  const price = sizeId === undefined ? undefined : calcSignaturePrice(catalogItem.id, sizeId, { additions, removals }, baseId);
   const delta = price !== undefined && basePrice !== undefined ? price - basePrice : 0;
+  const canSubmit = price !== undefined && sizeId !== undefined && baseId !== undefined;
 
   const atAddCap = additions.length >= MAX_ADDITIONS;
   const atRemoveCap = removals.length >= MAX_REMOVALS;
@@ -98,7 +186,7 @@ function EditDialog({
   useEffect(() => lockScroll(), []);
 
   // Focus: the Close button once the panel has settled; back to whatever
-  // opened the modal (the line's Edit button) when it unmounts.
+  // opened the modal (a "+" or a line's Edit button) when it unmounts.
   useEffect(() => {
     openerRef.current = document.activeElement;
     const t = setTimeout(() => closeRef.current?.focus(), s(PANEL_DURATION) * 1000);
@@ -132,10 +220,15 @@ function EditDialog({
     );
   };
 
-  const handleSave = () => {
-    updateSignatureLine(item.lineId, { sizeId, mods: { additions, removals } });
-    onClose();
+  const handleSubmit = () => {
+    if (sizeId === undefined || baseId === undefined || price === undefined) return;
+    onSubmit({ sizeId, baseId, additions, removals });
   };
+
+  const eyebrow = mode === "add" ? "Add" : "Edit";
+  const submitLabel = mode === "add" ? "Add to cart" : "Save";
+  const priceText =
+    sizeId === undefined ? "Choose a size" : price === undefined ? "Unavailable" : formatPrice(price);
 
   return (
     <div
@@ -164,7 +257,7 @@ function EditDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        data-signature-edit
+        data-signature-modal={mode}
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 24 }}
@@ -181,7 +274,7 @@ function EditDialog({
         {/* Header */}
         <div className="flex items-start justify-between gap-4 px-6 py-5" style={{ borderBottom: HAIRLINE }}>
           <div className="min-w-0">
-            <p className="font-body-caps text-[10px] tracking-widest text-grapefruit">Edit</p>
+            <p className="font-body-caps text-[10px] tracking-widest text-grapefruit">{eyebrow}</p>
             <h2 id={titleId} className="font-headline text-midnight leading-none mt-1" style={{ fontSize: "1.35rem" }}>
               {catalogItem.name}
             </h2>
@@ -189,7 +282,7 @@ function EditDialog({
           <button
             ref={closeRef}
             type="button"
-            aria-label="Close edit"
+            aria-label={mode === "add" ? "Close" : "Close edit"}
             onClick={onClose}
             className="font-body-caps text-[10px] tracking-widest text-juniper px-3 py-2 transition-opacity hover:opacity-70"
           >
@@ -201,10 +294,15 @@ function EditDialog({
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6" data-lenis-prevent>
           {hasSizes && (
             <section>
-              <p className="font-body-caps text-[10px] tracking-widest text-midnight mb-2">Size</p>
+              <RequiredHeading title="Size" chosen={sizeId !== undefined} />
               <SizeToggle category={catalogItem.category} value={sizeId} onChange={setSizeId} />
             </section>
           )}
+
+          <section>
+            <RequiredHeading title="Yogurt" chosen={baseId !== undefined} />
+            <BaseToggle value={baseId} onChange={setBaseId} />
+          </section>
 
           <section role="group" aria-labelledby={recipeId}>
             <SectionHeading id={recipeId} title={`In this ${noun}`} caption={`Remove up to ${MAX_REMOVALS}`} count={removals.length} max={MAX_REMOVALS} />
@@ -263,7 +361,7 @@ function EditDialog({
           <div className="flex justify-between pb-4">
             <span className="font-body-caps text-[11px] text-midnight">Item price</span>
             <span className="font-body-caps text-[11px] text-midnight" data-edit-price>
-              {price === undefined ? "Unavailable" : formatPrice(price)}
+              {priceText}
               {delta > 0 && <span className="text-juniper ml-2">({formatSurcharge(delta)})</span>}
             </span>
           </div>
@@ -278,8 +376,8 @@ function EditDialog({
             </button>
             <button
               type="button"
-              onClick={handleSave}
-              disabled={price === undefined}
+              onClick={handleSubmit}
+              disabled={!canSubmit}
               className="flex-1 font-body-caps text-[10px] tracking-widest py-3 transition-opacity hover:opacity-85 disabled:opacity-40 disabled:cursor-not-allowed"
               style={{
                 background: "var(--color-midnight)",
@@ -287,7 +385,7 @@ function EditDialog({
                 border: "0.5px solid var(--color-midnight)",
               }}
             >
-              Save
+              {submitLabel}
             </button>
           </div>
         </div>
@@ -297,6 +395,16 @@ function EditDialog({
 }
 
 // ---------------------------------------------------------------------------
+
+/** Heading for a choice the dialog will not submit without. */
+function RequiredHeading({ title, chosen }: { title: string; chosen: boolean }) {
+  return (
+    <div className="flex items-baseline justify-between gap-4 mb-3">
+      <p className="font-body-caps text-[10px] tracking-widest text-midnight">{title}</p>
+      {!chosen && <p className="font-body-mixed text-xs text-grapefruit">Choose one</p>}
+    </div>
+  );
+}
 
 function SectionHeading({
   id,
@@ -370,7 +478,11 @@ function Chip({
   );
 }
 
-/** The base: part of every recipe, not offered as a removal. */
+/**
+ * A recipe ingredient that cannot be left out. Recipes hold toppings only
+ * now (the yogurt is chosen above), so this is the backstop for a recipe
+ * that names a select:"one" ingredient, which the validator forbids.
+ */
 function StaticChip({ label }: { label: string }) {
   return (
     <span className={CHIP_CLASS} style={{ border: HAIRLINE, color: "var(--color-juniper)" }}>

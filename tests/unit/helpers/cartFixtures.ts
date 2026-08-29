@@ -27,6 +27,11 @@ export function customLine(
   };
 }
 
+/**
+ * A signature line on Plain yogurt, the way the store writes one since the
+ * yogurt became a choice. Pass `base: undefined` in `extra` for a line
+ * persisted before that (a bowl with no choice yet).
+ */
 export function signatureLine(
   lineId: string,
   productId: string,
@@ -40,6 +45,7 @@ export function signatureLine(
     productId,
     name: productId,
     size: { id: sizeId, label: sizeId },
+    base: "plain-greek-yogurt",
     nutrition: { ...EMPTY_NUTRITION },
     quantity: 1,
     unitPrice,

@@ -14,6 +14,8 @@ import {
   sanitizeSignatureMods,
   type SignatureMods,
 } from "@/lib/menu/signatureMods";
+import { ingredientName } from "@/lib/menu/ingredients";
+import { sanitizeBaseId } from "@/lib/menu/signatureBase";
 import { getSignatureItem, getSizeLabel } from "@/lib/menu/signatures";
 import { MAX_LINES, MAX_QUANTITY } from "@/lib/menu/limits";
 import {
@@ -32,6 +34,7 @@ export type CheckoutErrorCode =
   | "quantity"
   | "unavailable"
   | "price-changed"
+  | "base"
   | "invalid"
   | "unknown";
 
@@ -55,10 +58,11 @@ const LINE_MESSAGES: Record<LineErrorCode, string> = {
   quantity: "This quantity is not available. Reduce it to 99 or fewer.",
   unavailable: "This item is no longer available as selected. Remove it and add it again from the current menu.",
   "price-changed": "Prices have changed since you opened this page. Reload to see the current menu.",
+  base: "Choose a yogurt for this item before ordering.",
   invalid: "Something went wrong with this item. Remove it and add it again.",
 };
 
-type LineErrorCode = Extract<CheckoutErrorCode, "quantity" | "unavailable" | "price-changed" | "invalid">;
+type LineErrorCode = Extract<CheckoutErrorCode, "quantity" | "unavailable" | "price-changed" | "base" | "invalid">;
 
 type IncomingLine = {
   lineId?: unknown;
@@ -68,6 +72,7 @@ type IncomingLine = {
   unitPrice?: unknown;
   size?: { id?: unknown };
   selection?: unknown;
+  base?: unknown;
   mods?: unknown;
 };
 
@@ -168,10 +173,20 @@ function priceLine(raw: unknown): LineResult {
     const sanitized = sanitizeSignatureMods(item, mods);
     if (getSignatureModsKey(sanitized) !== getSignatureModsKey(mods)) return fail("unavailable");
 
+    // The yogurt: absent means the client has not chosen (a bowl carries no
+    // default), anything but a string is not a line the store wrote, and an
+    // id the Base step does not offer is the same tampering-or-menu-change
+    // case as a mod that sanitizes differently.
+    if (line.base !== undefined && typeof line.base !== "string") return fail("invalid");
+    const baseId = sanitizeBaseId(item, line.base);
+    if (typeof line.base === "string" && baseId !== line.base) return fail("unavailable");
+    if (baseId === undefined) return fail("base");
+
     // Unknown size for this item (e.g. "large" on a smoothie) is rejected, not priced.
-    const unitPrice = calcSignaturePrice(item.id, sizeId, sanitized);
+    const unitPrice = calcSignaturePrice(item.id, sizeId, sanitized, baseId);
     if (unitPrice === undefined) return fail("unavailable");
-    const name = [`${item.name} · ${getSizeLabel(item.category, sizeId)}`, formatSignatureMods(sanitized)]
+    // Staff read this line: the yogurt is part of what they make.
+    const name = [`${item.name} · ${getSizeLabel(item.category, sizeId)}`, ingredientName(baseId), formatSignatureMods(sanitized)]
       .filter(Boolean)
       .join(" · ");
     priced = { name, quantity, unitPrice };

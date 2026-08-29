@@ -2,9 +2,10 @@
 
 import { getSizeTiers, type SignatureCategory } from "@/lib/menu/signatures";
 
-// Squared segmented control for a signature item's size. Renders nothing for
+// Squared segmented control for a signature item's size (`value` undefined:
+// nothing chosen yet, as in the add modal). Renders nothing for
 // single-size categories (smoothies), so a layout only gains a row where there
-// is a choice. Used on the order cards and in the cart's edit modal.
+// is a choice. Used in the add/edit modal.
 //
 // Sizes are container-query units so the control follows the width of the
 // card or panel it sits in; a parent without `container-type` falls back to
@@ -16,7 +17,7 @@ export function SizeToggle({
   onChange,
 }: {
   category: SignatureCategory;
-  value: string;
+  value: string | undefined;
   onChange: (sizeId: string) => void;
 }) {
   const tiers = getSizeTiers(category);

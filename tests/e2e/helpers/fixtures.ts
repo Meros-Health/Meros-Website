@@ -22,6 +22,7 @@ export function moment(lineId: string, quantity = 1) {
     productId: "moment",
     name: "The Moment · Medium",
     size: { id: "medium", label: "Medium" },
+    base: "plain-greek-yogurt",
     nutrition: NUTRITION,
     quantity,
     unitPrice: 12,

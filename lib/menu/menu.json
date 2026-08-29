@@ -13,13 +13,13 @@
   },
 
   "ingredients": [
-    { "id": "plain-greek-yogurt", "name": "Plain Greek Yogurt", "servingLabel": "1 cup", "description": "Slow-strained, thick, and clean.", "tags": ["gf", "high-protein"], "nutritionStatus": "provisional",
+    { "id": "plain-greek-yogurt", "name": "Plain Greek Yogurt", "shortName": "Plain", "servingLabel": "1 cup", "description": "Slow-strained, thick, and clean.", "tags": ["gf", "high-protein"], "nutritionStatus": "provisional",
       "nutrition": { "calories": 130, "protein": 17, "carbs": 9, "fat": 4, "fiber": 0, "calcium": 150, "iron": 0, "potassium": 220 } },
-    { "id": "vanilla-greek-yogurt", "name": "Vanilla Greek Yogurt", "servingLabel": "1 cup", "description": "House vanilla, naturally sweetened.", "tags": ["gf", "high-protein"], "nutritionStatus": "provisional",
+    { "id": "vanilla-greek-yogurt", "name": "Vanilla Greek Yogurt", "shortName": "Vanilla", "servingLabel": "1 cup", "description": "House vanilla, naturally sweetened.", "tags": ["gf", "high-protein"], "nutritionStatus": "provisional",
       "nutrition": { "calories": 150, "protein": 16, "carbs": 14, "fat": 4, "fiber": 0, "calcium": 140, "iron": 0, "potassium": 210 } },
-    { "id": "vegan-coconut-yogurt", "name": "Vegan Coconut Yogurt", "servingLabel": "1 cup", "description": "Dairy-free coconut yogurt.", "tags": ["vegan", "gf"], "nutritionStatus": "provisional",
+    { "id": "vegan-coconut-yogurt", "name": "Vegan Coconut Yogurt", "shortName": "Vegan Coconut", "servingLabel": "1 cup", "description": "Dairy-free coconut yogurt.", "tags": ["vegan", "gf"], "nutritionStatus": "provisional",
       "nutrition": { "calories": 160, "protein": 6, "carbs": 18, "fat": 8, "fiber": 2, "calcium": 120, "iron": 0, "potassium": 180 } },
-    { "id": "high-protein-yogurt", "name": "High Protein 0% Fat Yogurt", "servingLabel": "1 cup", "description": "Extra-strained, 0% fat.", "tags": ["gf", "high-protein"], "nutritionStatus": "provisional",
+    { "id": "high-protein-yogurt", "name": "High Protein 0% Fat Yogurt", "shortName": "High Protein", "servingLabel": "1 cup", "description": "Extra-strained, 0% fat.", "tags": ["gf", "high-protein"], "nutritionStatus": "provisional",
       "nutrition": { "calories": 180, "protein": 24, "carbs": 10, "fat": 3, "fiber": 0, "calcium": 160, "iron": 0, "potassium": 240 } },
 
     { "id": "strawberries", "name": "Strawberries", "servingLabel": "1/2 cup", "tags": ["vegan", "gf"], "nutritionStatus": "provisional",
@@ -34,6 +34,10 @@
       "nutrition": { "calories": 42, "protein": 1, "carbs": 11, "fat": 0, "fiber": 2, "calcium": 0, "iron": 0, "potassium": 57 } },
     { "id": "peaches", "name": "Peaches", "servingLabel": "1/2 cup", "tags": ["vegan", "gf"], "nutritionStatus": "provisional",
       "nutrition": { "calories": 29, "protein": 1, "carbs": 7, "fat": 0, "fiber": 1, "calcium": 0, "iron": 0, "potassium": 143 } },
+    { "id": "seasonal-stone-fruits", "name": "Seasonal Stone Fruits", "group": "fruits", "servingLabel": "1/2 cup", "tags": ["vegan", "gf"], "nutritionStatus": "needs-recipe",
+      "nutrition": { "calories": 0, "protein": 0, "carbs": 0, "fat": 0, "fiber": 0, "calcium": 0, "iron": 0, "potassium": 0 } },
+    { "id": "seasonal-berries", "name": "Seasonal Berries", "group": "fruits", "servingLabel": "1/2 cup", "tags": ["vegan", "gf"], "nutritionStatus": "needs-recipe",
+      "nutrition": { "calories": 0, "protein": 0, "carbs": 0, "fat": 0, "fiber": 0, "calcium": 0, "iron": 0, "potassium": 0 } },
     { "id": "grapes", "name": "Grapes", "servingLabel": "1/2 cup", "tags": ["vegan", "gf"], "nutritionStatus": "provisional",
       "nutrition": { "calories": 52, "protein": 1, "carbs": 14, "fat": 0, "fiber": 1, "calcium": 0, "iron": 0, "potassium": 144 } },
     { "id": "papaya", "name": "Papaya", "servingLabel": "1/2 cup", "tags": ["vegan", "gf"], "nutritionStatus": "provisional",
@@ -91,7 +95,7 @@
     { "id": "evoo", "name": "EV Olive Oil", "servingLabel": "1 tsp", "tags": ["vegan", "gf"], "nutritionStatus": "provisional",
       "nutrition": { "calories": 40, "protein": 0, "carbs": 0, "fat": 5, "fiber": 0, "calcium": 0, "iron": 0, "potassium": 0 } },
 
-    { "id": "whey-protein-isolate", "name": "Whey Protein Isolate", "servingLabel": "1 scoop", "tags": ["gf", "high-protein"], "nutritionStatus": "needs-label",
+    { "id": "whey-protein-isolate", "name": "Whey Protein Isolate", "group": "finishes", "servingLabel": "1 scoop", "tags": ["gf", "high-protein"], "nutritionStatus": "needs-label",
       "nutrition": { "calories": 110, "protein": 24, "carbs": 2, "fat": 1, "fiber": 0, "calcium": 80, "iron": 0, "potassium": 0 } },
     { "id": "collagen-peptides", "name": "Collagen Peptides", "servingLabel": "1 scoop", "tags": ["gf", "high-protein"], "nutritionStatus": "needs-label",
       "nutrition": { "calories": 36, "protein": 9, "carbs": 0, "fat": 0, "fiber": 0, "calcium": 0, "iron": 0, "potassium": 0 } },
@@ -111,7 +115,7 @@
       "nutrition": { "calories": 10, "protein": 1, "carbs": 2, "fat": 0, "fiber": 1, "calcium": 0, "iron": 0, "potassium": 0 } },
     { "id": "mct-oil", "name": "MCT Oil", "servingLabel": "1 tsp", "tags": ["vegan", "gf"], "nutritionStatus": "provisional",
       "nutrition": { "calories": 45, "protein": 0, "carbs": 0, "fat": 5, "fiber": 0, "calcium": 0, "iron": 0, "potassium": 0 } },
-    { "id": "cacao-nibs", "name": "Cacao Nibs", "servingLabel": "1 tbsp", "tags": ["vegan", "gf"], "nutritionStatus": "provisional",
+    { "id": "cacao-nibs", "name": "Cacao Nibs", "group": "finishes", "servingLabel": "1 tbsp", "tags": ["vegan", "gf"], "nutritionStatus": "provisional",
       "nutrition": { "calories": 60, "protein": 1, "carbs": 5, "fat": 4, "fiber": 3, "calcium": 0, "iron": 1, "potassium": 0 } },
     { "id": "turmeric-black-pepper", "name": "Turmeric + Black Pepper", "servingLabel": "1 tsp", "tags": ["vegan", "gf"], "nutritionStatus": "needs-recipe",
       "nutrition": { "calories": 10, "protein": 0, "carbs": 2, "fat": 0, "fiber": 1, "calcium": 0, "iron": 0, "potassium": 0 } },
@@ -121,22 +125,22 @@
       "nutrition": { "calories": 28, "protein": 4, "carbs": 3, "fat": 0, "fiber": 2, "calcium": 0, "iron": 1, "potassium": 0 } },
     { "id": "matcha", "name": "Matcha", "servingLabel": "1 tsp", "tags": ["vegan", "gf"], "nutritionStatus": "needs-label",
       "nutrition": { "calories": 6, "protein": 1, "carbs": 1, "fat": 0, "fiber": 1, "calcium": 0, "iron": 0, "potassium": 0 } },
-    { "id": "bee-pollen", "name": "Bee Pollen", "servingLabel": "1 tsp", "tags": ["gf"], "nutritionStatus": "provisional",
+    { "id": "bee-pollen", "name": "Bee Pollen", "group": "finishes", "servingLabel": "1 tsp", "tags": ["gf"], "nutritionStatus": "provisional",
       "nutrition": { "calories": 16, "protein": 1, "carbs": 3, "fat": 0, "fiber": 0, "calcium": 0, "iron": 1, "potassium": 0 } },
 
-    { "id": "toasted-almonds", "name": "Toasted Almonds", "servingLabel": "2 tbsp", "tags": ["vegan", "gf"], "nutritionStatus": "provisional",
+    { "id": "toasted-almonds", "name": "Toasted Almonds", "group": "nuts-seeds", "servingLabel": "2 tbsp", "tags": ["vegan", "gf"], "nutritionStatus": "provisional",
       "nutrition": { "calories": 103, "protein": 4, "carbs": 4, "fat": 9, "fiber": 2, "calcium": 48, "iron": 0, "potassium": 0 } },
-    { "id": "raw-cocoa-powder", "name": "Raw Cocoa Powder", "servingLabel": "1 tsp", "tags": ["vegan", "gf"], "nutritionStatus": "provisional",
+    { "id": "raw-cocoa-powder", "name": "Raw Cocoa Powder", "group": "finishes", "servingLabel": "1 tsp", "tags": ["vegan", "gf"], "nutritionStatus": "provisional",
       "nutrition": { "calories": 12, "protein": 1, "carbs": 3, "fat": 1, "fiber": 2, "calcium": 0, "iron": 1, "potassium": 0 } },
-    { "id": "peanut-butter", "name": "Peanut Butter", "servingLabel": "1 tbsp", "nutritionStatus": "needs-label",
+    { "id": "peanut-butter", "name": "Peanut Butter", "group": "finishes", "servingLabel": "1 tbsp", "nutritionStatus": "needs-label",
       "nutrition": { "calories": 94, "protein": 4, "carbs": 3, "fat": 8, "fiber": 1, "calcium": 0, "iron": 0, "potassium": 90 } },
-    { "id": "almond-butter", "name": "Almond Butter", "servingLabel": "1 tbsp", "tags": ["vegan", "gf"], "nutritionStatus": "needs-label",
+    { "id": "almond-butter", "name": "Almond Butter", "group": "finishes", "servingLabel": "1 tbsp", "tags": ["vegan", "gf"], "nutritionStatus": "needs-label",
       "nutrition": { "calories": 98, "protein": 3, "carbs": 3, "fat": 9, "fiber": 1, "calcium": 43, "iron": 0, "potassium": 0 } },
-    { "id": "flaky-salt", "name": "Flaky Salt", "servingLabel": "pinch", "tags": ["vegan", "gf"], "nutritionStatus": "provisional",
+    { "id": "flaky-salt", "name": "Flaky Salt", "group": "finishes", "servingLabel": "pinch", "tags": ["vegan", "gf"], "nutritionStatus": "provisional",
       "nutrition": { "calories": 0, "protein": 0, "carbs": 0, "fat": 0, "fiber": 0, "calcium": 0, "iron": 0, "potassium": 0 } },
-    { "id": "chocolate", "name": "Chocolate", "servingLabel": "20 g", "nutritionStatus": "needs-label",
+    { "id": "chocolate", "name": "Chocolate", "group": "finishes", "servingLabel": "20 g", "nutritionStatus": "needs-label",
       "nutrition": { "calories": 108, "protein": 1, "carbs": 12, "fat": 6, "fiber": 1, "calcium": 0, "iron": 0, "potassium": 0 } },
-    { "id": "coconut-milk", "name": "Coconut Milk", "servingLabel": "1/2 cup", "tags": ["vegan", "gf"], "nutritionStatus": "needs-label",
+    { "id": "coconut-milk", "name": "Coconut Milk", "group": "finishes", "servingLabel": "1/2 cup", "tags": ["vegan", "gf"], "nutritionStatus": "needs-label",
       "nutrition": { "calories": 236, "protein": 2, "carbs": 3, "fat": 25, "fiber": 0, "calcium": 0, "iron": 0, "potassium": 0 } }
   ],
 
@@ -145,7 +149,6 @@
       { "id": "medium", "label": "Medium", "price": 12 },
       { "id": "large", "label": "Large", "price": 15 }
     ],
-    "intro": "Begin with a Base, layer Toppings, and Finish with intention.",
     "steps": [
       {
         "id": "base",
@@ -257,12 +260,14 @@
   },
 
   "signatures": {
+    "$comment": "Recipes are toppings only. The yogurt is the customer's choice: bowls carry no default, smoothies default to defaultBase.smoothies unless the item sets its own `base`. Calories/protein were computed with the yogurt each recipe named before 2026-08-28 (Moment and Recovery: Plain; all others: Vanilla). As of 2026-08-28, The Recovery defaults to Vanilla like every signature smoothie (its per-item `base` was removed): its printed figures are still the Plain-based ones, about 20 kcal low and 1 g protein high for the default base. Recipe changes of 2026-08-28 (owner): The Bloom was retired for The Seasonal (stone fruits, berries, granola; no photo by design), The Tropic became The Tropics and gained goji berries, The Cabana lost bananas. The Seasonal carries the old Bloom figures; The Tropics and The Cabana were adjusted by one registry serving (goji +35 kcal +2 g, banana -53 kcal -1 g). All three await a proper recompute from the macro sheets.",
+    "defaultBase": { "smoothies": "vanilla-greek-yogurt" },
     "bowls": [
       {
         "id": "moment",
         "name": "The Moment",
         "tags": ["Energy", "Antioxidants"],
-        "recipe": ["plain-greek-yogurt", "blueberries", "strawberries", "bananas", "passion-fruit-mousse", "toasted-almonds", "chia-seeds", "toasted-coconut", "house-granola"],
+        "recipe": ["blueberries", "strawberries", "bananas", "passion-fruit-mousse", "toasted-almonds", "chia-seeds", "toasted-coconut", "house-granola"],
         "sizes": {
           "medium": { "price": 12, "calories": 581, "protein": 17 },
           "large": { "price": 15, "calories": 680, "protein": 22 }
@@ -273,7 +278,7 @@
         "id": "silk",
         "name": "The Silk",
         "tags": ["Recovery", "Indulgence"],
-        "recipe": ["vanilla-greek-yogurt", "bananas", "strawberries", "hemp-hearts", "flax-meal", "raw-cocoa-powder", "peanut-butter-mousse", "cacao-nibs", "canadian-maple-syrup"],
+        "recipe": ["bananas", "strawberries", "hemp-hearts", "flax-meal", "raw-cocoa-powder", "peanut-butter-mousse", "cacao-nibs", "canadian-maple-syrup"],
         "sizes": {
           "medium": { "price": 12, "calories": 481, "protein": 16 },
           "large": { "price": 15, "calories": 552, "protein": 19 }
@@ -284,7 +289,7 @@
         "id": "crunch",
         "name": "The Crunch",
         "tags": ["Sustained Fuel", "Cognition"],
-        "recipe": ["vanilla-greek-yogurt", "bananas", "almonds", "pistachios", "walnuts", "hemp-hearts", "pumpkin-seeds", "chia-seeds", "house-granola", "local-raw-honey"],
+        "recipe": ["bananas", "almonds", "pistachios", "walnuts", "hemp-hearts", "pumpkin-seeds", "chia-seeds", "house-granola", "local-raw-honey"],
         "sizes": {
           "medium": { "price": 12, "calories": 682, "protein": 22 },
           "large": { "price": 15, "calories": 753, "protein": 24 }
@@ -292,26 +297,26 @@
         "images": { "photo": "/images-web/Bowls/Crunch-1.jpg", "transparent": "/images-web/Transparent/Crunch.png" }
       },
       {
-        "id": "bloom",
-        "name": "The Bloom",
+        "id": "tropic",
+        "name": "The Tropics",
+        "tags": ["Digestion", "Anti-Inflammatory"],
+        "recipe": ["mangoes", "pineapples", "passion-fruit-mousse", "toasted-coconut", "cashews", "goji-berries", "chia-seeds"],
+        "sizes": {
+          "medium": { "price": 12, "calories": 392, "protein": 11 },
+          "large": { "price": 15, "calories": 463, "protein": 14 }
+        },
+        "images": { "photo": "/images-web/Bowls/Tropic-1.jpg", "transparent": "/images-web/Transparent/Tropic.png" }
+      },
+      {
+        "id": "seasonal",
+        "name": "The Seasonal",
         "tags": ["Immune Support", "Antioxidants"],
-        "recipe": ["vanilla-greek-yogurt", "mangoes", "pineapples", "goji-berries", "toasted-coconut", "sunflower-seeds", "local-raw-honey", "bee-pollen"],
+        "recipe": ["seasonal-stone-fruits", "seasonal-berries", "sunflower-seeds", "house-granola", "local-raw-honey", "bee-pollen"],
+        "seasonNote": "late summer stone fruit and berries",
         "sizes": {
           "medium": { "price": 12, "calories": 371, "protein": 10 },
           "large": { "price": 15, "calories": 442, "protein": 13 }
-        },
-        "images": { "photo": "/images-web/Bowls/Bloom-1.jpg", "transparent": "/images-web/Transparent/Bloom.png" }
-      },
-      {
-        "id": "tropic",
-        "name": "The Tropic",
-        "tags": ["Digestion", "Anti-Inflammatory"],
-        "recipe": ["vanilla-greek-yogurt", "mangoes", "pineapples", "passion-fruit-mousse", "toasted-coconut", "cashews", "chia-seeds"],
-        "sizes": {
-          "medium": { "price": 12, "calories": 357, "protein": 9 },
-          "large": { "price": 15, "calories": 428, "protein": 12 }
-        },
-        "images": { "photo": "/images-web/Bowls/Tropic-1.jpg", "transparent": "/images-web/Transparent/Tropic.png" }
+        }
       }
     ],
     "smoothies": [
@@ -319,7 +324,7 @@
         "id": "rise",
         "name": "The Rise",
         "tags": ["Energy", "Antioxidants"],
-        "recipe": ["vanilla-greek-yogurt", "blueberries", "strawberries", "bananas", "almond-butter", "chia-seeds"],
+        "recipe": ["blueberries", "strawberries", "bananas", "almond-butter", "chia-seeds"],
         "sizes": { "standard": { "price": 15, "calories": 493, "protein": 16 } },
         "images": { "photo": "/images-web/Smoothies/rise-1.jpg", "transparent": "/images-web/Transparent/Rise.png" }
       },
@@ -327,7 +332,7 @@
         "id": "crave",
         "name": "The Crave",
         "tags": ["Satiate", "Mood Boost"],
-        "recipe": ["vanilla-greek-yogurt", "bananas", "peanut-butter", "flax-meal", "chocolate", "cacao-nibs", "flaky-salt", "local-raw-honey"],
+        "recipe": ["bananas", "peanut-butter", "flax-meal", "chocolate", "cacao-nibs", "flaky-salt", "local-raw-honey"],
         "sizes": { "standard": { "price": 15, "calories": 677, "protein": 20 } },
         "images": { "photo": "/images-web/Smoothies/crave-1.jpg", "transparent": "/images-web/Transparent/Crave.png" }
       },
@@ -335,7 +340,7 @@
         "id": "focus",
         "name": "The Focus",
         "tags": ["Brain Fuel", "Healthy Fats"],
-        "recipe": ["vanilla-greek-yogurt", "bananas", "almond-butter", "walnuts", "cacao-nibs", "local-raw-honey"],
+        "recipe": ["bananas", "almond-butter", "walnuts", "cacao-nibs", "local-raw-honey"],
         "sizes": { "standard": { "price": 15, "calories": 589, "protein": 17 } },
         "images": { "photo": "/images-web/Smoothies/focus-1.jpg", "transparent": "/images-web/Transparent/Focus.png" }
       },
@@ -343,15 +348,15 @@
         "id": "cabana",
         "name": "The Cabana",
         "tags": ["Digestion", "Hydration"],
-        "recipe": ["vanilla-greek-yogurt", "coconut-milk", "bananas", "mangoes", "pineapples", "chia-seeds", "local-raw-honey"],
-        "sizes": { "standard": { "price": 15, "calories": 597, "protein": 12 } },
+        "recipe": ["coconut-milk", "mangoes", "pineapples", "chia-seeds", "local-raw-honey"],
+        "sizes": { "standard": { "price": 15, "calories": 544, "protein": 11 } },
         "images": { "photo": "/images-web/Smoothies/cabana-1.jpg", "transparent": "/images-web/Transparent/Cabana.png" }
       },
       {
         "id": "recovery",
         "name": "The Recovery",
         "tags": ["Post-Workout Rebuild"],
-        "recipe": ["plain-greek-yogurt", "bananas", "blueberries", "peanut-butter", "hemp-hearts", "pumpkin-seeds", "whey-protein-isolate"],
+        "recipe": ["bananas", "blueberries", "peanut-butter", "hemp-hearts", "pumpkin-seeds", "whey-protein-isolate"],
         "sizes": { "standard": { "price": 15, "calories": 726, "protein": 53 } },
         "images": { "photo": "/images-web/Smoothies/recovery-1.jpg", "transparent": "/images-web/Transparent/Recovery.png" }
       }
