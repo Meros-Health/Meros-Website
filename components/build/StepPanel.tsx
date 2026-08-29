@@ -1,12 +1,7 @@
 "use client";
 
 import { getStep, getStepIngredients } from "@/lib/menu/buildConfig";
-import {
-  getOptionPriceLabel,
-  getStepInstruction,
-  getStepSurchargeBannerText,
-  showStepSurchargeBanner,
-} from "@/lib/menu/calcBowlPrice";
+import { getOptionPriceLabel, getStepInstruction, isIncludedAllowanceUsed } from "@/lib/menu/calcBowlPrice";
 import { useBowlBuilderStore } from "@/store/bowlBuilderStore";
 import { IngredientCard } from "./IngredientCard";
 
@@ -24,25 +19,27 @@ export function StepPanel() {
   const selectedIds = selection.steps[step.id] ?? [];
   const isSkipped = selectedIds.length === 0 && skippedSteps.includes(step.id);
   const isSingleSelect = step.select === "one";
+  // "2 included. Extras +$2 each." is always on screen; once the free picks
+  // are used it fades to grapefruit instead of a banner appearing, so nothing
+  // below it moves.
+  const extrasNext = isIncludedAllowanceUsed(step, selectedIds);
 
   return (
     <div>
-      <p className="font-body-mixed text-sm text-juniper max-w-md">{getStepInstruction(step)}</p>
+      <p
+        data-step-instruction
+        data-extras-next={extrasNext ? "true" : undefined}
+        className="font-body-mixed text-sm max-w-md transition-colors duration-700 ease-out"
+        style={{ color: extrasNext ? "var(--color-grapefruit)" : "var(--color-juniper)" }}
+      >
+        {getStepInstruction(step)}
+      </p>
       {step.note && (
         <p className="font-body-caps text-[10px] tracking-widest text-juniper/70 mt-1 max-w-md">
           {step.note}
         </p>
       )}
       <div className="mb-4" />
-
-      {showStepSurchargeBanner(step, selectedIds) && (
-        <p
-          className="font-body-caps text-[10px] tracking-widest text-grapefruit mb-4"
-          style={{ borderLeft: "2px solid var(--color-grapefruit)", paddingLeft: "0.75rem" }}
-        >
-          {getStepSurchargeBannerText(step)}
-        </p>
-      )}
 
       {!step.required && (
         <div className="mb-4">

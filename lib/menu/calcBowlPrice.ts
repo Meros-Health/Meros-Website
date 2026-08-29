@@ -121,16 +121,14 @@ export function getOptionPriceLabel(step: BuildStep, ingredientId: string, selec
   return position >= pricing.included ? formatSurcharge(pricing.extraPrice) : "Included";
 }
 
-/** Shown once the free picks on an included-then-extra step are used up. */
-export function showStepSurchargeBanner(step: BuildStep, selectedIds: string[]): boolean {
+/**
+ * True once the free picks on an included-then-extra step are used up: the
+ * next pick costs. The step panel colours its instruction line on this rather
+ * than adding a banner, so the layout never shifts under the customer.
+ */
+export function isIncludedAllowanceUsed(step: BuildStep, selectedIds: string[]): boolean {
   const pricing = step.pricing;
   return pricing.mode === "included-then-extra" && pricing.included > 0 && selectedIds.length >= pricing.included;
-}
-
-export function getStepSurchargeBannerText(step: BuildStep): string {
-  const pricing = step.pricing;
-  if (pricing.mode !== "included-then-extra") return "";
-  return `${pricing.included} included. Additional selections ${formatSurcharge(pricing.extraPrice)} each.`;
 }
 
 /** One-line instruction for the top of a step panel, derived from its rules. */
