@@ -52,9 +52,11 @@ nor disallowed.
 
 ## Still to do
 
-- Submit `https://merosyogurt.com/sitemap.xml` in Search Console and watch
-  Coverage for the five legacy URLs folding into their targets. Each takes
-  two 308 hops (trailing slash strip, then the redirect rule); see
-  `docs/dns-cutover.md` section 9.
+- Search Console (done 2026-08-28): the Domain property is verified by a
+  `google-site-verification` TXT at the apex, the sitemap was resubmitted
+  (the Aug 2 entry was the agency site's sitemap index at the same URL), and
+  indexing was requested for `/` and `/order`. Watch Pages for the five legacy
+  URLs folding into their targets. Each takes two 308 hops (trailing slash
+  strip, then the redirect rule); see `docs/dns-cutover.md` section 9.
 - Claim or update the Google Business Profile so the knowledge panel and the
   schema agree on hours and address.
