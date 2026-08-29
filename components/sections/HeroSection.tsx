@@ -49,7 +49,7 @@ const slideOff: Variants = {
 // One shared gutter used everywhere: between carousel tiles, between the right
 // image and the carousel, and between the carousel and the hero's bottom edge.
 const HERO_GAP = "clamp(0.85rem, 1.4vw, 1.4rem)";
-const CAROUSEL_TILE = "clamp(150px, 20vh, 260px)";
+const CAROUSEL_TILE = "clamp(150px, 14vw, 260px)";
 
 // Logo lockup: dark ink on the cream desktop canvas, light on the mobile scrim.
 const LOGO_ALT = "MERŌS House of Yogurt";

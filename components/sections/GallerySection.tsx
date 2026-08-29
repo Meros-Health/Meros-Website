@@ -49,7 +49,7 @@ function GalleryPanel({ panel }: { panel: (typeof PANELS)[number] }) {
   return (
     <div
       ref={panelRef}
-      className="flex-none sm:flex-1 sm:basis-0 h-[calc((100vh_-_3*var(--panel-gap))/2)] sm:h-[82vh]"
+      className="flex-none sm:flex-1 sm:basis-0 h-[clamp(300px,92vw,440px)] sm:h-[clamp(420px,52vw,760px)]"
       style={{
         position: "relative",
         overflow: "hidden",

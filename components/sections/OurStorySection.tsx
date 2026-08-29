@@ -954,7 +954,7 @@ export function OurStorySection() {
       style={cssVars}
       aria-label="Our Story"
     >
-      <div className="flex min-h-[100svh] flex-col px-section-x py-16 md:py-24">
+      <div className="flex flex-col px-section-x py-16 md:py-24">
         <span className="font-body-caps text-[10px] tracking-[0.30em] text-midnight/50">Our Story</span>
 
         {/* Composition: headline stack with the numbered rail, and the fan. */}
