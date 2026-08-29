@@ -56,6 +56,17 @@ export function listBaseOptions(): BaseOption[] {
   return out.sort((a, b) => a.surcharge - b.surcharge);
 }
 
+/**
+ * True for an ingredient that is, or was, a yogurt: offered by the Base step
+ * today, or named as a category default or item base. Used to decide whether
+ * a persisted id deserves its name in a notice.
+ */
+export function isBaseIngredient(id: string): boolean {
+  if (isBaseOffered(id)) return true;
+  if (Object.values(DEFAULT_BASE).includes(id)) return true;
+  return /yogurt/.test(id);
+}
+
 export function isBaseOffered(id: string): boolean {
   const step = getBaseStep();
   return step !== undefined && getOption(step.id, id) !== undefined && getIngredient(id) !== undefined;

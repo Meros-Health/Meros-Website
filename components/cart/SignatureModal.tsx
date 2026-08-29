@@ -20,6 +20,7 @@ import { getSignatureItem, getSignaturePrice, getSizeLabel, getSizeTiers, type S
 import { lockScroll } from "@/lib/scrollLock";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { useCartStore } from "@/store/cartStore";
+import { MAX_QUANTITY } from "@/lib/menu/limits";
 
 // One dialog, two jobs, the same rules for both:
 //
@@ -33,6 +34,9 @@ import { useCartStore } from "@/store/cartStore";
 //   sanitizes and re-prices.
 
 const MODAL_Z = 135; // above the cart drawer (130), below the page transition cover (140)
+// A tap that opened the dialog is often followed by a second one on the same
+// spot (a double-tap); for this long after opening, the backdrop ignores it.
+const BACKDROP_GRACE_MS = 350;
 const PANEL_DURATION = 0.45;
 const PANEL_EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -51,6 +55,13 @@ type Draft = {
 /** A draft the dialog will submit: both required choices made. */
 type CompleteDraft = Draft & { sizeId: string; baseId: string };
 
+/** What a submit came to: closed, or a line of copy the dialog shows and stays open on. */
+type SubmitOutcome = { kind: "done" } | { kind: "notice"; message: string };
+
+const AT_MAX_MESSAGE = `This item is already at its maximum of ${MAX_QUANTITY} in your cart.`;
+const UNAVAILABLE_MESSAGE = "This item is no longer available as chosen. Close and choose again.";
+const NO_YOGURT_MESSAGE = "Choose a yogurt for this bowl.";
+
 export function SignatureModal() {
   // Edit: driven by the line in the cart.
   const editingLineId = useCartStore((s) => s.editingLineId);
@@ -58,6 +69,7 @@ export function SignatureModal() {
   const editSession = useCartStore((s) => s.editSession);
   const closeEdit = useCartStore((s) => s.closeEdit);
   const updateSignatureLine = useCartStore((s) => s.updateSignatureLine);
+  const raiseNotice = useCartStore((s) => s.raiseNotice);
   const editCatalog = line?.kind === "signature" ? getSignatureItem(line.productId) : undefined;
   const editOpen = editingLineId !== null && line !== undefined && editCatalog !== undefined;
 
@@ -97,12 +109,20 @@ export function SignatureModal() {
             removals: line.mods?.removals ?? [],
           }}
           onSubmit={(draft) => {
-            updateSignatureLine(line.lineId, {
+            const result = updateSignatureLine(line.lineId, {
               sizeId: draft.sizeId,
               base: draft.baseId,
               mods: { additions: draft.additions, removals: draft.removals },
             });
+            // The line left the cart between opening and Save (another tab):
+            // nothing was written, and the drawer says so rather than the
+            // dialog closing as if it had.
+            if (result === "missing") {
+              raiseNotice([{ kind: "dropped", message: `${line.name} was removed from your cart before your changes could be saved.` }]);
+            }
+            if (result === "invalid") return { kind: "notice", message: NO_YOGURT_MESSAGE };
             closeEdit();
+            return { kind: "done" };
           }}
           onClose={closeEdit}
         />
@@ -117,11 +137,8 @@ export function SignatureModal() {
             const unitPrice = calcSignaturePrice(addCatalog.id, draft.sizeId, draft, draft.baseId);
             // Guarded by canSubmit; a menu change under the open dialog is the
             // only way here, and then there is nothing priceable to add.
-            if (unitPrice === undefined) {
-              closeAdd();
-              return;
-            }
-            addFromModal({
+            if (unitPrice === undefined) return { kind: "notice", message: UNAVAILABLE_MESSAGE };
+            const result = addFromModal({
               kind: "signature",
               productId: addCatalog.id,
               name: addCatalog.name,
@@ -132,6 +149,9 @@ export function SignatureModal() {
               quantity: 1,
               unitPrice,
             });
+            if (result === "at-max") return { kind: "notice", message: AT_MAX_MESSAGE };
+            if (result === "invalid") return { kind: "notice", message: UNAVAILABLE_MESSAGE };
+            return { kind: "done" };
           }}
           onClose={closeAdd}
         />
@@ -152,7 +172,7 @@ function Dialog({
   mode: Mode;
   catalogItem: SignatureItem;
   initial: Draft;
-  onSubmit: (draft: CompleteDraft) => void;
+  onSubmit: (draft: CompleteDraft) => SubmitOutcome;
   onClose: () => void;
 }) {
   const reduced = useReducedMotion();
@@ -165,6 +185,8 @@ function Dialog({
   const [baseId, setBaseId] = useState<string | undefined>(initial.baseId);
   const [additions, setAdditions] = useState<string[]>(initial.additions);
   const [removals, setRemovals] = useState<string[]>(initial.removals);
+  const [notice, setNotice] = useState<string | null>(null);
+  const openedAt = useRef(0);
 
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -184,6 +206,15 @@ function Dialog({
 
   // Scroll lock is reference counted with the drawer's; released on unmount.
   useEffect(() => lockScroll(), []);
+
+  useEffect(() => {
+    openedAt.current = performance.now();
+  }, []);
+
+  const handleBackdropClick = () => {
+    if (performance.now() - openedAt.current < BACKDROP_GRACE_MS) return;
+    onClose();
+  };
 
   // Focus: the Close button once the panel has settled; back to whatever
   // opened the modal (a "+" or a line's Edit button) when it unmounts.
@@ -208,6 +239,10 @@ function Dialog({
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
+  useEffect(() => {
+    setNotice(null);
+  }, [sizeId, baseId, additions, removals]);
+
   const toggleAddition = (id: string) => {
     setAdditions((current) =>
       current.includes(id) ? current.filter((x) => x !== id) : atAddCap ? current : [...current, id]
@@ -222,7 +257,8 @@ function Dialog({
 
   const handleSubmit = () => {
     if (sizeId === undefined || baseId === undefined || price === undefined) return;
-    onSubmit({ sizeId, baseId, additions, removals });
+    const outcome = onSubmit({ sizeId, baseId, additions, removals });
+    setNotice(outcome.kind === "notice" ? outcome.message : null);
   };
 
   const eyebrow = mode === "add" ? "Add" : "Edit";
@@ -241,7 +277,7 @@ function Dialog({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: s(PANEL_DURATION * 0.6), ease: "easeOut" }}
-        onClick={onClose}
+        onClick={handleBackdropClick}
         style={{
           position: "absolute",
           inset: 0,
@@ -274,7 +310,7 @@ function Dialog({
         {/* Header */}
         <div className="flex items-start justify-between gap-4 px-6 py-5" style={{ borderBottom: HAIRLINE }}>
           <div className="min-w-0">
-            <p className="font-body-caps text-[10px] tracking-widest text-grapefruit">{eyebrow}</p>
+            <p className="font-body-caps text-[10px] tracking-widest text-grapefruit-text">{eyebrow}</p>
             <h2 id={titleId} className="font-headline text-midnight leading-none mt-1" style={{ fontSize: "1.35rem" }}>
               {catalogItem.name}
             </h2>
@@ -284,7 +320,7 @@ function Dialog({
             type="button"
             aria-label={mode === "add" ? "Close" : "Close edit"}
             onClick={onClose}
-            className="font-body-caps text-[10px] tracking-widest text-juniper px-3 py-2 transition-opacity hover:opacity-70"
+            className="font-body-caps text-[10px] tracking-widest text-juniper px-3 py-2 min-h-11 transition-opacity hover:opacity-70"
           >
             Close
           </button>
@@ -357,7 +393,14 @@ function Dialog({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-5" style={{ borderTop: HAIRLINE }}>
+        {/* Below md the sheet sits on the bottom edge, so its padding grows by
+            the home indicator's inset; the centred dialog from md up does not. */}
+        <div className={`px-6 py-5 pb-[calc(1.25rem_+_env(safe-area-inset-bottom,0px))] md:pb-5`} style={{ borderTop: HAIRLINE }}>
+          {notice && (
+            <p role="alert" data-modal-notice className="font-body-mixed text-xs text-grapefruit-text pb-4">
+              {notice}
+            </p>
+          )}
           <div className="flex justify-between pb-4">
             <span className="font-body-caps text-[11px] text-midnight">Item price</span>
             <span className="font-body-caps text-[11px] text-midnight" data-edit-price>
@@ -369,7 +412,7 @@ function Dialog({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 font-body-caps text-[10px] tracking-widest py-3 transition-opacity hover:opacity-80"
+              className="flex-1 font-body-caps text-[10px] tracking-widest py-3 min-h-11 transition-opacity hover:opacity-80"
               style={{ background: "transparent", color: "var(--color-midnight)", border: HAIRLINE_STRONG }}
             >
               Cancel
@@ -378,7 +421,7 @@ function Dialog({
               type="button"
               onClick={handleSubmit}
               disabled={!canSubmit}
-              className="flex-1 font-body-caps text-[10px] tracking-widest py-3 transition-opacity hover:opacity-85 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex-1 font-body-caps text-[10px] tracking-widest py-3 min-h-11 transition-opacity hover:opacity-85 disabled:opacity-40 disabled:cursor-not-allowed"
               style={{
                 background: "var(--color-midnight)",
                 color: "var(--color-cream)",
@@ -401,7 +444,7 @@ function RequiredHeading({ title, chosen }: { title: string; chosen: boolean }) 
   return (
     <div className="flex items-baseline justify-between gap-4 mb-3">
       <p className="font-body-caps text-[10px] tracking-widest text-midnight">{title}</p>
-      {!chosen && <p className="font-body-mixed text-xs text-grapefruit">Choose one</p>}
+      {!chosen && <p className="font-body-mixed text-xs text-grapefruit-text">Choose one</p>}
     </div>
   );
 }
@@ -434,7 +477,10 @@ function SectionHeading({
   );
 }
 
-const CHIP_CLASS = "font-body-caps text-[10px] tracking-widest px-3 py-2 transition-colors duration-200 disabled:cursor-not-allowed";
+// min-h-10: a 40px chip clears WCAG 2.2's 24px target floor with room; the
+// 44px floor is kept for the primary controls, where a wrap of forty chips
+// that tall would read as bloated.
+const CHIP_CLASS = "font-body-caps text-[10px] tracking-widest px-3 py-2 min-h-10 transition-colors duration-200 disabled:cursor-not-allowed";
 
 function Chip({
   label,

@@ -20,11 +20,14 @@ export function AddToCartButton({
   return (
     <button
       type="button"
-      onClick={onClick}
-      disabled={added}
+      // aria-disabled rather than disabled: the button stays focusable during
+      // the "Added" beat, so focus can return to it when the add dialog
+      // closes. Callers ignore clicks while `added`.
+      onClick={added ? undefined : onClick}
+      aria-disabled={added || undefined}
       className={[
         "w-full font-body-caps tracking-widest transition-colors duration-200",
-        "disabled:cursor-default",
+        added ? "cursor-default" : "",
         className,
       ]
         .filter(Boolean)
