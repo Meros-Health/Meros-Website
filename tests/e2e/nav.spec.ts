@@ -3,10 +3,9 @@
 import { expect, test, type Page } from "@playwright/test";
 import { cartButton, seedCart, waitForPageReady } from "./helpers/cart";
 import { plainBowl } from "./helpers/fixtures";
+import { menuToggle, overlayLinks } from "./helpers/nav";
 
-const menuToggle = (page: Page) => page.getByRole("button", { name: /Open menu|Close menu/ });
 const bodyOverflow = (page: Page) => page.evaluate(() => document.body.style.overflow);
-const overlayLinks = (page: Page) => page.locator(".nav-overlay-link:visible");
 
 test("G7: resizing from mobile to desktop with the menu open leaves no overlay behind", async ({ page }) => {
   await page.setViewportSize({ width: 500, height: 800 });

@@ -51,7 +51,7 @@ const STORY_VALUES = [
     alt: "A bowl being finished by hand",
     backHeadline: "Built when you order.",
     backBody:
-      "Bowls and smoothies are built with real ingredients right after you order them. Nothing sits waiting under a lid.",
+      "We prepare our fruits each day and build every bowl and smoothie to order. That daily care keeps every serving bright, fresh, and ready when you are.",
     factLine: "Made to order.",
   },
   {
@@ -88,6 +88,7 @@ const CARD_PERSPECTIVE = 1400;               // px, on the wrapper, during the 3
 // Desktop subtitle: font-size as a share of the fan column width (cqw), so the
 // longest body (560px at 17px) stays on one line. 17 / 560 = 3.04; 2.94 keeps margin.
 const SUBTITLE_CQW = 2.94;
+const DESKTOP_PROGRESS_GAP = "gap-10";
 
 // ─── Scroll-driven timeline (no pin) ─────────────────────────────────────────
 // The section scrolls normally. One timeline is scrubbed from the point where
@@ -929,7 +930,7 @@ export function OurStorySection() {
   }, [openIndex, lenis, close, cardRefs]);
 
   const cssVars = {
-    "--hl": stackedMode ? "clamp(2.25rem, 9.5vw, 2.75rem)" : "clamp(2.1rem, 3.9vw, 3.6rem)",
+    "--hl": stackedMode ? "clamp(2.25rem, 9.5vw, 2.75rem)" : "clamp(2rem, 3.2vw, 3rem)",
     "--card-w": stackedMode ? "clamp(200px, 64vw, 260px)" : "clamp(200px, 20vw, 320px)",
     "--card-foot": stackedMode ? "52px" : "60px",
     "--back-lines": compact ? 6 : 8,
@@ -983,7 +984,7 @@ export function OurStorySection() {
               <div ref={railFillRef} className="absolute inset-0 bg-midnight" />
             </div>
 
-            <div className={stackedMode ? "flex flex-col gap-10" : "flex flex-col gap-6"}>
+            <div className={stackedMode ? "flex flex-col gap-10" : `flex flex-col ${DESKTOP_PROGRESS_GAP}`}>
               {STORY_VALUES.map((value, i) => (
                 <div
                   key={value.num}

@@ -15,7 +15,10 @@ const CHROME_FADE = 0.2; // links and note fading out ahead of a navigate close
 const OVERLAY_Z = 115;
 
 // Hole as fractions of the viewport: change these to resize the center panel.
-const HOLE_W_FRAC = 0.32; // 32vw
+// Narrowing the hole widens both side panels, which is what gives the link
+// column room for the largest type below. This is the only definition; there
+// is no CSS token mirroring it.
+const HOLE_W_FRAC = 0.28; // 28vw
 const HOLE_H_FRAC = 0.62; // 62vh
 
 // How the overlay leaves. "dismiss" (Escape, the toggle, clicking the window)
@@ -191,9 +194,9 @@ export function NavMenuOverlay({
             style={{
               display: "flex",
               flexDirection: "column",
-              gap: "0.75rem",
+              gap: "clamp(0.55rem, 0.9vw, 1.1rem)",
               paddingLeft: "var(--nav-padding-x)",
-              paddingRight: "2rem",
+              paddingRight: "1.5rem",
               width: "100%",
             }}
           >
@@ -218,7 +221,11 @@ export function NavMenuOverlay({
                 }
                 style={{
                   ...linkStyle,
-                  fontSize: "clamp(2rem, 4.2vw, 3.25rem)",
+                  // Sized against the left panel's usable width (halfW minus
+                  // its padding), so the longest label still fits on one line
+                  // at the narrowest desktop width. Nothing wraps: the links
+                  // are nowrap, and an overflow here would clip mid-word.
+                  fontSize: "clamp(2.25rem, 4.8vw, 4.75rem)",
                   fontWeight: 400,
                 }}
               >
