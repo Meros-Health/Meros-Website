@@ -15,6 +15,15 @@ import { useRevealReady } from "@/lib/useRevealReady";
 const MAPS_URL = mapsUrl();
 const MAPS_EMBED_URL = `https://www.google.com/maps?q=${encodeURIComponent(mapsQuery())}&output=embed`;
 
+// The footer leads with the Moment bowl post. Keep the feed's source order
+// unchanged for the dedicated Instagram section elsewhere on the homepage.
+const MOMENT_BOWL_POST = INSTAGRAM_POSTS.find((post) =>
+  post.imageUrl.endsWith("/bowls/moment.png")
+);
+const FOOTER_INSTAGRAM_POSTS = MOMENT_BOWL_POST
+  ? [MOMENT_BOWL_POST, ...INSTAGRAM_POSTS.filter((post) => post !== MOMENT_BOWL_POST)]
+  : INSTAGRAM_POSTS;
+
 // Prefix-matched so dynamic routes (e.g. /cart/edit/[lineId]) are covered too.
 const HIDDEN_ON = ["/order", "/build", "/checkout", "/cart"];
 
@@ -159,7 +168,7 @@ export function Footer() {
 
           {/* 6-post grid */}
           <div className="grid grid-cols-3" style={{ gap: "2px" }}>
-            {INSTAGRAM_POSTS.slice(0, 6).map((post, i) => (
+            {FOOTER_INSTAGRAM_POSTS.slice(0, 6).map((post, i) => (
               <FooterInstagramTile key={post.id} post={post} index={i} />
             ))}
           </div>

@@ -48,8 +48,10 @@ const TYPE_SCALE = {
 } as React.CSSProperties;
 
 // Scrub, not a pin. Pinning is what made Our Story fragile, and this needs none.
-const SCRUB_START = "top 78%";
-const SCRUB_END = "center 52%";
+// Shift the complete scrub window earlier without changing its length. Keeping
+// the same 26-point gap preserves the ring's progression rate on every width.
+const SCRUB_START = "top 88%";
+const SCRUB_END = "center 62%";
 const SCRUB_LAG = 1; // seconds of catch-up; smooths trackpad spikes
 
 const circumference = (r: number) => 2 * Math.PI * r;
