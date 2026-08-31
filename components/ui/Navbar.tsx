@@ -9,7 +9,7 @@ import { NavMenuOverlay, type NavMenuCloseMode } from "./NavMenuOverlay";
 import { MobileNavPanel } from "./MobileNavPanel";
 import { NavKitchenNote } from "./NavKitchenNote";
 import { useLenis } from "@/components/animation/LenisProvider";
-import { scrollToTop } from "@/lib/scroll";
+import { glideToHash, scrollToTop } from "@/lib/scroll";
 import { useTransitionReady, useTransitionRouter } from "@/components/transition/TransitionProvider";
 import { MENU_EXIT_COVER_MS, NAV_WATCHDOG_MS } from "@/lib/motion";
 import { useCartStore } from "@/store/cartStore";
@@ -48,10 +48,13 @@ function colorForT(t: number) {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
+// The whole primary nav. The bar itself carries only the menu toggle, the
+// wordmark and the cart, so this list is the only way into a route: a route
+// that is not here is unreachable. Keep it complete.
 const NAV_LINKS = [
   { label: "Home", href: "/" },
-  { label: "Order", href: "/order" },
   { label: "Build", href: "/build" },
+  { label: "Order", href: "/order" },
 ];
 
 export function Navbar() {
@@ -193,8 +196,27 @@ export function Navbar() {
   // above). Mobile, and any push the provider declines, close the menu as a
   // plain dismiss.
   const navigateFromMenu = (href: string) => {
-    const covered = !isMobile && href.split(/[?#]/)[0] !== pathname;
-    if (!covered) {
+    const [path, hash] = href.split("#");
+
+    // Already on this route: there is no page change to cover, so the menu
+    // just closes and the page moves. A hash pushed onto the same pathname
+    // never fires the hashchange RouteScroll listens for, which is why the
+    // glide is driven here rather than left to the router.
+    if (path === pathname) {
+      closeMenu();
+      // After the close commit, so the scroll lock has released Lenis.
+      requestAnimationFrame(() => {
+        if (hash) {
+          history.replaceState(null, "", href);
+          glideToHash(lenis, `#${hash}`);
+        } else {
+          scrollToTop(lenis, false);
+        }
+      });
+      return;
+    }
+
+    if (isMobile) {
       closeMenu();
       transitionRouter.push(href, menuNavOptions);
       return;
@@ -206,27 +228,6 @@ export function Navbar() {
   const handleNavigate = (href: string) => navigateFromMenu(href);
 
   const scrollHeroTop = () => scrollToTop(lenis, false);
-
-  const goToBuild = () => {
-    if (menuOpen) {
-      navigateFromMenu("/build");
-    } else {
-      transitionRouter.push("/build");
-    }
-  };
-
-  // Food menu lives at the top of /order. Scroll up in-page when already there,
-  // otherwise route to /order (RouteScroll lands at the top).
-  const goToMenu = () => {
-    if (pathname === "/order") {
-      if (menuOpen) closeMenu();
-      scrollToTop(lenis, false);
-    } else if (menuOpen) {
-      navigateFromMenu("/order");
-    } else {
-      transitionRouter.push("/order");
-    }
-  };
 
   // Cart is a global slide-over drawer, available from any page.
   const handleOpenCart = () => {
@@ -426,7 +427,9 @@ export function Navbar() {
             </Link>
           </div>
 
-          {/* Build + Menu + Cart: right */}
+          {/* Cart: right. Build and Order used to sit here as icons; every route
+              now goes through the menu, so the bar is three controls at every
+              breakpoint. */}
           <div
             style={{
               flex: 1,
@@ -437,28 +440,6 @@ export function Navbar() {
               gap: "0.15rem",
             }}
           >
-            {/* Hidden on mobile via CSS media query (not JS viewport state) so
-                there's no post-hydration flash of these icons on load. */}
-            <button
-              type="button"
-              aria-label="Build your bowl"
-              onClick={goToBuild}
-              className="nav-icon-desktop-only"
-              style={iconButtonStyle}
-            >
-              <BowlIcon />
-            </button>
-
-            <button
-              type="button"
-              aria-label="Our Menu"
-              onClick={goToMenu}
-              className="nav-icon-desktop-only"
-              style={iconButtonStyle}
-            >
-              <MenuListIcon />
-            </button>
-
             <button
               type="button"
               aria-label={`Cart (${cartCount} item${cartCount !== 1 ? "s" : ""})`}
@@ -519,7 +500,7 @@ export function Navbar() {
               onClose={closeMenu}
               onNavigate={handleNavigate}
               links={NAV_LINKS}
-              rightContent={<NavKitchenNote />}
+              rightContent={<NavKitchenNote onNavigate={handleNavigate} />}
             />
           )}
         </AnimatePresence>
@@ -568,45 +549,6 @@ function CloseIcon() {
         strokeWidth="1.5"
         strokeLinecap="round"
       />
-    </svg>
-  );
-}
-
-function MenuListIcon() {
-  const rows = [5, 10, 15];
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-      {rows.map((y) => (
-        <g key={y}>
-          <circle cx="3.5" cy={y} r="1" fill="currentColor" />
-          <line
-            x1="7"
-            y1={y}
-            x2="16.5"
-            y2={y}
-            stroke="currentColor"
-            strokeWidth="1.4"
-            strokeLinecap="round"
-          />
-        </g>
-      ))}
-    </svg>
-  );
-}
-
-function BowlIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-      <path
-        d="M2.5 9h15a7.5 7.5 0 0 1-15 0Z"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <circle cx="7" cy="6" r="1.15" fill="currentColor" />
-      <circle cx="10.4" cy="4.9" r="1.15" fill="currentColor" />
-      <circle cx="13.4" cy="6.2" r="1.15" fill="currentColor" />
     </svg>
   );
 }

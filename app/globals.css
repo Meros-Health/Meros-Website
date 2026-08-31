@@ -15,8 +15,9 @@
     --nav-overlay-bg:     #292D2A;
     --nav-overlay-text:   #FFF7F0;
     --nav-accent:         var(--color-grapefruit);
-    --nav-hole-width:     32vw;
-    --nav-hole-height:    62vh;
+    /* The menu's centre window is sized in NavMenuOverlay.tsx (HOLE_W_FRAC /
+       HOLE_H_FRAC); Framer Motion needs the pixel values, so there is no
+       token for it here. */
     --nav-padding-x:      3vw;
     --nav-frame-duration: 0.7s;
     --nav-frame-ease:     cubic-bezier(0.76, 0, 0.24, 1);
@@ -335,15 +336,6 @@
 
   .preloader-skeleton-mobile {
     display: flex;
-  }
-}
-
-/* Nav icons hidden on mobile purely via media query, matching Navbar's
-   useIsMobile() default 768px breakpoint. !important overrides the button's
-   inline display so this resolves at first paint, not after hydration. */
-@media (max-width: 768px) {
-  .nav-icon-desktop-only {
-    display: none !important;
   }
 }
 

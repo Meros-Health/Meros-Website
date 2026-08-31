@@ -3,6 +3,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { cartButton, readCart, seedCart, seedRawCart, waitForPageReady } from "./helpers/cart";
 import { plainBowl } from "./helpers/fixtures";
+import { navigateViaMenu } from "./helpers/nav";
 
 const drawer = (page: Page) => page.getByRole("dialog", { name: "Cart" });
 
@@ -54,7 +55,7 @@ test("A7: navigating within the Saved beat lands on the clicked route without th
   await page.goto("/cart/edit/edit-me");
   await waitForPageReady(page);
   await page.getByRole("button", { name: "Save Changes" }).click();
-  await page.getByRole("button", { name: "Build your bowl" }).click();
+  await navigateViaMenu(page, "Build");
   await page.waitForURL("**/build");
   await page.waitForTimeout(1500);
   expect(page.url()).toContain("/build");
@@ -66,7 +67,7 @@ test("B1: navigating within the Added beat on /build lands on the clicked route 
   await waitForPageReady(page);
   await page.getByRole("button", { name: /Plain Greek Yogurt/ }).first().click();
   await page.getByRole("button", { name: "Add to Cart" }).click();
-  await page.getByRole("button", { name: "Our Menu" }).click();
+  await navigateViaMenu(page, "Order");
   await page.waitForURL("**/order");
   await page.waitForTimeout(1500);
   await expect(drawer(page)).toBeHidden();
