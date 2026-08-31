@@ -1,15 +1,5 @@
 {
   "images": {
-    "/images-web/Bowls/Bloom-1.jpg": {
-      "hash": "7b13f4fd",
-      "width": 1024,
-      "height": 683
-    },
-    "/images-web/Bowls/Bloom-2.jpg": {
-      "hash": "b222b9b4",
-      "width": 1024,
-      "height": 683
-    },
     "/images-web/Bowls/Crunch-1.jpg": {
       "hash": "153f5457",
       "width": 1024,
@@ -165,11 +155,6 @@
       "width": 4096,
       "height": 2160
     },
-    "/images-web/Instagram/bowls/bloom.png": {
-      "hash": "301c833d",
-      "width": 1080,
-      "height": 1350
-    },
     "/images-web/Instagram/bowls/cabana.png": {
       "hash": "c1a5dc7e",
       "width": 1080,
@@ -294,11 +279,6 @@
       "hash": "57a46ecd",
       "width": 1024,
       "height": 683
-    },
-    "/images-web/Transparent/Bloom.png": {
-      "hash": "5f315812",
-      "width": 1080,
-      "height": 1080
     },
     "/images-web/Transparent/Cabana.png": {
       "hash": "741f0c67",

@@ -15,14 +15,21 @@ import { useRevealReady } from "@/lib/useRevealReady";
 const MAPS_URL = mapsUrl();
 const MAPS_EMBED_URL = `https://www.google.com/maps?q=${encodeURIComponent(mapsQuery())}&output=embed`;
 
-// The footer leads with the Moment bowl post. Keep the feed's source order
-// unchanged for the dedicated Instagram section elsewhere on the homepage.
-const MOMENT_BOWL_POST = INSTAGRAM_POSTS.find((post) =>
-  post.imageUrl.endsWith("/bowls/moment.png")
-);
-const FOOTER_INSTAGRAM_POSTS = MOMENT_BOWL_POST
-  ? [MOMENT_BOWL_POST, ...INSTAGRAM_POSTS.filter((post) => post !== MOMENT_BOWL_POST)]
-  : INSTAGRAM_POSTS;
+// The footer's six tiles, named rather than sliced off the top of the feed, so
+// which six show and in what order is one editable line instead of a
+// consequence of the feed's authoring order. The homepage Instagram section
+// still renders INSTAGRAM_POSTS as authored; only the footer picks.
+//
+// The Tropics shot is deliberately out: it reads as the retired Bloom, which
+// is the same collision that retired the Bloom in the first place. Every id
+// here resolves to a photo in public/images-web/Instagram/.
+const FOOTER_POST_IDS = ["9", "2", "3", "4", "5", "7"] as const;
+
+const FOOTER_INSTAGRAM_POSTS = FOOTER_POST_IDS.map((id) => {
+  const post = INSTAGRAM_POSTS.find((p) => p.id === id);
+  if (!post) throw new Error(`Footer feed: no Instagram post with id "${id}"`);
+  return post;
+});
 
 // Prefix-matched so dynamic routes (e.g. /cart/edit/[lineId]) are covered too.
 const HIDDEN_ON = ["/order", "/build", "/checkout", "/cart"];
@@ -168,7 +175,7 @@ export function Footer() {
 
           {/* 6-post grid */}
           <div className="grid grid-cols-3" style={{ gap: "2px" }}>
-            {FOOTER_INSTAGRAM_POSTS.slice(0, 6).map((post, i) => (
+            {FOOTER_INSTAGRAM_POSTS.map((post, i) => (
               <FooterInstagramTile key={post.id} post={post} index={i} />
             ))}
           </div>
