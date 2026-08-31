@@ -8,9 +8,9 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
-  // Order record + checkout idempotency (schema in migrations/). One database
-  // for the site: a second binding per table would be a second thing to
-  // create, migrate and forget about.
+  // Order record, checkout idempotency, and catering inquiries (schema in
+  // migrations/). One database, two unrelated tables: a second binding for one
+  // table would be a second thing to create, migrate and forget about.
   //
   // Created 2026-08-31 in the merosyogurt account, region WNAM. The id is an
   // identifier, not a credential: access comes from this binding existing on

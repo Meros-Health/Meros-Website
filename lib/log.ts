@@ -31,6 +31,14 @@ export function logContact(summary: ContactSummary, detail: ContactDetail): void
   console.log("[contact form]", isProduction ? summary : { ...summary, ...detail });
 }
 
+type CateringInquirySummary = { stored: boolean };
+type CateringInquiryDetail = { business: string; contactName: string; email: string; phone: string; message: string };
+
+/** The inquiry row itself carries the contact details (migrations/0002); the log never does. */
+export function logCateringInquiry(summary: CateringInquirySummary, detail: CateringInquiryDetail): void {
+  console.log("[catering inquiry]", isProduction ? summary : { ...summary, ...detail });
+}
+
 /** Error class and message only. Never the request payload. */
 export function logActionError(action: string, err: unknown): void {
   const description = err instanceof Error ? `${err.name}: ${err.message}` : typeof err;

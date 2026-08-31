@@ -16,6 +16,16 @@ const LEGACY_PATHS: Array<[from: string, to: string]> = [
   ["/contact", "/#footer"],
 ];
 
+// The short URL on the catering business card. /catering is the real page, so
+// this is the only alias it needs. Temporary, not permanent: if the page ever
+// moves, a 308 already cached in a browser would keep sending scanners to the
+// old path, and a printed card cannot be recalled.
+//
+// There is deliberately no /wholesale. We cater for immediate consumption and
+// do not supply yogurt as stock, so a URL that resolves would be a claim we
+// cannot honour (see lib/catering/content.ts).
+const CATERING_ALIASES: Array<[from: string, to: string]> = [["/cater", "/catering"]];
+
 const nextConfig: NextConfig = {
   // The built-in optimizer does nothing on Cloudflare Workers (it returned the
   // untouched originals, 1.6 MB PNGs at 64px). Variants are rendered ahead of
@@ -30,11 +40,18 @@ const nextConfig: NextConfig = {
   async redirects() {
     // WordPress served these with a trailing slash. Next normalises the
     // trailing slash before matching, so one entry covers both forms.
-    return LEGACY_PATHS.map(([source, destination]) => ({
-      source,
-      destination,
-      permanent: true,
-    }));
+    return [
+      ...LEGACY_PATHS.map(([source, destination]) => ({
+        source,
+        destination,
+        permanent: true,
+      })),
+      ...CATERING_ALIASES.map(([source, destination]) => ({
+        source,
+        destination,
+        permanent: false,
+      })),
+    ];
   },
 };
 

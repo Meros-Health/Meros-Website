@@ -10,6 +10,7 @@ const PAGES = [
   { path: "/", canonical: "/", title: /MERŌS/ },
   { path: "/order", canonical: "/order", title: /Our Menu/ },
   { path: "/build", canonical: "/build", title: /Build a Bowl/ },
+  { path: "/catering", canonical: "/catering", title: /Catering/ },
   { path: "/privacy", canonical: "/privacy", title: /Privacy Policy/ },
   { path: "/terms", canonical: "/terms", title: /Terms of Service/ },
 ] as const;

@@ -27,6 +27,23 @@ for (const [from, to] of LEGACY) {
   });
 }
 
+// The QR code on the catering business card. A broken one here is a printed
+// card that leads nowhere, which cannot be fixed after the cards exist.
+for (const from of ["/cater", "/cater/"]) {
+  test(`${from} redirects to /catering`, async ({ page }) => {
+    const response = await page.goto(from);
+    expect(response?.status(), `${from} should resolve, not error`).toBeLessThan(400);
+    expect(page.url()).toBe(new URL("/catering", page.url()).toString());
+  });
+}
+
+// We cater for immediate consumption and do not supply yogurt as stock, so a
+// /wholesale URL that resolved would be a claim we cannot honour.
+test("/wholesale does not resolve", async ({ page }) => {
+  const response = await page.goto("/wholesale");
+  expect(response?.status()).toBe(404);
+});
+
 test("the old home page URL still resolves", async ({ page }) => {
   const response = await page.goto("/");
   expect(response?.status()).toBe(200);
