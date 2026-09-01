@@ -29,14 +29,13 @@ import type { SignatureItem } from "@/lib/menu/signatures";
 //     resamples, which softens the text and the photograph, and in WebKit the
 //     hidden back bleeds through mirrored. Do not "simplify" that away.
 //
-// `variant` picks the slot, and only one of them is the card:
-//   "card"  - /order. Just the photograph, filling the square well exactly the
-//             way every other bowl's photo does. The card around it already
-//             carries the name, price, tags, recipe and Add button, so the
-//             image well stays an image well.
-//   "stage" - homepage sticky stage: the card that turns.
-//   "thumb" - the 64px ledger mark: the photograph alone. A card cannot be
-//             read at 64px and the row prints the name right beside it.
+// This is the only slot this file fills. /order and the ledger thumbnail
+// (components/sections/SignatureMenuSection.tsx, app/order/page.tsx) used to
+// reuse it for a plain photograph in the image well ("card" and "thumb"
+// variants), standing in a generic gallery shot where the item's own photo
+// would go. As of 2026-09-01 both surfaces render no image region at all for
+// an item without photography instead, so this file only ever renders the
+// homepage sticky stage's turning card.
 
 const PHOTO = "/images-web/Gallery/Gallery-6.jpg";
 
@@ -61,17 +60,13 @@ const FOOT = "clamp(38px, 12cqw, 60px)";
 const SCRIM = "color-mix(in srgb, var(--color-midnight) 64%, transparent)";
 
 /**
- * Share of the stage square the card occupies. On /order the card fills its
- * well, because every neighbour there is a full-bleed photograph. On the stage
- * the neighbours are transparent bowl cutouts floating on cream, so the card
- * is inset: enough to stop it dwarfing them, and enough room under it for the
- * drop shadow.
+ * Share of the stage square the card occupies. The stage's neighbours are
+ * transparent bowl cutouts floating on cream, so the card is inset: enough to
+ * stop it dwarfing them, and enough room under it for the drop shadow.
  */
 const STAGE_SCALE = "88%";
 
 const DEFAULT_NOTE = "what is in season";
-
-export type SignatureTileVariant = "card" | "stage" | "thumb";
 
 // Why the bowl exists. It lives here rather than in menu.json because it is
 // evergreen: menu.json carries the part that changes (`seasonNote`).
@@ -100,31 +95,13 @@ function CloseIcon() {
 
 export function SignatureTile({
   item,
-  variant = "card",
   active = true,
 }: {
   item: SignatureItem;
-  variant?: SignatureTileVariant;
-  /** Stage only: false while another item is showing, which resets the turn. */
+  /** False while another item is showing, which resets the turn. */
   active?: boolean;
 }) {
-  if (variant === "stage") return <SeasonalCard item={item} active={active} />;
-
-  // /order and the ledger thumb: the photograph, nothing else. Mirrors the
-  // <Image> every photographed item renders in the same slot.
-  const isCard = variant === "card";
-  return (
-    <div data-signature-tile={variant} aria-hidden={isCard ? undefined : "true"} className="relative h-full w-full overflow-hidden">
-      <Image
-        src={PHOTO}
-        alt={isCard ? item.name : ""}
-        fill
-        sizes={isCard ? "(max-width: 767px) 92vw, (max-width: 1279px) 45vw, 560px" : "64px"}
-        loading={isCard ? undefined : "lazy"}
-        className="object-cover object-center"
-      />
-    </div>
-  );
+  return <SeasonalCard item={item} active={active} />;
 }
 
 function SeasonalCard({ item, active }: { item: SignatureItem; active: boolean }) {

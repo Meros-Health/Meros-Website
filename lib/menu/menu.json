@@ -260,7 +260,7 @@
   },
 
   "signatures": {
-    "$comment": "Recipes are toppings only. The yogurt is the customer's choice: bowls carry no default, smoothies default to defaultBase.smoothies unless the item sets its own `base`. Calories/protein were computed with the yogurt each recipe named before 2026-08-28 (Moment and Recovery: Plain; all others: Vanilla). As of 2026-08-28, The Recovery defaults to Vanilla like every signature smoothie (its per-item `base` was removed): its printed figures are still the Plain-based ones, about 20 kcal low and 1 g protein high for the default base. Recipe changes of 2026-08-28 (owner): The Bloom was retired for The Seasonal (stone fruits, berries, granola; no photo by design), The Tropic became The Tropics and gained goji berries, The Cabana lost bananas. The Seasonal carries the old Bloom figures; The Tropics and The Cabana were adjusted by one registry serving (goji +35 kcal +2 g, banana -53 kcal -1 g). All three await a proper recompute from the macro sheets.",
+    "$comment": "Recipes are toppings only. The yogurt is the customer's choice: bowls carry no default, smoothies default to defaultBase.smoothies unless the item sets its own `base`. Calories/protein were computed with the yogurt each recipe named before 2026-08-28 (Moment and Recovery: Plain; all others: Vanilla). As of 2026-08-28, The Recovery defaults to Vanilla like every signature smoothie (its per-item `base` was removed): its printed figures are still the Plain-based ones, about 20 kcal low and 1 g protein high for the default base. Recipe changes of 2026-08-28 (owner): The Bloom was retired for The Seasonal (stone fruits, berries, granola; no photo by design), The Tropic became The Tropics and gained goji berries, The Cabana lost bananas. As of 2026-09-01, The Seasonal's calories/protein were removed (they had carried the old Bloom figures, which no longer matched its recipe) pending a proper recompute from the macro sheets; the validator allows this one item to omit them. The Tropics and The Cabana were adjusted by one registry serving (goji +35 kcal +2 g, banana -53 kcal -1 g) and still await their own recompute from the macro sheets.",
     "defaultBase": { "smoothies": "vanilla-greek-yogurt" },
     "bowls": [
       {
@@ -313,9 +313,10 @@
         "tags": ["Immune Support", "Antioxidants"],
         "recipe": ["seasonal-stone-fruits", "seasonal-berries", "sunflower-seeds", "house-granola", "local-raw-honey", "bee-pollen"],
         "seasonNote": "late summer stone fruit and berries",
+        "note": "Ask our staff about our seasonal offerings",
         "sizes": {
-          "medium": { "price": 12, "calories": 371, "protein": 10 },
-          "large": { "price": 15, "calories": 442, "protein": 13 }
+          "medium": { "price": 12 },
+          "large": { "price": 15 }
         }
       }
     ],

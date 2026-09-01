@@ -8,8 +8,10 @@ export type SignatureCategory = "bowl" | "smoothie";
 
 export type SignatureSizeInfo = {
   price: number;
-  calories: number;
-  protein: number;
+  /** Absent on The Seasonal: removed pending a recompute from the macro sheets. */
+  calories?: number;
+  /** Absent on The Seasonal: removed pending a recompute from the macro sheets. */
+  protein?: number;
 };
 
 export type SizeTier = { id: string; label: string };
@@ -109,7 +111,8 @@ export function shortName(item: SignatureItem): string {
 /**
  * Per-size values joined in tier order: "581 / 680" for a bowl, "493" for a
  * smoothie. The Menu TV sync script applies the same rule so both surfaces
- * print identical figures.
+ * print identical figures. Returns "" when the item carries no value for
+ * this field at any size (The Seasonal, pending a macro recompute).
  */
 export function formatSizeStat(item: SignatureItem, field: "calories" | "protein"): string {
   return SIZE_TIERS[item.category]

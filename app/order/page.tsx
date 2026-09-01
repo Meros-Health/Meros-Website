@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { useCartStore } from "@/store/cartStore";
 import { AddToCartButton } from "@/components/cart/AddToCartButton";
-import { SignatureTile } from "@/components/ui/SignatureTile";
 import { useAddedBeat } from "@/lib/useAddedBeat";
 import { addSignatureDirect, needsConfiguration, startingPrice } from "@/lib/menu/signatureAdd";
 import { listBowls, listSmoothies, shortName, type SignatureItem } from "@/lib/menu/signatures";
@@ -42,10 +41,10 @@ function MenuCard({ item, priority = false }: { item: SignatureItem; priority?: 
       }}
     >
       {/* Square-cropped image: always rendered at ~half a 2-column grid, at every
-          breakpoint. An item without photography gets the typographic tile in
-          the same square. */}
-      <div className="relative w-full aspect-square overflow-hidden">
-        {item.images ? (
+          breakpoint. An item without photography (The Seasonal) renders no
+          image region at all rather than a stand-in photo. */}
+      {item.images && (
+        <div className="relative w-full aspect-square overflow-hidden">
           <Image
             src={item.images.photo}
             alt={item.name}
@@ -54,10 +53,8 @@ function MenuCard({ item, priority = false }: { item: SignatureItem; priority?: 
             priority={priority}
             className="object-cover object-center"
           />
-        ) : (
-          <SignatureTile item={item} variant="card" />
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Info: sized off the card's own (container-query) width, not the viewport, so
           text always fits 2-up regardless of how much room the sidebar title leaves it */}

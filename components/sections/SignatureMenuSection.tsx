@@ -140,8 +140,13 @@ function MenuRow({
   onActivate: () => void;
   variants: MenuVariants;
 }) {
+  // Both come back "" when the item has no macro figures at all (The
+  // Seasonal, pending a recompute from the macro sheets). Neither field is
+  // ever partially missing today, so the two lines below just fall back to
+  // "N/A" together rather than printing a bare label with no number.
   const calories = formatSizeStat(item, "calories");
   const protein = formatSizeStat(item, "protein");
+  const hasMacros = calories !== "" || protein !== "";
   const addItem = useCartStore((s) => s.addItem);
   const openAdd = useCartStore((s) => s.openAdd);
   const { added, flash } = useAddedBeat(item.id);
@@ -181,8 +186,10 @@ function MenuRow({
             beneath it, so the two read as one group (no sticky stage there).
             Above lg: the row index. */}
         <div className="lg:hidden flex w-16 flex-col items-center gap-3.5">
-          <div className="relative w-16 aspect-square">
-            {item.images ? (
+          {/* An item without photography (The Seasonal) renders no image
+              region here rather than a generic stand-in photo. */}
+          {item.images && (
+            <div className="relative w-16 aspect-square">
               <Image
                 src={item.images.transparent}
                 alt=""
@@ -192,10 +199,8 @@ function MenuRow({
                 loading="lazy"
                 style={{ width: "100%", height: "auto" }}
               />
-            ) : (
-              <SignatureTile item={item} variant="thumb" />
-            )}
-          </div>
+            </div>
+          )}
           <AddIconButton name={item.name} added={added} onClick={handleAdd} className="flex" />
         </div>
         <span
@@ -213,15 +218,19 @@ function MenuRow({
             {item.tags.join(" · ")}
           </p>
           <p className="font-body-mixed text-juniper text-sm leading-relaxed">{item.ingredients}</p>
-          <p className="lg:hidden font-body-caps text-midnight/50 text-[10px] tracking-[0.2em] mt-1">
-            {calories} cal · {protein} g protein
-          </p>
+          {hasMacros && (
+            <p className="lg:hidden font-body-caps text-midnight/50 text-[10px] tracking-[0.2em] mt-1">
+              {calories || "N/A"} cal · {protein || "N/A"} g protein
+            </p>
+          )}
         </div>
 
-        <div className="hidden lg:flex flex-col items-end gap-1 pt-1.5 whitespace-nowrap font-body-caps text-midnight/50 text-[10px] tracking-[0.2em]">
-          <span>{calories} cal</span>
-          <span>{protein} g protein</span>
-        </div>
+        {hasMacros && (
+          <div className="hidden lg:flex flex-col items-end gap-1 pt-1.5 whitespace-nowrap font-body-caps text-midnight/50 text-[10px] tracking-[0.2em]">
+            <span>{calories || "N/A"} cal</span>
+            <span>{protein || "N/A"} g protein</span>
+          </div>
+        )}
 
         {/* Desktop: bottom-right of the row */}
         <AddIconButton
@@ -334,7 +343,7 @@ function MenuStage({ active, reduced }: { active: SignatureItem; reduced: boolea
                   style={{ width: "100%", height: "auto" }}
                 />
               ) : (
-                <SignatureTile item={item} variant="stage" active={isActive} />
+                <SignatureTile item={item} active={isActive} />
               )}
             </motion.div>
           );

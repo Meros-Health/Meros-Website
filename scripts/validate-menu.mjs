@@ -259,6 +259,7 @@ for (const [listKey, tierKey] of Object.entries(CATEGORY_TIERS)) {
     if (!Array.isArray(item?.tags) || !item.tags.every(isNonEmptyString)) fail(`${where}: tags must be an array of strings`);
     if (item?.ingredients !== undefined) fail(`${where}: "ingredients" is no longer supported, use "recipe" (ingredient ids)`);
 
+    if (item?.note !== undefined && !isNonEmptyString(item.note)) fail(`${where}: note must be a string`);
     if (item?.base !== undefined) {
       if (!isNonEmptyString(item.base) || !isBase(item.base)) {
         fail(`${where}: base "${item.base}" is not an ingredient offered in a select "one" step`);
@@ -288,13 +289,23 @@ for (const [listKey, tierKey] of Object.entries(CATEGORY_TIERS)) {
       for (const tierId of tierIds) {
         if (!sizeKeys.includes(tierId)) fail(`${where}: sizes is missing tier "${tierId}"`);
       }
+      // Macros are required on every signature item except The Seasonal (id
+      // "seasonal"): its calories/protein were removed pending a recompute
+      // from the macro sheets, see signatures.$comment in menu.json. When a
+      // field is present anyway it is still validated like any other item's;
+      // only its absence is allowed.
+      const macrosOptional = item?.id === "seasonal";
       for (const key of sizeKeys) {
         if (!tierIds.includes(key)) fail(`${where}: sizes has unknown tier "${key}" (sizeTiers.${tierKey} defines ${tierIds.join(", ")})`);
         const s = item.sizes[key];
         if (!isObj(s)) { fail(`${where}: sizes.${key} must be an object`); continue; }
         if (!isMoney(s.price)) fail(`${where}: sizes.${key}.price must be a number >= 0`);
-        if (!isCount(s.calories)) fail(`${where}: sizes.${key}.calories must be an integer >= 0`);
-        if (!isCount(s.protein)) fail(`${where}: sizes.${key}.protein must be an integer >= 0`);
+        if (!(macrosOptional && s.calories === undefined) && !isCount(s.calories)) {
+          fail(`${where}: sizes.${key}.calories must be an integer >= 0`);
+        }
+        if (!(macrosOptional && s.protein === undefined) && !isCount(s.protein)) {
+          fail(`${where}: sizes.${key}.protein must be an integer >= 0`);
+        }
         if (isMoney(s.price)) {
           if (!pricesBySize.has(key)) pricesBySize.set(key, new Set());
           pricesBySize.get(key).add(s.price);
