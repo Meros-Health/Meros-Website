@@ -8,7 +8,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { waitForPageReady } from "./helpers/cart";
 
-const ROUTES = ["/", "/build", "/order", "/checkout", "/privacy", "/terms"] as const;
+const ROUTES = ["/", "/build", "/order", "/catering", "/checkout", "/privacy", "/terms"] as const;
 
 /**
  * Anything wider than the viewport, reported with enough detail to fix it.

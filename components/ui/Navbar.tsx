@@ -55,6 +55,7 @@ const NAV_LINKS = [
   { label: "Home", href: "/" },
   { label: "Build", href: "/build" },
   { label: "Order", href: "/order" },
+  { label: "Catering", href: "/catering" },
 ];
 
 export function Navbar() {

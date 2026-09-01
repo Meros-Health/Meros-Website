@@ -4,6 +4,10 @@ Written overnight 2026-08-27, revised 22:45 the same day when the decision was
 made to cut over that night rather than in the morning. Everything below is
 verified against the deployed Worker and live DNS, not inferred.
 
+> **Superseded 2026-08-31.** The cutover ran and succeeded: the zone is active,
+> the apex serves the Worker, and mail still reaches Microsoft 365. Items 1 and
+> 2 below are closed by that. See [mail-estate.md](mail-estate.md).
+
 **No DNS has been touched.** GoDaddy, the Cloudflare zone, nameservers and the
 custom domain are all exactly as they were.
 
@@ -113,11 +117,12 @@ Ordered by how much they cost if missed.
    That domain is not in the GoDaddy account and no such mailbox exists. All
    six now go to `info@merosyogurt.com`. **Confirm that is the mailbox someone
    actually reads.**
-4. **The contact form still delivers nothing.** It validates, logs, and
-   returns. It no longer claims "Message Sent" or promises a reply; it says the
-   inbox is not wired and gives the address that works. Wiring Cloudflare Email
-   Sending is the first job after the cutover, since it needs the domain in
-   Cloudflare anyway.
+4. **The footer contact form is gone; it is a mailto now.** Rather than a form
+   that validated and discarded, the footer offers `info@merosyogurt.com` (with
+   a "Website inquiry" subject prefilled) and the phone number. Nothing is
+   collected by the site, so nothing can be lost. This makes step 2's mailbox
+   cutover the thing that matters: if that address does not deliver, the
+   footer's only contact path does not either.
 5. **`house-compote` was removed from `menu.json` and `evoo` renamed to
    "EV Olive Oil".** Menu removals are global. `validate:menu` clears the repo,
    but the Menu TV static board and any printed or CSV surfaces live outside it

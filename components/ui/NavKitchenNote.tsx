@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 
 // The desktop menu's right panel. It is the same width as the link column and
 // would otherwise be empty, so it carries the short version of who we are:
-// enough for someone who arrived on /partners or a QR code and has never seen
+// enough for someone who arrived on /catering or a QR code and has never seen
 // the home page.
 //
 // Reveal order matches the left panel's link stagger (LINK_BASE_DELAY / ease)
