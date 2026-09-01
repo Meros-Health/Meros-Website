@@ -54,9 +54,10 @@ export default function PrivacyPage() {
               this to prepare your order, contact you about it, and confirm pickup.
             </span>,
             <span key="contact">
-              <strong className="font-normal text-midnight">When you contact us:</strong> your
-              name, email address, and the message you send. We use this to respond to your
-              inquiry.
+              <strong className="font-normal text-midnight">When you submit a catering
+              inquiry:</strong> your business name, your name, email address, phone number
+              if you give one, and the details of your request. We use this to prepare a
+              quote and respond to you.
             </span>,
           ]}
         />
@@ -140,7 +141,7 @@ export default function PrivacyPage() {
 
       <LegalSection heading="Consent">
         <p>
-          By submitting an order or contact form, you consent to us collecting and using
+          By submitting an order or a catering inquiry, you consent to us collecting and using
           the information you provide for the purposes described above. You may withdraw
           your consent at any time by emailing{" "}
           <a href="mailto:info@merosyogurt.com" className="underline hover:text-grapefruit transition-colors">
@@ -166,8 +167,8 @@ export default function PrivacyPage() {
 
       <LegalSection heading="How Long We Keep It">
         <p>
-          We keep order and contact information only as long as needed to fulfill your
-          order or respond to your inquiry, meet legal and accounting requirements, and
+          We keep order and catering inquiry information only as long as needed to
+          fulfill your order or respond to your inquiry, meet legal and accounting requirements, and
           resolve any disputes. After that, it is deleted.
         </p>
       </LegalSection>

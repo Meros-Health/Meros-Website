@@ -9,7 +9,6 @@ vi.hoisted(() => {
 });
 
 import { submitCheckout } from "@/app/actions/checkout";
-import { submitContactForm } from "@/app/actions/contact";
 import { makeIdempotencyKey, resetOrderDedupeForTests } from "@/lib/checkout/idempotency";
 import { IDLE, VALID_CUSTOMER, fileField, makeFormData } from "./helpers/formData";
 import { customLine, signatureLine } from "./helpers/cartFixtures";
@@ -278,39 +277,11 @@ describe("F5: validation matrix (confirmed-correct boundaries stay locked)", () 
   });
 });
 
-describe("F9: contact form", () => {
-  it("accepts a valid message", async () => {
-    const result = await submitContactForm(IDLE, makeFormData({ name: "A", email: "a@b.co", message: "hi" }));
-    expect(result.status).toBe("success");
-  });
-
-  it("treats a File in the message field as missing instead of throwing", async () => {
-    const result = await submitContactForm(IDLE, makeFormData({ name: "A", email: "a@b.co", message: fileField() }));
-    expect(result).toMatchObject({ status: "error", message: "All fields are required." });
-  });
-
-  it("logs only the message length in production", async () => {
-    vi.resetModules();
-    vi.stubEnv("NODE_ENV", "production");
-    const { submitContactForm: prodContact } = await import("@/app/actions/contact");
-    await prodContact(IDLE, makeFormData({ name: "Secret Name", email: "secret@example.com", message: "private" }));
-    const logged = JSON.stringify(logSpy.mock.calls);
-    expect(logged).not.toContain("secret@example.com");
-    expect(logged).not.toContain("private");
-    expect(logged).toContain("messageLength");
-  });
-});
-
 describe("F5-26 / F5-28: field caps", () => {
   it("rejects over-long checkout fields with a field-specific message", async () => {
     expect((await submit([momentMedium()], customer({ name: "x".repeat(101) }))).message).toMatch(/Name must be 100/);
     expect((await submit([momentMedium()], customer({ phone: "1".repeat(31) }))).message).toMatch(/Phone must be 30/);
     expect((await submit([momentMedium()], customer({ email: "a".repeat(250) + "@b.co" }))).message).toMatch(/Email must be 254/);
-  });
-
-  it("rejects an over-long contact message", async () => {
-    const result = await submitContactForm(IDLE, makeFormData({ name: "A", email: "a@b.co", message: "x".repeat(2001) }));
-    expect(result.message).toMatch(/Message must be 2000/);
   });
 
   it("still accepts a phone with letters as long as ten digits are present (documented rough edge)", async () => {

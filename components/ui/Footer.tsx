@@ -5,7 +5,6 @@ import { useState, useRef } from "react";
 import { TransitionLink } from "@/components/transition/TransitionLink";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { submitContactForm, type ContactFormState } from "@/app/actions/contact";
 import { INSTAGRAM_POSTS, INSTAGRAM_URL, INSTAGRAM_HANDLE } from "@/lib/instagramFeed";
 import { BUSINESS, hoursDisplay, mapsQuery, mapsUrl } from "@/lib/business";
 import { useRevealReady } from "@/lib/useRevealReady";
@@ -14,6 +13,14 @@ import { useRevealReady } from "@/lib/useRevealReady";
 // home page's Restaurant schema is built from.
 const MAPS_URL = mapsUrl();
 const MAPS_EMBED_URL = `https://www.google.com/maps?q=${encodeURIComponent(mapsQuery())}&output=embed`;
+
+// The footer's contact block opens the visitor's own mail client rather than
+// posting to us. There is no email service behind the site, so a form here
+// could only validate and discard; a mailto reaches a mailbox someone reads.
+// The subject is prefilled so website mail is separable from everything else
+// arriving at the same address.
+const CONTACT_MAILTO = `mailto:${BUSINESS.email}?subject=${encodeURIComponent("Website inquiry")}`;
+const CONTACT_TEL = `tel:${BUSINESS.phone.replace(/-/g, "")}`;
 
 // The footer's six tiles, named rather than sliced off the top of the feed, so
 // which six show and in what order is one editable line instead of a
@@ -36,31 +43,6 @@ const HIDDEN_ON = ["/order", "/build", "/checkout", "/cart"];
 
 export function Footer() {
   const pathname = usePathname();
-  const [state, setState] = useState<ContactFormState>({ status: "idle", message: "" });
-  const [pending, setPending] = useState(false);
-  const formRef = useRef<HTMLFormElement>(null);
-
-  const submittingRef = useRef(false);
-
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    // The disabled attribute only applies after the next render; the ref
-    // stops a second submit dispatched in the same tick.
-    if (submittingRef.current) return;
-    submittingRef.current = true;
-    setPending(true);
-    const formData = new FormData(e.currentTarget);
-    try {
-      const result = await submitContactForm(state, formData);
-      setState(result);
-      if (result.status === "success") formRef.current?.reset();
-    } catch {
-      setState({ status: "error", message: "Something went wrong. Please try again." });
-    } finally {
-      submittingRef.current = false;
-      setPending(false);
-    }
-  }
 
   if (HIDDEN_ON.some((route) => pathname === route || pathname.startsWith(`${route}/`))) {
     return null;
@@ -192,92 +174,38 @@ export function Footer() {
           </a>
         </div>
 
-        {/* ── RIGHT: Contact form ───────────────────────────────────────── */}
+        {/* ── RIGHT: Contact ───────────────────────────────────────────── */}
         <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-3">
             <span className="font-body-caps text-cream/40 text-[9px] tracking-[0.30em]">Get In Touch</span>
+            <p className="font-body-mixed text-cream/55 text-xs leading-relaxed">
+              Email or call us about the menu, an order, or catering. We read and
+              reply from the same address.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2">
             <a
-              href={`mailto:${BUSINESS.email}`}
-              className="font-body-mixed text-cream/70 text-xs hover:text-grapefruit transition-colors duration-200"
+              href={CONTACT_MAILTO}
+              className="font-body-mixed text-cream text-sm hover:text-grapefruit transition-colors duration-200"
             >
               {BUSINESS.email}
             </a>
             <a
-              href={`tel:${BUSINESS.phone.replace(/-/g, "")}`}
+              href={CONTACT_TEL}
               className="font-body-mixed text-cream/70 text-xs hover:text-grapefruit transition-colors duration-200"
             >
               {BUSINESS.phoneDisplay}
             </a>
           </div>
 
-          {state.status === "success" ? (
-            <div role="status" className="flex flex-col gap-2 py-4">
-              <span className="font-body-caps text-grapefruit text-[9px] tracking-[0.25em]">Thanks</span>
-              <p className="font-body-mixed text-cream/55 text-xs">{state.message}</p>
-            </div>
-          ) : (
-            <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="footer-name" className="font-body-caps text-cream/35 text-[8px] tracking-[0.25em]">
-                    Name
-                  </label>
-                  <input
-                    id="footer-name"
-                    name="name"
-                    maxLength={100}
-                    type="text"
-                    required
-                    autoComplete="name"
-                    className="bg-transparent border-b border-cream/20 text-cream font-body-mixed text-xs py-1.5 placeholder:text-cream/25 outline-none focus:border-grapefruit transition-colors duration-200"
-                    placeholder="Your name"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="footer-email" className="font-body-caps text-cream/35 text-[8px] tracking-[0.25em]">
-                    Email
-                  </label>
-                  <input
-                    id="footer-email"
-                    name="email"
-                    maxLength={254}
-                    type="email"
-                    required
-                    autoComplete="email"
-                    className="bg-transparent border-b border-cream/20 text-cream font-body-mixed text-xs py-1.5 placeholder:text-cream/25 outline-none focus:border-grapefruit transition-colors duration-200"
-                    placeholder="you@email.com"
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="footer-message" className="font-body-caps text-cream/35 text-[8px] tracking-[0.25em]">
-                  Message
-                </label>
-                <textarea
-                  id="footer-message"
-                  name="message"
-                  maxLength={2000}
-                  required
-                  rows={3}
-                  className="bg-transparent border-b border-cream/20 text-cream font-body-mixed text-xs py-1.5 placeholder:text-cream/25 outline-none focus:border-grapefruit transition-colors duration-200 resize-none"
-                  placeholder="Say hello..."
-                />
-              </div>
-
-              {state.status === "error" && (
-                <p role="alert" className="font-body-mixed text-grapefruit text-[10px]">{state.message}</p>
-              )}
-
-              <button
-                type="submit"
-                disabled={pending}
-                className="mt-1 self-start font-body-caps text-[9px] tracking-[0.25em] text-midnight bg-cream px-6 py-2.5 hover:bg-grapefruit transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {pending ? "Sending..." : "Send Message"}
-              </button>
-            </form>
-          )}
+          <a
+            href={CONTACT_MAILTO}
+            className="mt-1 inline-flex items-center gap-2 self-start font-body-caps text-[9px] tracking-[0.25em] text-midnight bg-cream px-6 py-2.5 hover:bg-grapefruit transition-colors duration-300"
+          >
+            <MailIcon />
+            Email Us
+          </a>
         </div>
       </div>
 
@@ -334,6 +262,15 @@ function InstagramIcon() {
       <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
       <circle cx="12" cy="12" r="4" />
       <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function MailIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="2.5" y="4.5" width="19" height="15" rx="2" />
+      <path d="M3 6l9 7 9-7" />
     </svg>
   );
 }

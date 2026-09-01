@@ -157,16 +157,15 @@ test("B4-02: the builder's instruction colour change collapses under reduced mot
   expect(property).toBe("none");
 });
 
-test("F8-01: the contact form's confirmation is a status region", async ({ page }) => {
+test("F8-01: the footer's contact path is a mailto, with no form behind it", async ({ page }) => {
   await page.goto("/");
   await waitForPageReady(page);
-  const form = page.locator("form").filter({ has: page.locator("#footer-message") });
-  await form.scrollIntoViewIfNeeded();
-  await page.fill("#footer-name", "Test Customer");
-  await page.fill("#footer-email", "customer@example.com");
-  await page.fill("#footer-message", "Suite check, ignore.");
-  await form.getByRole("button", { name: "Send Message" }).click();
-  await expect(page.locator("footer [role='status']")).toContainText(/Thanks/i);
+  const footer = page.locator("footer#footer");
+  await expect(footer.locator("form")).toHaveCount(0);
+  await expect(footer.getByRole("link", { name: "Email Us" })).toHaveAttribute(
+    "href",
+    /^mailto:info@merosyogurt\.com\?subject=/
+  );
 });
 
 test("S1-13: the viewport opts into the safe area and the sheet footer pads for it", async ({ page }) => {
