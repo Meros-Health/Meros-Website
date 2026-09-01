@@ -2,6 +2,7 @@
 
 import { CHECKOUT_ENABLED } from "@/lib/config";
 import { getOrderDedupe, isIdempotencyKey } from "@/lib/checkout/idempotency";
+import { getCheckoutRuntime } from "@/lib/checkout/runtime";
 import { logActionError, logOrder } from "@/lib/log";
 import { calcBowlPrice, isSelectionComplete, PricingError, type BowlSelection } from "@/lib/menu/calcBowlPrice";
 import { getBuildSize } from "@/lib/menu/buildConfig";
@@ -233,6 +234,13 @@ async function processCheckout(cartItemsJson: string, formData: FormData): Promi
     return error("closed", "Ordering is not open yet.");
   }
 
+  const runtime = getCheckoutRuntime();
+  if (runtime.orderingDisabled) {
+    // Runtime kill switch (ORDERING_DISABLED on the Worker): staff stopped
+    // taking online orders without waiting for a build.
+    return error("closed", "Ordering is paused right now. Please check back soon.");
+  }
+
   const name = readField(formData, "name");
   const email = readField(formData, "email");
   const phone = readField(formData, "phone");
@@ -290,7 +298,12 @@ async function processCheckout(cartItemsJson: string, formData: FormData): Promi
 
   // A repeated key (double submit, retry after a timeout) returns the order
   // that already exists rather than creating a second one.
-  const claim = await getOrderDedupe().claim(idempotencyKey, orderRef);
+  // Durable across isolates when the D1 binding exists; per-isolate memory
+  // otherwise. A claim that throws (D1 unavailable) deliberately bubbles to
+  // submitCheckout's catch and becomes the generic retry message: without a
+  // dedupe guarantee the order is not accepted.
+  const dedupe = runtime.orderStore ?? getOrderDedupe();
+  const claim = await dedupe.claim(idempotencyKey, orderRef);
   if (claim.status === "duplicate") {
     return { status: "success", message: SUCCESS_MESSAGE, orderRef: claim.orderRef };
   }
@@ -309,6 +322,16 @@ async function processCheckout(cartItemsJson: string, formData: FormData): Promi
     { orderRef, idempotencyKey, lineCount: items.length, total },
     { name, email, phone, items }
   );
+
+  if (runtime.orderStore) {
+    try {
+      await runtime.orderStore.record(idempotencyKey, { name, email, phone, items, total });
+    } catch (err) {
+      // The claim row exists and the order is logged; a failed detail write
+      // must not fail the customer. The row left at 'claimed' is the trace.
+      logActionError("checkout-record", err);
+    }
+  }
 
   return { status: "success", message: SUCCESS_MESSAGE, orderRef };
 }

@@ -7,5 +7,24 @@
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
-  }
+  },
+  // Order record + checkout idempotency (schema in migrations/). One database
+  // for the site: a second binding per table would be a second thing to
+  // create, migrate and forget about.
+  //
+  // Created 2026-08-31 in the merosyogurt account, region WNAM. The id is an
+  // identifier, not a credential: access comes from this binding existing on
+  // this Worker, so there is nothing here to leak.
+  //
+  // Local dev uses a separate miniflare copy, not this database. Apply
+  // migrations to it once with:
+  //   npx wrangler d1 migrations apply meros-orders --local
+  "d1_databases": [
+    {
+      "binding": "ORDERS_DB",
+      "database_name": "meros-orders",
+      "database_id": "c1eb6ab0-3cbf-4332-8b9e-5fc3f006109a",
+      "migrations_dir": "migrations"
+    }
+  ]
 }

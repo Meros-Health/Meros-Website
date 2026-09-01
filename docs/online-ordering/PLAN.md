@@ -141,3 +141,20 @@ Key build items:
 ---
 
 *Research: two-agent web sweep 2026-07-23 (Toast first-party product; Toast developer APIs). Key unconfirmed items are flagged inline; primary sources are doc.toasttab.com / support.toasttab.com links above.*
+
+---
+
+## 8. Safe submit path (built 2026-08-30, branch `online-ordering`)
+
+Foundation for Track B, no Toast write anywhere. What landed:
+
+- **Durable idempotency + order record in one table**: `migrations/0001_orders.sql`, D1 binding `ORDERS_DB` (`wrangler.jsonc`). The claim is the INSERT (`ON CONFLICT DO NOTHING` on the idempotency key), so a claim and an order row cannot diverge. `lib/checkout/orderStore.ts`.
+- **Fail closed**: if D1 cannot answer, the claim throws and the customer gets the retry message. No dedupe guarantee, no accepted order.
+- **Runtime kill switch**: `ORDERING_DISABLED=true` on the Worker refuses orders per request, no rebuild. Stacks under the build-time `CHECKOUT_ENABLED` gate. `lib/checkout/runtime.ts`.
+- **Fallback**: without the binding (tests, pre-provision) behaviour is exactly the old per-isolate `MemoryOrderDedupe`.
+
+Row lifecycle: `claimed` → `received` today; `paid` / `sent_to_pos` / `failed` reserved for Stripe and Toast. The row is the store's own audit trail regardless of what Toast later says (the "charged but no ticket" reconciliation reads it).
+
+**Before merge (one-time, in the merosyogurt account):** `wrangler d1 create meros-orders`, paste the `database_id` into `wrangler.jsonc`, `wrangler d1 migrations apply meros-orders --remote`. Local dev: `npx wrangler d1 migrations apply meros-orders --local` once (already applied on this machine).
+
+**Why the website reads Toast (when read credentials are wired in):** not to validate its own orders (that is the idempotency store above). Reads are for: menu GUID mapping + price-drift diff (Menus API), 86'd-item stock to disable builder options, config read for the `TAKE_OUT` dining option and `OTHER` tender GUIDs and store hours, and orders read for post-submit reconciliation (confirm a timed-out `POST /orders` landed before retrying, and the cron that compares this table against Toast). "Right device" is not an API concern: ticket routing is store-side auto-fire/prep-station config. `POST /prices` (tax authority) is write-tier, so it waits on the Custom Integration grant.
