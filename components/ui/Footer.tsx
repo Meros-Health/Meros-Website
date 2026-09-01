@@ -221,43 +221,17 @@ export function Footer() {
         </div>
       </div>
 
-      {/* ── Icon mark ────────────────────────────────────────────────────── */}
-      <div className="flex justify-center px-section-x py-8">
-        <Image
-          src="/logos/logo-light.png"
-          alt="MERŌS"
-          width={48}
-          height={48}
-          className="opacity-80"
-          priority={false}
-        />
-      </div>
-
-      {/* ── Bottom bar ────────────────────────────────────────────────────── */}
-      <div
-        className="flex items-center justify-between px-section-x py-4"
-        style={{ borderTop: "0.5px solid rgba(255,247,240,0.08)" }}
-      >
-      <span className="font-body-mixed text-cream/30 text-[10px]">
+      {/* ── Copyright ─────────────────────────────────────────────────────── */}
+      {/* The line the footer ends on. Privacy, Terms and the neighbourhood used
+          to sit beside it; the first two are in the Help column now and the
+          third is in the address above, so a bar carrying only a repeat of them
+          was removed rather than kept for symmetry. No top padding here: the
+          grid's own bottom padding sets the gap above, and `pb` matches it, so
+          the line sits in even space top and bottom. */}
+      <div className="flex justify-center px-section-x pb-14 md:pb-16">
+        <span className="font-body-mixed text-cream/30 text-[10px]">
           © {new Date().getFullYear()} MERŌS. All rights reserved.
         </span>
-        <div className="flex items-center gap-5">
-          <TransitionLink
-            href="/privacy"
-            className="font-body-mixed text-cream/30 text-[10px] hover:text-cream/70 transition-colors duration-200"
-          >
-            Privacy Policy
-          </TransitionLink>
-          <TransitionLink
-            href="/terms"
-            className="font-body-mixed text-cream/30 text-[10px] hover:text-cream/70 transition-colors duration-200"
-          >
-            Terms of Service
-          </TransitionLink>
-          <span className="font-body-mixed text-cream/30 text-[10px]">
-            Yaletown, Vancouver
-          </span>
-        </div>
       </div>
     </footer>
   );
