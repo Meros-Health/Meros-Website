@@ -19,6 +19,13 @@
   // Local dev uses a separate miniflare copy, not this database. Apply
   // migrations to it once with:
   //   npx wrangler d1 migrations apply meros-orders --local
+  //
+  // Secrets are not listed here. The catering form's notification needs
+  // RESEND_API_KEY, set once per environment with
+  //   npx wrangler secret put RESEND_API_KEY
+  // and read in lib/catering/runtime.ts. Local dev reads the same name from
+  // .dev.vars (gitignored). Without it the notifier is null: inquiries are
+  // still stored in D1, they just do not send an email.
   "d1_databases": [
     {
       "binding": "ORDERS_DB",

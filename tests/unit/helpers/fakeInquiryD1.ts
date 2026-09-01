@@ -1,6 +1,7 @@
-// In-memory stand-in for the single statement lib/catering/inquiryStore.ts
-// issues. Separate from FakeD1 so the two stores' fakes never drift into one
-// query dispatcher that has to know about both tables.
+// In-memory stand-in for the two statements lib/catering/inquiryStore.ts
+// issues: the insert, and the hourly count the notification throttle reads.
+// Separate from FakeD1 so the two stores' fakes never drift into one query
+// dispatcher that has to know about both tables.
 import type { D1Like, D1PreparedLike } from "@/lib/checkout/orderStore";
 
 export type FakeInquiryRow = {
@@ -49,7 +50,13 @@ export class FakeInquiryD1 implements D1Like {
         return { meta: { changes: 1 } };
       },
       first: async <T,>(): Promise<T | null> => {
-        throw new Error("FakeInquiryD1: the inquiry store never reads");
+        if (this.failing) throw new Error("D1 unavailable");
+        if (!query.startsWith("SELECT COUNT(*) AS n FROM catering_inquiries")) {
+          throw new Error(`FakeInquiryD1: unexpected first() for ${query}`);
+        }
+        const [sinceIso] = bound as [string];
+        const n = this.rows.filter((row) => row.created_at >= sinceIso).length;
+        return { n } as T;
       },
     };
     return stmt;

@@ -30,6 +30,12 @@ yarn-error.log*
 .env.staging
 .env.production
 
+# Wrangler's local secret file. Holds the same values as `wrangler secret put`
+# (RESEND_API_KEY), so it is a credential file and never belongs in the repo.
+# The .env* catch-all below does not match it.
+.dev.vars
+.dev.vars.*
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
@@ -71,6 +77,11 @@ next-env.d.ts
 
 # Internal infra/DNS runbook (account details, third-party vendor relationship). Never commit to public repo.
 /docs/dns-cutover.md
+
+# Same class: a consolidated map of who sends and receives mail for the domain
+# (M365 tenant, reseller, SPF/DMARC posture). Each record is public in DNS; the
+# map is not, and this repo already keeps that line for the runbook above.
+/docs/mail-estate.md
 
 # test output
 /test-results/

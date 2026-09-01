@@ -47,4 +47,20 @@ export class D1CateringInquiryStore {
       )
       .run();
   }
+
+  /**
+   * How many inquiries landed since `sinceIso`. Feeds the notification throttle
+   * in the action: the row is always stored, but a flood stops earning an email.
+   *
+   * Counting the table we already write is deliberate. A dedicated counter
+   * would need its own binding, its own migration and its own expiry, to guard
+   * a form that sees single digits a week.
+   */
+  async countSince(sinceIso: string): Promise<number> {
+    const row = await this.db
+      .prepare("SELECT COUNT(*) AS n FROM catering_inquiries WHERE created_at >= ?1")
+      .bind(sinceIso)
+      .first<{ n: number }>();
+    return row?.n ?? 0;
+  }
 }

@@ -199,10 +199,20 @@ that neither the nav nor `next.config.ts` mentions wholesale.
 - **Pricing.** No numbers anywhere. If a starting per-head price is ever set,
   it belongs on this page: B2B buyers screen on it.
 - **Lead time and minimums.** Same. Currently "confirmed in the quote".
-- **Email delivery.** Cloudflare Email Service would give both this form and
-  the dead footer contact form a real destination.
-- **Bot protection.** Honeypot only. Turnstile is the next step if the form
-  attracts spam.
+- **Email delivery.** Done, on Resend. A stored inquiry is emailed to
+  `info@merosyogurt.com` from `catering@mail.merosyogurt.com`, with `Reply-To`
+  set to the business that asked, so the notification carries the whole lead
+  and the inbox becomes the working copy. Cloudflare Email Sending was the
+  natural fit for this stack and is gated behind Workers Paid; the provider is
+  behind one interface in `lib/catering/notify.ts` so swapping back later is
+  that file and nothing else. The apex stays on Microsoft 365: sending from a
+  subdomain the tenant does not know about is what keeps Exchange's anti-spoof
+  heuristics off our own notification.
+- **Bot protection.** Honeypot, plus a throttle on the notification: above
+  twenty inquiries in an hour the row is still stored but stops earning an
+  email, so a bot that gets past the honeypot cannot drain the inbox or the
+  daily send quota. Turnstile is still the next step if the form attracts real
+  spam, since neither of those stops the write.
 - **Photography.** The page uses existing bowl and gallery shots. A picture of
   a real catering drop or a staffed bar would carry it better than a retail
   bowl does.

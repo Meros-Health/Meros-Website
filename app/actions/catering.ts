@@ -10,7 +10,8 @@ import {
   readField,
   tooLong,
 } from "@/lib/forms";
-import { getCateringInquiryStore } from "@/lib/catering/runtime";
+import { getCateringRuntime, type CateringRuntime } from "@/lib/catering/runtime";
+import type { CateringInquiryRecord } from "@/lib/catering/inquiryStore";
 
 export type CateringInquiryState = {
   status: "idle" | "success" | "error";
@@ -21,6 +22,13 @@ export type CateringInquiryState = {
 
 const MAX_BUSINESS_LENGTH = 120;
 const MAX_SHORT_LENGTH = 120; // headcount, needed-on: both are free text, not parsed
+
+// Notification throttle. Above this many inquiries in an hour the row is still
+// stored, but it stops earning an email. The honeypot is the only other bot
+// defence here, and a bot that gets past it would otherwise flood info@ and
+// burn the day's send quota. Set well above any real hour on this form.
+const NOTIFY_MAX_PER_HOUR = 20;
+const HOUR_MS = 60 * 60 * 1000;
 
 const SUCCESS_MESSAGE =
   "Thanks, we have your inquiry. We will reply at the email you gave us. If it is time sensitive, call (778) 345-3023.";
@@ -77,15 +85,15 @@ async function processInquiry(formData: FormData): Promise<CateringInquiryState>
     return error("Please enter a valid email address.", "email");
   }
 
-  const store = getCateringInquiryStore();
-  if (!store) {
+  const runtime = getCateringRuntime();
+  if (!runtime.inquiryStore) {
     // No durable destination. Say so plainly: a confirmation here would be a
     // lie, and a business that believes it was received never follows up.
     logCateringInquiry({ stored: false }, { business, contactName, email, phone, message });
     return error(`We could not reach our inbox just now. Please ${FALLBACK} and we will pick it up from there.`);
   }
 
-  await store.record(crypto.randomUUID(), {
+  const inquiry: CateringInquiryRecord = {
     business,
     contactName,
     email,
@@ -93,8 +101,41 @@ async function processInquiry(formData: FormData): Promise<CateringInquiryState>
     headcount,
     neededOn,
     message,
-  });
+  };
+
+  // The row is the source of truth and the only thing the confirmation speaks
+  // for. A throw here reaches the outer catch and the visitor gets the phone
+  // number instead of a confirmation.
+  await runtime.inquiryStore.record(crypto.randomUUID(), inquiry);
+
+  // The email is a courtesy that tells a human to go look. It runs after the
+  // write, cannot change what the visitor is told, and cannot fail the submit.
+  await notify(runtime, inquiry);
 
   logCateringInquiry({ stored: true }, { business, contactName, email, phone, message });
   return { status: "success", message: SUCCESS_MESSAGE };
+}
+
+/**
+ * Hands the notification to the runtime's defer, which uses waitUntil on the
+ * Worker so the confirmation never waits on Resend. Every failure past this
+ * point is absorbed: the lead is already stored, so a send that does not land
+ * costs a reminder, not the lead.
+ */
+async function notify(runtime: CateringRuntime, inquiry: CateringInquiryRecord): Promise<void> {
+  const { inquiryStore, notifier } = runtime;
+  if (!notifier || !inquiryStore) return;
+
+  await runtime.defer(
+    (async () => {
+      const recent = await inquiryStore.countSince(new Date(Date.now() - HOUR_MS).toISOString());
+      if (recent > NOTIFY_MAX_PER_HOUR) {
+        // Stored, not sent. Logged as a count so the skip is visible without
+        // putting any of the submitted fields in the Worker logs.
+        console.warn(`[catering notification] throttled: ${recent} inquiries in the last hour`);
+        return;
+      }
+      await notifier.notify(inquiry);
+    })().catch((err) => logActionError("catering notification", err))
+  );
 }
