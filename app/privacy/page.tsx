@@ -10,10 +10,11 @@ import { LegalShell, LegalSection, LegalList } from "@/components/legal/LegalPag
 //      by Stripe: we never see full card numbers; link to stripe.com/privacy).
 //   2. Mention that payment info is collected at checkout and processed by Stripe.
 //   3. Bump the effective date below.
-// Same applies if we ever add analytics (e.g. Cloudflare Web Analytics, GA) or
-// an email service (e.g. Resend); each new processor gets listed here.
+// Every processor that touches submitted information is named in "Service
+// Providers"; the same applies to anything added later (analytics, a marketing
+// email tool). tests/unit/catering.test.ts fails if Resend leaves that list.
 
-const EFFECTIVE_DATE = "July 7, 2026";
+const EFFECTIVE_DATE = "August 31, 2026";
 
 export const metadata = pageMetadata({
   title: "Privacy Policy - MERŌS",
@@ -56,8 +57,9 @@ export default function PrivacyPage() {
             <span key="contact">
               <strong className="font-normal text-midnight">When you submit a catering
               inquiry:</strong> your business name, your name, email address, phone number
-              if you give one, and the details of your request. We use this to prepare a
-              quote and respond to you.
+              if you give one, the headcount and date or cadence you ask about, and
+              anything else you write in the message. We use this to prepare a quote and
+              respond to you.
             </span>,
           ]}
         />
@@ -102,7 +104,7 @@ export default function PrivacyPage() {
         </p>
       </LegalSection>
 
-      <LegalSection heading="Storage on Your Device">
+      <LegalSection heading="Storage on Your Device" id="cookies">
         <p>
           Your cart is saved in your own browser&rsquo;s local storage so it isn&rsquo;t
           lost between visits, and your most recent order confirmation is kept in session
@@ -139,6 +141,46 @@ export default function PrivacyPage() {
         />
       </LegalSection>
 
+      <LegalSection heading="Service Providers">
+        <p>
+          A few companies handle information on our behalf so the website can run. They
+          may only use it to provide their service to us, under our instructions, and not
+          for their own purposes:
+        </p>
+        <LegalList
+          items={[
+            <span key="cloudflare">
+              <strong className="font-normal text-midnight">Cloudflare</strong> hosts the
+              website and provides the database in which orders and catering inquiries are
+              stored. See the{" "}
+              <a
+                href="https://www.cloudflare.com/privacypolicy/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-grapefruit transition-colors"
+              >
+                Cloudflare Privacy Policy
+              </a>
+              .
+            </span>,
+            <span key="resend">
+              <strong className="font-normal text-midnight">Resend</strong> delivers the
+              email that tells us a catering inquiry has arrived. That email contains what
+              you entered on the form, so that we can read and reply to it. See the{" "}
+              <a
+                href="https://resend.com/legal/privacy-policy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-grapefruit transition-colors"
+              >
+                Resend Privacy Policy
+              </a>
+              .
+            </span>,
+          ]}
+        />
+      </LegalSection>
+
       <LegalSection heading="Consent">
         <p>
           By submitting an order or a catering inquiry, you consent to us collecting and using
@@ -167,18 +209,25 @@ export default function PrivacyPage() {
 
       <LegalSection heading="How Long We Keep It">
         <p>
-          We keep order and catering inquiry information only as long as needed to
-          fulfill your order or respond to your inquiry, meet legal and accounting requirements, and
-          resolve any disputes. After that, it is deleted.
+          We keep order and catering inquiry information only as long as we have a reason
+          to: fulfilling your order, quoting and replying to your inquiry, meeting legal
+          and accounting requirements, and resolving any dispute. A catering inquiry is a
+          business record, so we may keep it for as long as we are dealing with the
+          business that sent it. You can ask us to delete your information at any time
+          (see &ldquo;Your Rights&rdquo; below) and we will, unless the law requires us to
+          keep it.
         </p>
       </LegalSection>
 
       <LegalSection heading="Where It Is Processed">
         <p>
           Our website is hosted on Cloudflare&rsquo;s global network, so technical data may
-          be processed on servers outside of Canada, including in the United States. When
-          personal information is handled outside Canada, it may be subject to the laws of
-          those jurisdictions.
+          be processed on servers outside of Canada, including in the United States. The
+          same is true of the information you submit: orders and catering inquiries are
+          stored in a Cloudflare database, and catering inquiries also pass through Resend
+          to reach our inbox. Both companies operate outside Canada. When personal
+          information is handled outside Canada, it may be subject to the laws of those
+          jurisdictions and accessible to their authorities under those laws.
         </p>
       </LegalSection>
 

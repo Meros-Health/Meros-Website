@@ -106,8 +106,8 @@ describe("scope: catering, not supply", () => {
     // own reasoning.
     const config = stripComments(readFileSync(path.join(ROOT, "next.config.ts"), "utf8"));
     expect(config).not.toContain("/wholesale");
-    const navbar = stripComments(readFileSync(path.join(ROOT, "components/ui/Navbar.tsx"), "utf8"));
-    expect(navbar).not.toMatch(/wholesale|partners/i);
+    const nav = stripComments(readFileSync(path.join(ROOT, "lib/nav.ts"), "utf8"));
+    expect(nav).not.toMatch(/wholesale|partners/i);
   });
 });
 
@@ -118,8 +118,9 @@ describe("routing", () => {
   });
 
   it("carries one Catering entry in the nav", () => {
-    const navbar = readFileSync(path.join(ROOT, "components/ui/Navbar.tsx"), "utf8");
-    expect(navbar).toContain('{ label: "Catering", href: "/catering" }');
+    // lib/nav.ts is the route index the navbar and the footer both render.
+    const nav = readFileSync(path.join(ROOT, "lib/nav.ts"), "utf8");
+    expect(nav).toContain('{ label: "Catering", href: "/catering" }');
   });
 });
 
@@ -151,5 +152,40 @@ describe("service schema", () => {
     expect(graph[0].serviceType).toBe("Catering");
     expect(graph[0].provider["@id"]).toBe("https://example.com/#restaurant");
     expect(graph[0].url).toBe("https://example.com/catering");
+  });
+});
+
+describe("what the form does with what it collects", () => {
+  const privacy = stripComments(readFileSync(path.join(ROOT, "app/privacy/page.tsx"), "utf8"));
+  const terms = stripComments(readFileSync(path.join(ROOT, "app/terms/page.tsx"), "utf8"));
+  const form = stripComments(
+    readFileSync(path.join(ROOT, "components/catering/CateringInquiryForm.tsx"), "utf8")
+  );
+
+  // A processor named in the code and not in the policy is an undisclosed
+  // recipient of a lead's name, email, phone and message. Each entry is the
+  // file that would introduce one, so adding a processor without a policy line
+  // fails here rather than in front of a privacy commissioner.
+  const PROCESSORS = [
+    { name: "Resend", source: "lib/catering/runtime.ts" },
+    { name: "Stripe", source: "app/actions/checkout.ts" },
+  ];
+
+  it.each(PROCESSORS)("names $name in the privacy policy once the code uses it", ({ name, source }) => {
+    const code = stripComments(readFileSync(path.join(ROOT, source), "utf8"));
+    if (!new RegExp(name, "i").test(code)) return; // not wired up yet
+    expect(privacy, `${name} handles submitted data but /privacy does not name it`).toContain(name);
+  });
+
+  it("links the policy from the form, where consent is actually given", () => {
+    // The policy treats a submit as consent. Consent given without the terms
+    // in reach is not informed consent under PIPA.
+    expect(form).toContain('href="/privacy"');
+  });
+
+  it("tells a catering buyer an inquiry is not a booking", () => {
+    // The retail refund and pickup rules in /terms are written for a bowl. A
+    // quote, not those sections, governs a catered event.
+    expect(terms.toLowerCase()).toContain("not a booking");
   });
 });

@@ -10,7 +10,7 @@ import { LegalShell, LegalSection, LegalList } from "@/components/legal/LegalPag
 //      and describe the refund mechanism (refund to original payment method).
 //   2. Bump the effective date below.
 
-const EFFECTIVE_DATE = "July 7, 2026";
+const EFFECTIVE_DATE = "August 31, 2026";
 
 export const metadata = pageMetadata({
   title: "Terms of Service - MERŌS",
@@ -25,11 +25,12 @@ export default function TermsPage() {
       <LegalShell title="Terms of Service" effectiveDate={EFFECTIVE_DATE}>
       <LegalSection heading="Agreement">
         <p>
-          These Terms of Service (&ldquo;Terms&rdquo;) govern your use of the MERŌS website
-          and any orders you place through it. MERŌS (&ldquo;we&rdquo;, &ldquo;us&rdquo;,
-          &ldquo;our&rdquo;) operates from 1207 Hamilton Street, Yaletown, Vancouver,
-          British Columbia. By using this website or placing an order, you agree to these
-          Terms. If you do not agree, please do not use the website.
+          These Terms of Service (&ldquo;Terms&rdquo;) govern your use of the MERŌS website,
+          any orders you place through it, and any catering inquiry you send us through it.
+          MERŌS (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;) operates from 1207
+          Hamilton Street, Yaletown, Vancouver, British Columbia. By using this website,
+          placing an order, or sending a catering inquiry, you agree to these Terms. If you
+          do not agree, please do not use the website.
         </p>
       </LegalSection>
 
@@ -41,7 +42,7 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection heading="Orders & Payment">
+      <LegalSection heading="Orders & Payment" id="payment">
         <p>
           Submitting an order through the website is an offer to purchase. An order is not
           confirmed until we accept it, and we may decline or cancel an order at our
@@ -63,7 +64,7 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection heading="Refunds">
+      <LegalSection heading="Refunds" id="refunds">
         <p>
           Because our products are fresh and perishable, all sales are final once an order
           has been prepared. If something is wrong with your order (a missing item,
@@ -72,6 +73,22 @@ export default function TermsPage() {
             info@merosyogurt.com
           </a>{" "}
           or speak to us in store, and we will make it right with a replacement or refund.
+        </p>
+      </LegalSection>
+
+      <LegalSection heading="Catering Inquiries" id="catering">
+        <p>
+          Sending a catering inquiry is a request for a quote. It is not a booking, it does
+          not reserve a date, and it does not commit either of us to anything. We reply by
+          email with what we can serve, when we can serve it, and what it costs.
+        </p>
+        <p>
+          A catering order exists once you accept that quote and we confirm it. The quote
+          sets the terms of that order, including scope, headcount, lead time, any
+          minimum, delivery or setup, payment and invoicing, and what happens if you change
+          or cancel. Where the quote and the &ldquo;Orders &amp; Payment&rdquo; or
+          &ldquo;Refunds&rdquo; sections above say different things, the quote applies to
+          that catering order.
         </p>
       </LegalSection>
 
@@ -152,8 +169,9 @@ export default function TermsPage() {
           <Link href="/privacy" className="underline hover:text-grapefruit transition-colors">
             Privacy Policy
           </Link>{" "}
-          explains how we handle the personal information you provide when ordering or
-          contacting us. It forms part of these Terms.
+          explains how we handle the personal information you provide when ordering,
+          sending a catering inquiry, or otherwise contacting us. It forms part of these
+          Terms.
         </p>
       </LegalSection>
 

@@ -32,9 +32,24 @@ export function LegalShell({
   );
 }
 
-export function LegalSection({ heading, children }: { heading: string; children: ReactNode }) {
+/**
+ * `id` gives the section a link target. Sections the footer links to pass one
+ * explicitly so that renaming a heading cannot silently break the link; the
+ * rest fall back to a slug of the heading. `scroll-mt` clears the fixed nav so
+ * an anchored heading is not landed on underneath it.
+ */
+export function LegalSection({
+  heading,
+  id,
+  children,
+}: {
+  heading: string;
+  id?: string;
+  children: ReactNode;
+}) {
+  const anchor = id ?? heading.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   return (
-    <section className="flex flex-col gap-3">
+    <section id={anchor} className="flex flex-col gap-3 scroll-mt-32">
       <h2 className="font-body-caps text-midnight text-[12px] tracking-[0.2em]">{heading}</h2>
       <div className="flex flex-col gap-3 font-body-mixed text-sm leading-relaxed text-midnight/80">
         {children}

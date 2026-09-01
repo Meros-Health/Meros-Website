@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRevealReady } from "@/lib/useRevealReady";
 import { Reveal } from "@/components/ui/ScrollReveal";
@@ -8,9 +9,10 @@ import { CATERING_CONTACT } from "@/lib/catering/content";
 import { BUSINESS } from "@/lib/business";
 
 // The only conversion on the page. It writes a row to D1 (migrations/0002)
-// through the server action; there is no email delivery yet, so the email and
-// phone sit next to it rather than behind it, and a failed submit hands both
-// over instead of asking the visitor to try again into the same hole.
+// through the server action, which then emails info@ as a courtesy. The row is
+// what the confirmation speaks for, so the email and phone sit next to the form
+// rather than behind it, and a failed submit hands both over instead of asking
+// the visitor to try again into the same hole.
 //
 // Every field here is free text. Headcount and date are not parsed: an event
 // is described in a sentence more often than it fits a picker, and a form that
@@ -216,6 +218,17 @@ export function CateringInquiryForm() {
                   >
                     {pending ? "Sending..." : "Send inquiry"}
                   </button>
+
+                  <p className="font-body-mixed text-cream/40 text-xs leading-relaxed">
+                    We use what you send here to quote and reply, nothing else. Our{" "}
+                    <Link
+                      href="/privacy"
+                      className="underline transition-colors duration-200 hover:text-grapefruit"
+                    >
+                      Privacy Policy
+                    </Link>{" "}
+                    covers how it is stored and who handles it.
+                  </p>
                 </form>
               </Reveal>
             )}

@@ -16,6 +16,9 @@ import { useCartStore } from "@/store/cartStore";
 import { useIsMobile } from "@/lib/useIsMobile";
 import { CRITICAL_IMAGE } from "@/lib/criticalImages";
 import { lockScroll } from "@/lib/scrollLock";
+// The bar itself carries only the menu toggle, the wordmark and the cart, so
+// this list is the only way into a route from the header. See lib/nav.ts.
+import { NAV_LINKS } from "@/lib/nav";
 
 const HEADER_BG_Z = 110;
 const HEADER_CONTENT_Z = 120;
@@ -47,16 +50,6 @@ function colorForT(t: number) {
   const b = Math.round(b0 + (b1 - b0) * t);
   return `rgb(${r}, ${g}, ${b})`;
 }
-
-// The whole primary nav. The bar itself carries only the menu toggle, the
-// wordmark and the cart, so this list is the only way into a route: a route
-// that is not here is unreachable. Keep it complete.
-const NAV_LINKS = [
-  { label: "Home", href: "/" },
-  { label: "Build", href: "/build" },
-  { label: "Order", href: "/order" },
-  { label: "Catering", href: "/catering" },
-];
 
 export function Navbar() {
   const transitionRouter = useTransitionRouter();

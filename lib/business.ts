@@ -4,6 +4,15 @@
 
 import { INSTAGRAM_URL } from "@/lib/instagramFeed";
 
+// The footer's social bar buttons and the Restaurant schema's sameAs both read
+// this list, so a new account is one line and cannot end up on the page
+// without also being declared to search engines.
+export const SOCIAL_LINKS = [
+  { label: "Instagram", href: INSTAGRAM_URL },
+  { label: "Facebook", href: "https://www.facebook.com/profile.php?id=61593443750991" },
+  { label: "TikTok", href: "https://www.tiktok.com/@meros_yogurt" },
+] as const;
+
 export const BUSINESS = {
   name: "MERŌS House of Yogurt",
   description: "Greek yogurt bowls and smoothies, strained and built in-house. Yaletown, Vancouver.",
@@ -24,7 +33,7 @@ export const BUSINESS = {
   hours: { opens: "08:00", closes: "22:00" },
   priceRange: "$$",
   servesCuisine: ["Greek yogurt bowls", "Smoothies"],
-  sameAs: [INSTAGRAM_URL],
+  sameAs: SOCIAL_LINKS.map((s) => s.href),
 } as const;
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -51,6 +60,14 @@ export function mapsQuery(): string {
 
 export function mapsUrl(): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery())}`;
+}
+
+// Apple Maps resolves the pin from the street address rather than the search
+// string, so an iPhone visitor lands on the store and not a list of results.
+export function appleMapsUrl(): string {
+  const { street, city, region, postalCode } = BUSINESS.address;
+  const address = `${street}, ${city}, ${region} ${postalCode}`;
+  return `https://maps.apple.com/?q=${encodeURIComponent(BUSINESS.name)}&address=${encodeURIComponent(address)}`;
 }
 
 /** schema.org Restaurant for the home page. */
