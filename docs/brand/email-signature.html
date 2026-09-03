@@ -6,15 +6,17 @@
 
   Images are 2x (retina) and MUST carry explicit width/height at half their
   intrinsic size, or they render double. Intrinsic -> displayed:
-    meros-logo-2x.png       320x87  -> 160x43
+    meros-wordmark-2x.png   320x87  -> 160x43
     instagram-logo-2x.png    44x44  ->   22x22
     facebook-logo-2x.png     44x44  ->   22x22
     merosyogurt-url-2x.png  225x29  -> 112x14
     rule-vertical-2x.png      2x88  ->    1x44
 
-  line-vertical-2x.png (100x256, transparent, thin centered line) is not
-  used here. It keeps REX's original filename alive for signatures pasted
-  before 2026-09-03, whose markup stretches it into a tall divider box.
+  meros-logo-2x.png (320x149, wordmark padded to 2.15:1) and
+  line-vertical-2x.png (100x256, thin centered line) are not used here.
+  They keep REX's original filenames alive for signatures pasted before
+  2026-09-03, whose markup boxes each image at REX's canvas shape; a tight
+  file in that box renders squeezed.
 
   Absolute https URLs are required. A relative path resolves against the mail
   client, not the site, and 404s.
@@ -29,7 +31,7 @@
   <tr>
     <td style="padding:0 0 10px 0;">
       <a href="https://merosyogurt.com" style="text-decoration:none;border:0;">
-        <img src="https://merosyogurt.com/signature/meros-logo-2x.png"
+        <img src="https://merosyogurt.com/signature/meros-wordmark-2x.png"
              width="160" height="43" alt="Meros"
              style="display:block;border:0;outline:none;text-decoration:none;" />
       </a>
