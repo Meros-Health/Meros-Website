@@ -10,14 +10,20 @@
     instagram-logo-2x.png    44x44  ->   22x22
     facebook-logo-2x.png     44x44  ->   22x22
     merosyogurt-url-2x.png  225x29  -> 112x14
-    line-vertical-2x.png      2x88  ->    1x44
+    rule-vertical-2x.png      2x88  ->    1x44
+
+  line-vertical-2x.png (100x256, transparent, thin centered line) is not
+  used here. It keeps REX's original filename alive for signatures pasted
+  before 2026-09-03, whose markup stretches it into a tall divider box.
 
   Absolute https URLs are required. A relative path resolves against the mail
   client, not the site, and 404s.
 
   Social URLs, phone and business name are pulled from lib/business.ts and
   lib/instagramFeed.ts, so they match the footer and the Restaurant schema.
-  Replace [FULL NAME] and [TITLE]; everything else is real.
+  Replace [FULL NAME], [TITLE], [EMAIL] and [CELL]; everything else is real.
+  Drop the C: line entirely for someone without a work cell. The store phone
+  is not in the signature: the logo links to the site, which carries it.
 -->
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;font-family:'DM Sans',Helvetica,Arial,sans-serif;color:#292D2A;">
   <tr>
@@ -58,7 +64,7 @@
             </a>
           </td>
           <td style="padding:0 14px 0 0;vertical-align:middle;">
-            <img src="https://merosyogurt.com/signature/line-vertical-2x.png"
+            <img src="https://merosyogurt.com/signature/rule-vertical-2x.png"
                  width="1" height="44" alt=""
                  style="display:block;border:0;outline:none;" />
           </td>
@@ -69,7 +75,8 @@
                    style="display:block;border:0;outline:none;" />
             </a>
             <div style="font-size:12px;line-height:18px;color:#818A83;padding-top:4px;letter-spacing:0.02em;">
-              (778) 345-3023
+              <a href="mailto:[EMAIL]" style="color:#818A83;text-decoration:none;">[EMAIL]</a>
+              <br />C: [CELL]
             </div>
           </td>
         </tr>
