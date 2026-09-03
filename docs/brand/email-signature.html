@@ -7,16 +7,19 @@
   Images are 2x (retina) and MUST carry explicit width/height at half their
   intrinsic size, or they render double. Intrinsic -> displayed:
     meros-wordmark-2x.png   320x87  -> 160x44
-    instagram-logo-2x.png    44x44  ->   22x22
-    facebook-logo-2x.png     44x44  ->   22x22
-    merosyogurt-url-2x.png  225x29  -> 112x14
-    rule-vertical-2x.png      2x88  ->    1x44
+    instagram-icon-2x.png    44x44  ->  22x22
+    facebook-icon-2x.png     44x44  ->  22x22
+    site-url-2x.png         225x29  -> 112x14
+    rule-vertical-2x.png      2x88  ->   1x44
+  tests/unit/signatureImages.test.ts fails the build if a tag is off the
+  file's ratio: brand art is never squeezed on one axis.
 
-  meros-logo-2x.png (320x149, wordmark padded to 2.15:1) and
-  line-vertical-2x.png (100x256, thin centered line) are not used here.
-  They keep REX's original filenames alive for signatures pasted before
-  2026-09-03, whose markup boxes each image at REX's canvas shape; a tight
-  file in that box renders squeezed.
+  The five REX filenames (meros-logo, facebook-logo, instagram-logo,
+  line-vertical, merosyogurt-url) are NOT used here. Signatures pasted before
+  2026-09-03 carry REX's markup, which boxes each image at a fixed shape
+  (171x90, 29x30, 29x30, 52x132, 152x10); those files are transparent
+  canvases at exactly that shape with the same art fitted inside, so the old
+  pastes render clean. Keep both sets.
 
   Absolute https URLs are required. A relative path resolves against the mail
   client, not the site, and 404s.
@@ -53,14 +56,14 @@
         <tr>
           <td style="padding:0 8px 0 0;vertical-align:middle;">
             <a href="https://instagram.com/merosyogurt" style="text-decoration:none;border:0;">
-              <img src="https://merosyogurt.com/signature/instagram-logo-2x.png"
+              <img src="https://merosyogurt.com/signature/instagram-icon-2x.png"
                    width="22" height="22" alt="Instagram"
                    style="display:block;border:0;outline:none;" />
             </a>
           </td>
           <td style="padding:0 14px 0 0;vertical-align:middle;">
             <a href="https://www.facebook.com/profile.php?id=61593443750991" style="text-decoration:none;border:0;">
-              <img src="https://merosyogurt.com/signature/facebook-logo-2x.png"
+              <img src="https://merosyogurt.com/signature/facebook-icon-2x.png"
                    width="22" height="22" alt="Facebook"
                    style="display:block;border:0;outline:none;" />
             </a>
@@ -72,7 +75,7 @@
           </td>
           <td style="vertical-align:middle;">
             <a href="https://merosyogurt.com" style="text-decoration:none;border:0;">
-              <img src="https://merosyogurt.com/signature/merosyogurt-url-2x.png"
+              <img src="https://merosyogurt.com/signature/site-url-2x.png"
                    width="112" height="14" alt="merosyogurt.com"
                    style="display:block;border:0;outline:none;" />
             </a>

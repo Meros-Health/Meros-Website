@@ -51,3 +51,25 @@ describe("signature images", () => {
     });
   }
 });
+
+// REX's original markup, still installed in Outlook from before 2026-09-03,
+// boxes each legacy filename at a fixed tag size (read from a sent email).
+// Those files must stay canvases of exactly that shape, or the old pastes
+// squeeze again.
+const LEGACY_TAGS: Record<string, { w: number; h: number }> = {
+  "meros-logo-2x.png": { w: 171, h: 90 },
+  "facebook-logo-2x.png": { w: 29, h: 30 },
+  "instagram-logo-2x.png": { w: 29, h: 30 },
+  "line-vertical-2x.png": { w: 52, h: 132 },
+  "merosyogurt-url-2x.png": { w: 152, h: 10 },
+};
+
+describe("legacy REX signature files", () => {
+  for (const [name, tag] of Object.entries(LEGACY_TAGS)) {
+    it(`${name} is a canvas at REX's ${tag.w}x${tag.h} tag shape`, () => {
+      const { w, h } = pngSize(join(ASSET_DIR, name));
+      expect(w, "canvas is 2x the tag").toBe(tag.w * 2);
+      expect(h, "canvas is 2x the tag").toBe(tag.h * 2);
+    });
+  }
+});
