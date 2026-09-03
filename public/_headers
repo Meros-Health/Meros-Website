@@ -16,6 +16,12 @@
   Cache-Control: public, max-age=86400
 /logos/*
   Cache-Control: public, max-age=86400
+
+# Email signature art. Mail clients and scanners refetch these on every
+# open, so without a cache header each open is a full origin request.
+# Plain names, so a replaced file still lands within a day.
+/signature/*
+  Cache-Control: public, max-age=86400
 /videos/*
   Cache-Control: public, max-age=86400
 /icons/*

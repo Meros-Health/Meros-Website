@@ -1,0 +1,79 @@
+<!--
+  Meros email signature — M365 / Outlook / Apple Mail / Gmail safe.
+
+  Table-based with inline styles on purpose: Outlook renders with Word's HTML
+  engine, which ignores flexbox, grid and most <style> blocks.
+
+  Images are 2x (retina) and MUST carry explicit width/height at half their
+  intrinsic size, or they render double. Intrinsic -> displayed:
+    meros-logo-2x.png       320x87  -> 160x43
+    instagram-logo-2x.png    44x44  ->   22x22
+    facebook-logo-2x.png     44x44  ->   22x22
+    merosyogurt-url-2x.png  225x29  -> 112x14
+    line-vertical-2x.png      2x88  ->    1x44
+
+  Absolute https URLs are required. A relative path resolves against the mail
+  client, not the site, and 404s.
+
+  Social URLs, phone and business name are pulled from lib/business.ts and
+  lib/instagramFeed.ts, so they match the footer and the Restaurant schema.
+  Replace [FULL NAME] and [TITLE]; everything else is real.
+-->
+<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;font-family:'DM Sans',Helvetica,Arial,sans-serif;color:#292D2A;">
+  <tr>
+    <td style="padding:0 0 10px 0;">
+      <a href="https://merosyogurt.com" style="text-decoration:none;border:0;">
+        <img src="https://merosyogurt.com/signature/meros-logo-2x.png"
+             width="160" height="43" alt="Meros"
+             style="display:block;border:0;outline:none;text-decoration:none;" />
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:0 0 2px 0;font-size:14px;line-height:20px;font-weight:600;letter-spacing:0.02em;">
+      [FULL NAME]
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:0 0 10px 0;font-size:12px;line-height:18px;color:#818A83;letter-spacing:0.02em;">
+      [TITLE] &nbsp;&middot;&nbsp; MER&#332;S House of Yogurt
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+        <tr>
+          <td style="padding:0 8px 0 0;vertical-align:middle;">
+            <a href="https://instagram.com/merosyogurt" style="text-decoration:none;border:0;">
+              <img src="https://merosyogurt.com/signature/instagram-logo-2x.png"
+                   width="22" height="22" alt="Instagram"
+                   style="display:block;border:0;outline:none;" />
+            </a>
+          </td>
+          <td style="padding:0 14px 0 0;vertical-align:middle;">
+            <a href="https://www.facebook.com/profile.php?id=61593443750991" style="text-decoration:none;border:0;">
+              <img src="https://merosyogurt.com/signature/facebook-logo-2x.png"
+                   width="22" height="22" alt="Facebook"
+                   style="display:block;border:0;outline:none;" />
+            </a>
+          </td>
+          <td style="padding:0 14px 0 0;vertical-align:middle;">
+            <img src="https://merosyogurt.com/signature/line-vertical-2x.png"
+                 width="1" height="44" alt=""
+                 style="display:block;border:0;outline:none;" />
+          </td>
+          <td style="vertical-align:middle;">
+            <a href="https://merosyogurt.com" style="text-decoration:none;border:0;">
+              <img src="https://merosyogurt.com/signature/merosyogurt-url-2x.png"
+                   width="112" height="14" alt="merosyogurt.com"
+                   style="display:block;border:0;outline:none;" />
+            </a>
+            <div style="font-size:12px;line-height:18px;color:#818A83;padding-top:4px;letter-spacing:0.02em;">
+              (778) 345-3023
+            </div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
