@@ -137,7 +137,7 @@ export function MacroRingChart({ nutrition }: MacroRingChartProps) {
         ) : (
           <div className="flex flex-col gap-2">
             <p className="font-body-mixed text-[11px] text-juniper">
-              Add ingredients to see how your bowl allocates protein, carbs, fat, fiber, and minerals.
+              Add ingredients to see how your bowl allocates protein, carbs, fat, fibre, and minerals.
             </p>
             <ul className="flex flex-wrap gap-x-3 gap-y-1">
               {NUTRITION_SEGMENTS.map((segment) => (

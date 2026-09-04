@@ -15,7 +15,6 @@ interface BowlConfiguratorProps {
   /** Edit mode: false once the line being edited has left the cart. */
   editLineExists?: boolean;
   header: {
-    eyebrow: string;
     title: string;
     description: string;
   };
@@ -30,15 +29,9 @@ export function BowlConfigurator({ mode, editLineId, editLineExists = true, head
   return (
     <div className="px-[7vw] pt-28 pb-24">
       <header className="mb-10 md:mb-14">
-        {/* Reveal order follows visual hierarchy (title first), not DOM order. */}
-        <EntranceReveal index={1}>
-          <span className="font-body-caps text-midnight/50 text-[10px] tracking-[0.30em]">
-            {header.eyebrow}
-          </span>
-        </EntranceReveal>
         <EntranceReveal index={0}>
           <h1
-            className="font-headline text-midnight leading-[0.9] uppercase mt-2"
+            className="font-headline text-midnight leading-[0.9] uppercase"
             style={{ fontSize: "clamp(2.5rem, 6vw, 5rem)" }}
           >
             {header.title}

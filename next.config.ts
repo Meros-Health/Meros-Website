@@ -11,7 +11,7 @@ import { DEVICE_SIZES, IMAGE_SIZES } from "./lib/images/variants.cjs";
 const LEGACY_PATHS: Array<[from: string, to: string]> = [
   ["/about-us", "/#about"],
   ["/build-a-bowl", "/build"],
-  ["/our-menu", "/order"],
+  ["/our-menu", "/menu"],
   ["/privacy-policy", "/privacy"],
   ["/contact", "/#footer"],
 ];
@@ -25,6 +25,13 @@ const LEGACY_PATHS: Array<[from: string, to: string]> = [
 // do not supply yogurt as stock, so a URL that resolves would be a claim we
 // cannot honour (see lib/catering/content.ts).
 const CATERING_ALIASES: Array<[from: string, to: string]> = [["/cater", "/catering"]];
+
+// The menu page lived at /order from the cutover (2026-08-28) until 2026-09-03,
+// long enough to be crawled and linked. The path was renamed because "order"
+// named two different things on this site: a page you cannot order from, and
+// the act of ordering. Permanent, because the page is not coming back to the
+// old path.
+const RENAMED_PATHS: Array<[from: string, to: string]> = [["/order", "/menu"]];
 
 const nextConfig: NextConfig = {
   // The built-in optimizer does nothing on Cloudflare Workers (it returned the
@@ -42,6 +49,11 @@ const nextConfig: NextConfig = {
     // trailing slash before matching, so one entry covers both forms.
     return [
       ...LEGACY_PATHS.map(([source, destination]) => ({
+        source,
+        destination,
+        permanent: true,
+      })),
+      ...RENAMED_PATHS.map(([source, destination]) => ({
         source,
         destination,
         permanent: true,

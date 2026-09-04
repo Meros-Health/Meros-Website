@@ -1,5 +1,5 @@
 // What a "+" on a signature does, shared by the homepage ledger rows and the
-// /order cards so the two surfaces never disagree with each other or with
+// /menu cards so the two surfaces never disagree with each other or with
 // the store counter.
 //
 // An item that has a choice to make (more than one size, or no default

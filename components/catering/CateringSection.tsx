@@ -22,14 +22,14 @@ const TONE = {
     section: "bg-cream",
     heading: "text-midnight",
     body: "text-midnight/70",
-    eyebrow: "text-grapefruit-text",
+    accent: "text-grapefruit-text",
     rule: "rgba(41, 45, 42, 0.15)",
   },
   midnight: {
     section: "bg-midnight",
     heading: "text-cream",
     body: "text-cream/65",
-    eyebrow: "text-grapefruit",
+    accent: "text-grapefruit",
     rule: "rgba(255, 247, 240, 0.15)",
   },
 } as const;
@@ -37,7 +37,6 @@ const TONE = {
 interface CateringSectionProps {
   id: string;
   tone: Tone;
-  eyebrow: string;
   title: string;
   intro: string;
   items: readonly CateringItem[];
@@ -51,7 +50,6 @@ interface CateringSectionProps {
 export function CateringSection({
   id,
   tone,
-  eyebrow,
   title,
   intro,
   items,
@@ -67,21 +65,15 @@ export function CateringSection({
     <section id={id} ref={ref} className={`w-full ${theme.section} scroll-mt-24`}>
       <div className="mx-auto w-full max-w-[1600px] px-section-x py-section">
         <Reveal show={show} index={0}>
-          <span className={`font-body-caps text-[10px] tracking-[0.30em] ${theme.eyebrow}`}>
-            {eyebrow}
-          </span>
-        </Reveal>
-
-        <Reveal show={show} index={1}>
           <h2
-            className={`font-headline mt-4 uppercase leading-[0.95] ${theme.heading}`}
+            className={`font-headline uppercase leading-[0.95] ${theme.heading}`}
             style={{ fontSize: "clamp(2rem, 4.6vw, 3.75rem)" }}
           >
             {title}
           </h2>
         </Reveal>
 
-        <Reveal show={show} index={2}>
+        <Reveal show={show} index={1}>
           <p className={`font-body-mixed mt-6 max-w-2xl leading-relaxed text-[0.95rem] ${theme.body}`}>
             {intro}
           </p>
@@ -91,12 +83,12 @@ export function CateringSection({
             number is the fastest way to refer to one on a phone call. */}
         <div className="mt-14 grid grid-cols-1 gap-x-12 gap-y-0 md:grid-cols-2">
           {items.map((item, i) => (
-            <Reveal key={item.id} show={show} index={3 + i}>
+            <Reveal key={item.id} show={show} index={2 + i}>
               <article
                 className="flex flex-col gap-3 py-8"
                 style={{ borderTop: `0.5px solid ${theme.rule}` }}
               >
-                <span className={`font-body-caps text-[10px] tracking-[0.25em] ${theme.eyebrow}`}>
+                <span className={`font-body-caps text-[10px] tracking-[0.25em] ${theme.accent}`}>
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <h3 className={`font-headline uppercase leading-tight ${theme.heading}`} style={{ fontSize: "clamp(1.1rem, 1.8vw, 1.5rem)" }}>
@@ -113,7 +105,7 @@ export function CateringSection({
         {notes && notes.length > 0 && (
           <div className="mt-4 grid grid-cols-1 gap-x-12 gap-y-8 sm:grid-cols-3">
             {notes.map((note, i) => (
-              <Reveal key={note.id} show={show} index={3 + items.length + i}>
+              <Reveal key={note.id} show={show} index={2 + items.length + i}>
                 <div
                   className="flex flex-col gap-2.5 pt-8"
                   style={{ borderTop: `0.5px solid ${theme.rule}` }}
@@ -136,7 +128,7 @@ export function CateringSection({
               className="mt-16 flex flex-col gap-4 pt-8 sm:flex-row sm:items-baseline sm:gap-10"
               style={{ borderTop: `0.5px solid ${theme.rule}` }}
             >
-              <span className={`font-body-caps shrink-0 text-[10px] tracking-[0.25em] ${theme.eyebrow}`}>
+              <span className={`font-body-caps shrink-0 text-[10px] tracking-[0.25em] ${theme.accent}`}>
                 {audienceLabel}
               </span>
               <ul className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-x-8">

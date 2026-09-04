@@ -12,6 +12,15 @@ gsap.registerPlugin(ScrollTrigger);
 
 const BOWL_SIZE = 1080;
 
+// The gap above COMPOSE YOUR OWN, and half of an argument that starts in the
+// section before this one. SignatureMenuSection ends on an "or" that has to
+// read as sitting between the two headings, so the space under it cannot be a
+// leftover: it is this. Deliberately shorter than a full section token, which
+// leaves the hinge a little above the geometric middle of the seam and a little
+// nearer this heading, where it belongs. The heading is large and the button
+// above the hinge is small, so an exactly even split reads as high.
+const SEAM_TOP = "clamp(2.25rem, 4.6vw, 4.6rem)";
+
 // ─── Carousel config ──────────────────────────────────────────────────────────
 // Load-bearing "feel" values. The row is NOT scroll-pinned; it runs as a
 // continuous carousel driven by a single gsap.ticker loop. That loop advances the
@@ -44,16 +53,21 @@ const WINDOWS: { src: string; alt: string }[] = [
 export const SET_REPEAT = 3;
 const REPEATED_WINDOWS = Array.from({ length: SET_REPEAT }, () => WINDOWS).flat();
 
+// The one bowl the mobile and reduced-motion layouts show, standing in for the
+// carousel the desktop branch runs. The Tropics, not The Moment: the same shot
+// the footer tiles leave out because it reads as the retired Bloom. Nothing on
+// this screen is a menu listing, so a photograph that reads as a bowl of fruit
+// is doing the right job here, and it is still a bowl that can be ordered.
 const STATIC_BOWL = {
-  src: "/images-web/Transparent/Moment.png",
-  alt: "The Moment bowl",
+  src: "/images-web/Transparent/Tropic.png",
+  alt: "The Tropics bowl",
 };
 
 export function BuildSection() {
   // ── Carousel (desktop/tablet) refs ────────────────────────────────────────
   const sectionRef = useRef<HTMLElement>(null);
-  const eyebrowRef = useRef<HTMLParagraphElement>(null);
   const headlineRef = useRef<HTMLHeadingElement>(null);
+  const subtitleRef = useRef<HTMLParagraphElement>(null);
   const ctaRef = useRef<HTMLDivElement>(null);
   const rowRef = useRef<HTMLDivElement>(null);
   const windowRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -61,8 +75,8 @@ export function BuildSection() {
 
   // ── Static (mobile / reduced-motion) refs ─────────────────────────────────
   const staticSectionRef = useRef<HTMLElement>(null);
-  const staticEyebrowRef = useRef<HTMLParagraphElement>(null);
   const staticTitleRef = useRef<HTMLHeadingElement>(null);
+  const staticSubtitleRef = useRef<HTMLParagraphElement>(null);
   const staticImageRef = useRef<HTMLDivElement>(null);
   const staticCtaRef = useRef<HTMLDivElement>(null);
 
@@ -158,8 +172,9 @@ export function BuildSection() {
       window.addEventListener("resize", onResize);
 
       // Title stack: slow, staggered reveal-in as the section approaches
-      // (brand motion: ~1.1s, ease-out, descending hierarchy).
-      const titleTargets = [eyebrowRef.current, headlineRef.current, ctaRef.current];
+      // (brand motion: ~1.1s, ease-out, descending hierarchy). The headline is
+      // the first thing in, because nothing sits above it any more.
+      const titleTargets = [headlineRef.current, subtitleRef.current, ctaRef.current];
       gsap.set(titleTargets, { opacity: 0, y: 18 });
       gsap.to(titleTargets, {
         opacity: 1,
@@ -190,8 +205,8 @@ export function BuildSection() {
       if (!useMobileReveal || !staticShow || !staticSectionRef.current) return;
 
       const targets = [
-        staticEyebrowRef.current,
         staticTitleRef.current,
+        staticSubtitleRef.current,
         staticImageRef.current,
         staticCtaRef.current,
       ].filter(Boolean);
@@ -218,25 +233,32 @@ export function BuildSection() {
     return (
       <section
         ref={staticSectionRef}
-        className="relative w-full bg-cream overflow-hidden py-20 px-[7vw]"
+        className="relative flex w-full flex-col justify-start overflow-hidden bg-cream px-[7vw] pb-section"
+        // No 100svh floor and no vertical centring. Both were here to make this
+        // a full-screen panel, and together they put a viewport's worth of
+        // leftover space above the heading, which is the space the previous
+        // section's "or" is supposed to be sitting in the middle of. The
+        // section is now as tall as what it holds, so that gap is SEAM_TOP and
+        // nothing else.
+        style={{ paddingTop: SEAM_TOP }}
         aria-label="Build A Bowl"
       >
         <div className="mx-auto flex w-full max-w-md flex-col items-center text-center">
-          <p
-            ref={staticEyebrowRef}
-            className="font-body-caps text-midnight/50 text-[10px] tracking-[0.30em]"
-            style={revealHiddenStyle}
-          >
-            Build A Bowl
-          </p>
-
           <h2
             ref={staticTitleRef}
-            className="font-headline text-midnight leading-[1.05] uppercase mt-3"
+            className="font-headline text-midnight leading-[1.05] uppercase"
             style={{ fontSize: "clamp(2rem, 9vw, 3.25rem)", ...revealHiddenStyle }}
           >
-            Create Your Perfect Bowl.
+            Compose Your Own.
           </h2>
+
+          <p
+            ref={staticSubtitleRef}
+            className="font-body-mixed mt-4 leading-relaxed text-juniper"
+            style={{ fontSize: "clamp(0.875rem, 3.6vw, 1rem)", ...revealHiddenStyle }}
+          >
+            Pick your base and toppings. Protein and calories update as you build.
+          </p>
 
           <div
             ref={staticImageRef}
@@ -256,7 +278,7 @@ export function BuildSection() {
 
           <div ref={staticCtaRef} className="mt-8" style={revealHiddenStyle}>
             <CTAButton href="/build" variant="dark">
-              Build Your Custom Bowl
+              Build
             </CTAButton>
           </div>
         </div>
@@ -269,13 +291,25 @@ export function BuildSection() {
     <section
       ref={sectionRef}
       id="st-section"
-      className="relative w-full bg-cream overflow-x-clip py-20"
+      className="relative flex w-full flex-col justify-start overflow-x-clip bg-cream pb-section"
+      style={{ minHeight: "100svh", paddingTop: SEAM_TOP }}
       aria-label="Build A Bowl"
     >
-      {/* Normal document flow: section height derives from its content
-          (title stack + gap + card height + paddings), so spacing edits move
-          the whole section as one block. overflow-x-clip contains the
-          wider-than-viewport marquee row without hiding vertical overflow. */}
+      {/* Normal document flow, top-aligned in a section that is at least a
+          viewport tall. Content still sets the floor (title stack + gap + card
+          height + paddings), so a window too short to hold it scrolls rather
+          than clipping. overflow-x-clip contains the wider-than-viewport
+          marquee row without hiding vertical overflow.
+
+          It used to be justify-center. Centring made the space above the
+          heading a leftover: whatever the viewport had spare after the content,
+          halved. That is unknowable from the section above, and the menu
+          section's "or" has to sit on the midpoint of the seam between the two
+          headings, so it needs the number to be fixed. Top-aligned with an
+          explicit padding, the gap is the same on every screen and the hinge
+          can match it. The trade is that on a display tall enough for
+          justify-center to have had slack, that slack now falls below the
+          carousel instead of being split above and below it. */}
       <div
         style={{
           display: "flex",
@@ -293,13 +327,6 @@ export function BuildSection() {
             padding: "0 1.5rem",
           }}
         >
-          <p
-            ref={eyebrowRef}
-            className="font-body-caps text-midnight/50"
-            style={{ fontSize: "0.7rem", letterSpacing: "0.30em", marginBottom: "0.9rem", willChange: "transform, opacity" }}
-          >
-            Build A Bowl
-          </p>
           <h2
             ref={headlineRef}
             className="font-headline text-midnight"
@@ -312,14 +339,31 @@ export function BuildSection() {
               willChange: "transform, opacity",
             }}
           >
-            CREATE YOUR PERFECT BOWL
+            COMPOSE YOUR OWN
           </h2>
+          {/* One line at every desktop width. No width cap, and the font size
+              scales with the viewport rather than the line wrapping: 1.6vw only
+              binds below ~1060px, and the 0.875rem floor still fits 70
+              characters inside the narrowest column this branch ever renders
+              (640px viewport minus the stack's 1.5rem padding). */}
+          <p
+            ref={subtitleRef}
+            className="font-body-mixed leading-relaxed text-juniper"
+            style={{
+              marginTop: "1rem",
+              whiteSpace: "nowrap",
+              fontSize: "clamp(0.875rem, 1.6vw, 1.0625rem)",
+              willChange: "transform, opacity",
+            }}
+          >
+            Pick your base and toppings. Protein and calories update as you build.
+          </p>
           <div
             ref={ctaRef}
             style={{ marginTop: "1.75rem", willChange: "transform, opacity" }}
           >
             <CTAButton href="/build" variant="dark">
-              Build Your Custom Bowl
+              Build
             </CTAButton>
           </div>
         </div>

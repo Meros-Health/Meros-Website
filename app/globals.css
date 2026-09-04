@@ -19,6 +19,10 @@
        HOLE_H_FRAC); Framer Motion needs the pixel values, so there is no
        token for it here. */
     --nav-padding-x:      3vw;
+    /* Height of the fixed nav bar. Mirrors NAV_BAR_HEIGHT_PX in
+       components/ui/Navbar.tsx, which draws the band itself; the hero
+       reserves this as padding so its first row starts under the bar. */
+    --nav-bar-height:     72px;
     --nav-frame-duration: 0.7s;
     --nav-frame-ease:     cubic-bezier(0.76, 0, 0.24, 1);
 
@@ -41,23 +45,42 @@
     --ingredient-badge-size: 0.5625rem;  /* 8px → 9px (protein/vegan badges) */
     --ingredient-card-padding: clamp(0.875rem, 2.2vw, 1.125rem);
 
-    /* ── Menu card ("Our Menu" order page) type scale ──
-       cqw-based: driven by the card's own (container-query) width, not the
-       viewport, so desktop cards (wider, up to the max-width cap) render
-       larger than mobile ones automatically, with no separate breakpoint needed. */
-    --menu-card-max-width: 560px;
-    --menu-card-name-size: clamp(1.15rem, 7cqw, 2rem);
-    --menu-card-price-size: clamp(0.75rem, 3.2cqw, 1rem);
-    --menu-card-tag-size: clamp(0.7rem, 2.6cqw, 0.8125rem);
-    --menu-card-desc-size: clamp(0.9rem, 4cqw, 1.0625rem);
-    --menu-card-padding: clamp(1rem, 4.5cqw, 1.75rem);
-    --menu-card-gap: clamp(0.5rem, 2.5cqw, 0.875rem);
-    --menu-grid-row-gap: clamp(1.5rem, 4vw, 3rem);
-    --menu-grid-col-gap: clamp(1rem, 2.5vw, 2rem);
-    /* Grid width at which a second column starts being worth it. Two cards plus
-       the gap leaves each one just over 300px, which is where the card's own
-       container queries still render comfortably. */
-    --menu-grid-two-col-at: 640px;
+    /* ── Gallery wall (/menu) ──
+       Row height is one value for every row on the page: the columns change
+       from row to row, the height never does, so the eye can read across the
+       wall without re-measuring it.
+
+       Type is measured against the row, not against the panel it sits in.
+       These cqw values used to resolve against each panel, which meant an
+       8/24 text panel and a 12/24 one set the same component at two different
+       sizes: the reader was asked to change reading distance halfway down the
+       wall. The container now lives on .gallery-row, so every block of type on
+       the wall sets identically no matter how wide its own panel is.
+
+       The coefficients are a third of what they were, which is exactly the
+       proportion the leading text panel occupies (GALLERY_TEXT_SPAN, 8 of 24).
+       Nothing about a leading panel's rendered type has changed; the panels
+       that are not a third of the row have come into line with it.
+
+       The shrink ladder, in order. Padding falls first, because its cqw
+       coefficient is the steepest here and it reaches its floor at roughly a
+       1200px row. Type keeps shrinking under it until roughly 840px. Below
+       that nothing shrinks any further and the wall goes to one column
+       instead, which is the collapse in .gallery-row. That block restores the
+       original coefficients, because a collapsed panel is the full row. */
+    --gallery-row-height: clamp(24rem, 40vw, 40rem);
+    /* The rule between rows. Cream, and the page ground is cream, so it reads
+       as a hairline of the page showing through the wall rather than as a
+       border drawn on it. Rows only: columns inside a row stay flush, which is
+       what keeps a row reading as one object. */
+    --gallery-rule: 4px;
+    --gallery-pad: clamp(1.25rem, 1.6667cqw, 3rem);
+    --gallery-gap: clamp(0.5rem, 0.8cqw, 1.1rem);
+    --gallery-name-size: clamp(1.5rem, 3cqw, 3.25rem);
+    --gallery-tag-size: clamp(0.625rem, 0.8667cqw, 0.8125rem);
+    --gallery-body-size: clamp(0.8125rem, 1.4cqw, 1.125rem);
+    --gallery-price-size: clamp(0.8125rem, 1.1333cqw, 1.125rem);
+    --gallery-cta-size: clamp(0.625rem, 1cqw, 0.8125rem);
   }
 
   @media (min-width: 768px) {
@@ -150,192 +173,165 @@
   }
 }
 
-/* ── Preloader skeleton: pulsing placeholder blocks shown while hero
-   assets load. Opacity-only so it reads as a "breathing" frame, not a shimmer. */
-@keyframes skeleton-pulse {
-  0%, 100% { opacity: 0.35; }
-  50%      { opacity: 0.85; }
+/* ── Preloader: the MERŌS mark alone on cream, breathing at a fixed rate
+   until the route's critical assets are decoded. The rate never changes with
+   loading progress: a mark that sped up would be reporting progress it does
+   not have. */
+@keyframes logo-breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.08); }
 }
 
-.skeleton-pulse {
-  animation: skeleton-pulse 1.6s ease-in-out infinite;
+.preloader-mark {
+  width: clamp(104px, 16vw, 168px);
+  height: auto;
+  display: block;
+  animation: logo-breathe 1.6s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .skeleton-pulse {
+  .preloader-mark {
     animation: none;
-    opacity: 0.6;
   }
 }
 
-/* Which skeleton variant is visible is resolved purely by media query, not
-   JS viewport state: CSS applies before hydration, so there's no flash of
-   the wrong layout on load. Breakpoint matches HeroSection's useIsMobile(1023). */
-/* Hero: one DOM for both layouts (HeroSection.tsx). Desktop is an editorial
-   split, portrait on the right half, logo and CTAs on the left, carousel
-   across the bottom. Below 1024px the portrait goes full bleed under a scrim
-   with the logo centred and the CTAs pinned to the bottom edge. Media queries
-   rather than a JS breakpoint so the server HTML is right for every viewport
-   and no layout moves after hydration. */
+/* Hero: three equal panels of half the viewport each (HeroSection.tsx), so
+   the section is 150svh and the first screen holds exactly the first two.
+   Panel 1 is cream with the lockup centred, panel 2 is the image band with the
+   actions in its bottom-left corner, panel 3 sits under the fold and carries
+   the tagline over a second photograph. */
 .hero {
   position: relative;
   width: 100%;
-  /* The one section that sizes off viewport height. Every other section is
-     width-derived and a short screen scrolls, but the hero has to fill the
-     first screen on every device (a width clamp left a phone with the next
-     section showing under it). svh, not dvh, so the height does not jump
-     when the mobile URL bar collapses. */
-  height: 100svh;
   overflow: hidden;
   background: var(--color-cream);
   display: flex;
   flex-direction: column;
 }
 
-.hero-body {
+/* svh, not dvh: the panels must not resize when the mobile URL bar collapses,
+   or the fold would move under the reader mid-scroll. The consequence is that
+   with the bar showing, a sliver of panel 3 is already visible, which is the
+   direction to err in for a panel whose job is to advertise itself. */
+.hero-panel {
   position: relative;
-  flex: 1 1 0%;
-  min-height: 0;
-}
-
-.hero-portrait {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 50%;
-  height: 100%;
-}
-
-.hero-scrim {
-  display: none;
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.48);
-}
-
-.hero-lead {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 50%;
-  height: 100%;
-}
-
-/* Centred in the band between the nav's bottom edge (72px, matches
-   NAV_HEIGHT_PX in Navbar.tsx) and the carousel's top, not in the section. */
-.hero-logo {
-  position: absolute;
-  left: 50%;
-  top: calc(50% + 36px);
-  transform: translate(-50%, -50%);
-  width: clamp(200px, 28vw, 440px);
-}
-
-.hero-logo-light,
-.hero-ctas-light {
-  display: none;
-}
-
-.hero-ctas {
-  position: absolute;
-  left: 50%;
-  bottom: 0;
-  transform: translateX(-50%);
-}
-
-.hero-ctas-dark {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.75rem;
-}
-
-.hero-carousel {
-  position: relative;
-  flex-shrink: 0;
+  flex: 0 0 auto;
+  height: 50svh;
   width: 100%;
   overflow: hidden;
 }
 
-@media (max-width: 1023px) {
-  .hero-portrait {
-    left: 0;
-    width: 100%;
-  }
-
-  .hero-scrim {
-    display: block;
-  }
-
-  .hero-lead {
-    width: 100%;
-    z-index: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 0 1.5rem;
-  }
-
-  .hero-logo {
-    position: static;
-    transform: none;
-    width: clamp(220px, 72vw, 420px);
-  }
-
-  .hero-logo-dark,
-  .hero-ctas-dark {
-    display: none;
-  }
-
-  .hero-logo-light {
-    display: block;
-  }
-
-  .hero-ctas {
-    left: 0;
-    right: 0;
-    bottom: clamp(1.5rem, 5vh, 2.5rem);
-    transform: none;
-    padding: 0 1.5rem;
-  }
-
-  .hero-ctas-light {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.75rem;
-  }
-
-  .hero-carousel {
-    display: none;
-  }
-}
-
-.preloader-skeleton-desktop {
-  flex: 1 1 0%;
-  min-height: 0;
+/* The lockup with the actions under it, as one centred column. The gap is the
+   knob that spreads them: a taller group centred in the same box puts the
+   lockup nearer the top and the buttons nearer the seam with the photograph,
+   without either being positioned absolutely or measured in the JS. */
+.hero-panel-lockup {
   display: flex;
   flex-direction: column;
-  gap: clamp(0.85rem, 1.4vw, 1.4rem);
-}
-
-.preloader-skeleton-mobile {
-  flex: 1 1 0%;
-  min-height: 0;
-  display: none;
   align-items: center;
   justify-content: center;
+  gap: clamp(2rem, 8vh, 5.5rem);
+  /* The nav bar is fixed, so it takes no space here; reserve its height (plus
+     the status-bar inset it grows by under viewport-fit=cover) so the group
+     centres in what is left rather than behind the controls. The bottom
+     padding is the floor under the buttons, nothing more. */
+  padding: calc(var(--nav-bar-height) + env(safe-area-inset-top, 0px)) var(--nav-padding-x)
+    clamp(1rem, 2.5vh, 1.75rem);
+}
+
+.hero-lockup {
+  width: min(clamp(220px, 32vw, 460px), 100%);
+}
+
+.hero-lockup-mark {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.hero-image-clip {
+  position: absolute;
+  inset: 0;
+}
+
+/* The moving layer. It overhangs its panel by --hero-parallax top and bottom,
+   which is exactly how far lib/useParallax.ts translates it, so neither edge
+   is ever briefly empty. Percentages on top/bottom resolve against the
+   containing block's height, which is what makes one rule work for panels of
+   different heights. The two panels set the variable from the same constants
+   the hook is given (see PARALLAX in HeroSection.tsx). */
+.hero-image-layer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(-1 * var(--hero-parallax, 0%));
+  bottom: calc(-1 * var(--hero-parallax, 0%));
+  will-change: transform;
+}
+
+/* Panel 3 only. Panel 2 carries no type, so it keeps its frame undarkened. */
+.hero-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(41, 45, 42, 0.42); /* --color-midnight */
+}
+
+/* Under the lockup, side by side, in normal flow: the column above owns the
+   spacing, so nothing here is positioned. */
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  max-width: 100%;
+}
+
+.hero-panel-tagline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--nav-padding-x);
+}
+
+/* Bounds the wipe and is what useSeen measures. Separate from the line itself,
+   which is the element that carries the clip path: an element clipped to zero
+   width cannot be measured to decide whether to unclip it. It takes its width
+   from the longer of the two lines, so there is no character-count cap here to
+   wrap against. */
+.hero-tagline-wrap {
+  position: relative;
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.hero-tagline {
+  margin: 0;
+  text-align: center;
+  text-transform: uppercase;
+  font-family: var(--font-body);
+  color: var(--color-cream);
+  font-size: clamp(0.8125rem, 2vw, 1.375rem);
+  line-height: 1.9;
+}
+
+/* One line each, and neither may wrap: the break between them is authored in
+   the component, so the count cannot drift with the viewport. At the clamp's
+   floor the longer line is about 170px, which fits the narrowest phone. */
+.hero-tagline-line {
+  display: block;
+  white-space: nowrap;
+  letter-spacing: 0.3em;
+  /* Letter-spacing lands after the last character too, which pushes centred
+     text right by one gap. Pull it back so each line is truly centred. */
+  margin-right: -0.3em;
 }
 
 @media (max-width: 1023px) {
-  .preloader-skeleton-desktop {
-    display: none;
-  }
-
-  .preloader-skeleton-mobile {
-    display: flex;
+  /* The two buttons sit side by side under the lockup; on a narrow phone the
+     pair only fits on one line if they give back some horizontal padding. */
+  .hero-actions .cta {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
   }
 }
 
@@ -405,40 +401,327 @@
   .font-subhead-mixed { @apply font-body-mixed; }
 }
 
-/* ── Our Menu grid ────────────────────────────────────────────────────────────
-   Two cards per row wherever the grid is wide enough, one when it is not, and
-   never three.
+/* ── Gallery wall ─────────────────────────────────────────────────────────────
+   Twenty-four columns per row, flush: no border, no gutter, no radius. Two or
+   three panels per row, each either a photograph or a block of type, and every
+   row the same height.
 
-   This is a container query, not a media query, and that distinction is the
-   whole point. The grid does not occupy the viewport: on wide screens a sticky
-   section title sits beside it and takes several hundred pixels, so the same
-   1280px viewport can leave the grid either 1100px or 560px depending on
-   layout. A viewport breakpoint gets that wrong in both directions, which it
-   did: 1280 rendered one card per row while 1920 rendered three.
+   A row that carries photographs opens with its block of type at a fixed 8 of
+   24 and divides the remaining sixteen differently every time. The fixed
+   leading column is the readability rule: the name of each item is in the same
+   place in every row, so the page can be read straight down its leading edge,
+   and the asymmetry that makes it a wall rather than a list lives in the two
+   photographs beside it. The splits themselves are data, in
+   lib/menu/menuGallery.ts, not here.
 
-   Querying the grid's own width instead means the column count follows the
-   space actually available, whatever the surrounding layout does with it.
+   The collapse is a container query, not a media query, and that is what makes
+   the wall reusable. On /menu the wall is full-bleed so its container is the
+   viewport and the two are equivalent, but dropped into a narrower slot on
+   another page it still collapses on its own width rather than on the window's.
 
-   The wrapper is the container and the grid is its child, because an element
-   cannot query its own size to style itself. max-width caps the row at two
-   cards; a third makes each card narrower than its type scale reads well at. */
-.menu-grid-wrap {
+   Two nested containers, and which one is which is the whole type scale.
+   .gallery is queried by .gallery-row for the collapse, because an element
+   cannot query its own size to style itself. .gallery-row is then a container
+   in turn, and the panels are not, so cqw inside a panel resolves against the
+   row. That is what makes one text component set at one size in an 8/24 column
+   and a 12/24 column alike. Putting the container on the panel instead, which
+   is what this did before, made the same component set larger in a wider panel
+   and left the wall with two reading distances.
+
+   Rows are separated by a cream rule and columns are not. A wall of flush
+   panels with no separation anywhere reads as busy: the eye cannot tell where
+   one item stops and the next starts. Ruling the rows draws that boundary and
+   ruling the columns as well would undo it, by making every panel look equally
+   separate from every other.
+
+   Under 900px there is no asymmetry left to have. Two panels side by side at
+   that width leaves each one under 300px, which is where the ingredient list
+   stops being readable, so the wall becomes one column and every panel takes
+   the full width. */
+.gallery {
   container-type: inline-size;
-  min-width: 0;
-  flex: 1;
-  max-width: calc(var(--menu-card-max-width) * 2 + var(--menu-grid-col-gap));
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  /* The gap is the rule: cream shows through between rows and nowhere else.
+     A border would have to be suppressed on the last row and would sit inside
+     one row's box rather than between two; a gap belongs to neither. */
+  gap: var(--gallery-rule);
+  background: var(--color-cream);
 }
 
-.menu-grid {
+.gallery-row {
+  /* The type scale's container. See the header above: panels are deliberately
+     not containers, so a block of type measures itself against the row it is
+     in rather than against its own column. */
+  container-type: inline-size;
   display: grid;
-  grid-template-columns: 1fr;
-  column-gap: var(--menu-grid-col-gap);
-  row-gap: var(--menu-grid-row-gap);
+  grid-template-columns: repeat(24, minmax(0, 1fr));
+  /* min-height, not height: uniform rows are the design, but a recipe that
+     outgrows the row must push it taller rather than have its ingredients
+     clipped. A menu that hides what is in the food is worse than an uneven
+     wall. */
+  min-height: var(--gallery-row-height);
 }
 
-@container (min-width: 640px) {
-  .menu-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+.gallery-panel {
+  position: relative;
+  min-width: 0;
+}
+
+.gallery-panel-image {
+  overflow: hidden;
+  background: var(--color-midnight);
+}
+
+.gallery-panel-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--gallery-gap);
+  padding: var(--gallery-pad);
+}
+
+.gallery-tone-cream {
+  background: var(--color-cream);
+  --gallery-ink: var(--color-midnight);
+  --gallery-ink-quiet: rgba(41, 45, 42, 0.62);
+  --gallery-ink-accent: var(--color-grapefruit-text);
+}
+
+.gallery-tone-midnight {
+  background: var(--color-midnight);
+  --gallery-ink: var(--color-cream);
+  --gallery-ink-quiet: rgba(255, 247, 240, 0.66);
+  --gallery-ink-accent: var(--color-grapefruit);
+}
+
+/* ── Home gallery: promo band ──────────────────────────────────────────────
+   Two photographs standing on cream, above the wall. Not a wall row: a wall
+   row runs flush to both page edges and butts against its neighbours, and
+   these are framed, with the same gutter on every side and between them. One
+   value does all four, so the frame reads as even rather than as a margin plus
+   a gap that happen to be close.
+
+   Each panel is a fixed height rather than an aspect ratio, which is the one
+   thing here that is not derived: the pair has to be tall enough to carry a
+   button with room around it at any width, and short enough that two of them
+   stacked on a phone are not the whole screen. The clamps are the numbers this
+   band has always run at.
+
+   Side by side from 640px, stacked below it. That is narrower than the wall's
+   own 900px collapse, so between the two widths the photographs are paired
+   while the panels under them are stacked. Matching 900 here would put a
+   900-wide panel at its 440px ceiling, a 2:1 letterbox cut out of a portrait
+   photograph, which is the crop this band exists to avoid. */
+.gallery-promo {
+  --promo-gutter: clamp(0.85rem, 1.4vw, 1.4rem);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--promo-gutter);
+  padding: var(--promo-gutter);
+  background: var(--color-cream);
+}
+
+.gallery-promo-panel {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-midnight);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  height: clamp(300px, 92vw, 440px);
+}
+
+@media (min-width: 640px) {
+  .gallery-promo {
+    flex-direction: row;
+  }
+
+  .gallery-promo-panel {
+    flex: 1 1 0;
+    height: clamp(420px, 52vw, 760px);
+  }
+}
+
+/* The moving layer. It overhangs the panel by --promo-parallax at the top and
+   the bottom both, which is exactly how far lib/useParallax.ts translates it,
+   so neither edge is ever briefly empty. Percentages on top/bottom resolve
+   against the panel's height, which is what lets one rule serve both of this
+   band's heights. The value is set inline from the same constant the hook is
+   given (see PARALLAX in GalleryPromoBand.tsx).
+
+   Opacity is the decode gate, not an entrance: the panel holds its dark ground
+   and its button until the photograph is ready to be seen. */
+.gallery-promo-layer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(-1 * var(--promo-parallax, 0%));
+  bottom: calc(-1 * var(--promo-parallax, 0%));
+  will-change: transform;
+  transition: opacity 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.gallery-promo-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.54);
+}
+
+.gallery-promo-action {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  padding: 0 2rem;
+}
+
+/* ── Gallery wall: centred pair ────────────────────────────────────────────
+   A wall whose panels centre their type instead of setting it against the
+   panel's leading edge. Used by the home page's closing row, where the two
+   halves share a ground and a tone, so nothing but space tells them apart.
+
+   That is what the padding is for, and why it is so much larger than the
+   wall's default. --gallery-pad reaches 3rem, which on two 720px halves leaves
+   the two blocks of type 6rem apart at most, and less than that whenever a
+   line runs long. Widening the inset and capping the measure at 24rem puts a
+   clear field of cream between them: at a 1440 viewport each block is 384px of
+   type in a 720px half, so roughly 300px separates the two. A divider would do
+   the same job with a line, but the row above is already framed in cream, and
+   a rule here would be the third different treatment of the same boundary.
+
+   The cap is on the children, not the panel, so the panel's ground stays half
+   the page while the type inside it stays at a length the eye can track back
+   from. Below the wall's 900px collapse the row is one column and each block
+   centres in the full width, which is the same rule doing the mobile layout.
+
+   --gallery-rule is what .gallery uses as its flex gap. There is one row here
+   so nothing renders either way; zeroing it means the day a second row is
+   added it does not arrive with a cream stripe against a cream panel. */
+.gallery-centered {
+  --gallery-rule: 0px;
+  /* This wall opts out of the menu wall's type scale. That scale is a third of
+     the row, because a menu row's leading text panel is 8 of 24; here both
+     panels are 12 of 24, and inheriting a scale sized for a third would set
+     this section's type a third smaller than it has always been for no reason
+     the reader can see. Halves, so the coefficients are half the row rather
+     than a third of it: every value below is 1.5x the wall default, which
+     lands on exactly what these panels rendered when the container was on the
+     panel itself. */
+  --gallery-gap: clamp(0.5rem, 1.2cqw, 1.1rem);
+  --gallery-name-size: clamp(1.5rem, 4.5cqw, 3.25rem);
+  --gallery-tag-size: clamp(0.625rem, 1.3cqw, 0.8125rem);
+  --gallery-body-size: clamp(0.8125rem, 2.1cqw, 1.125rem);
+  --gallery-price-size: clamp(0.8125rem, 1.7cqw, 1.125rem);
+  --gallery-cta-size: clamp(0.625rem, 1.5cqw, 0.8125rem);
+}
+
+.gallery-centered .gallery-panel-text {
+  align-items: center;
+  text-align: center;
+  /* Half of what it reads as, for the same reason as the type above: cqw is
+     measured against the row now, and this panel is half the row. */
+  padding-inline: clamp(1.5rem, 4.5cqw, 5rem);
+  /* The vertical inset is what keeps this row from reading as a caption on the
+     photographs above it and the footer below. It is deliberately larger than
+     the row needs to fit its type, and it is in vw rather than the cqw the
+     inline padding uses: cqw is measured against the panel, so a half-width
+     desktop panel and a full-width phone panel would resolve the same
+     coefficient to wildly different insets, and the point here is that the
+     room above and below is the same idea at every size.
+
+     It also overrides --gallery-row-height in practice. Content plus two of
+     these exceeds the row's min-height from roughly 1100px down, which is the
+     intent: the height should come from the space the type is given, not from
+     a number the row shares with a wall that looks nothing like this one. */
+  padding-block: clamp(4rem, 6vw, 7rem);
+}
+
+.gallery-centered .gallery-panel-text > * {
+  max-width: 24rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gallery-promo-layer {
+    transition-duration: 0.01ms;
+  }
+}
+
+/* One column, and one shape for the whole wall: every item is a block of type
+   with a single square photograph under it, item after item down the page.
+
+   Three rules make that out of the desktop wall, without a second set of rows.
+
+   Order, not markup order. The wall sets its type panel first in every row,
+   which is the desktop reading rule; stacked, that would put a name above the
+   photograph of the thing it names, item after item. Ordering the image ahead
+   of the type inside every row inverts it: picture, then the name of the thing
+   in it, then the next item. The photograph leads because it is what the
+   reader is scrolling for, and it arrives before the name rather than as a
+   caption after it. Doing it here rather than in the row data is what lets one
+   set of rows serve both layouts.
+
+   One photograph per item. A row carries two shots of the same bowl, which is
+   a pairing that only exists side by side; stacked they read as two separate
+   items, and they double the length of the page on the device least willing to
+   scroll it. Every image after the first in its row is dropped. The first is
+   the one the row was built around, and it is never a cropped panel, so
+   nothing tuned to a desktop column shape survives into the phone layout.
+   Dropped panels cost nothing to fetch: they are lazy, and a display:none
+   image is never lazy-loaded. That is also why the second photograph of the
+   first /menu row is not marked priority (see lib/menu/menuGallery.ts): a
+   preload would ignore the display rule and download it anyway.
+
+   Square, not 4/5. The portrait box was the desktop panel's proportion carried
+   down. A square is the calmer shape in a single column: it holds the same
+   subject while giving the rhythm of type and photograph a shorter beat. */
+@container (max-width: 900px) {
+  .gallery-row {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+    /* One column, so a panel is the row: the type scale goes back to being
+       measured against the width the type actually occupies. These are the
+       coefficients the wall used everywhere before the desktop scale was
+       rebased onto the row, and they are what this wall has always set on a
+       phone. Declared on the row rather than on .gallery so they also win over
+       .gallery-centered, whose half-row values are meaningless once its two
+       panels are stacked full width. */
+    --gallery-pad: clamp(1.25rem, 5cqw, 3rem);
+    --gallery-gap: clamp(0.5rem, 2.4cqw, 1.1rem);
+    --gallery-name-size: clamp(1.5rem, 9cqw, 3.25rem);
+    --gallery-tag-size: clamp(0.625rem, 2.6cqw, 0.8125rem);
+    --gallery-body-size: clamp(0.8125rem, 4.2cqw, 1.125rem);
+    --gallery-price-size: clamp(0.8125rem, 3.4cqw, 1.125rem);
+    --gallery-cta-size: clamp(0.625rem, 3cqw, 0.8125rem);
+  }
+
+  .gallery-panel {
+    grid-column: 1 / -1;
+  }
+
+  .gallery-panel-text {
+    order: 1;
+    /* The wall's own padding is one value for all four sides, and on a
+       full-width phone panel it resolves to its floor.
+       Twenty pixels of it above a name and below a button reads as items
+       crowding each other rather than as items with room. This is the only
+       separation between one item's last line and the next item's first, so
+       it is set on its own, well above what the type needs to fit. */
+    padding-block: clamp(3rem, 10cqw, 4.5rem);
+  }
+
+  .gallery-panel-image {
+    order: 0;
+    /* The row no longer sets a height, so a fill image needs its own box. */
+    aspect-ratio: 1 / 1;
+  }
+
+  /* Any photograph with a photograph before it in the same row. */
+  .gallery-panel-image ~ .gallery-panel-image {
+    display: none;
   }
 }
 

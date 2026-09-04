@@ -5,7 +5,7 @@ a menu reads from it:
 
 | Surface | Reader |
 |---|---|
-| Website signature bowls and smoothies (`/`, `/order`, pairings) | `lib/menu/signatures.ts` |
+| Website signature bowls and smoothies (`/`, `/menu`, pairings) | `lib/menu/signatures.ts` |
 | Website bowl builder (`/build`), cart, checkout pricing | `lib/menu/buildConfig.ts`, `lib/menu/calcBowlPrice.ts` |
 | In-store Menu TV, both panels | `../menu-tv/sync-menu.sh` writes `menu-data.js` |
 
@@ -90,13 +90,13 @@ departs from it. An item that did would set `base` (for example, The
 Recovery: `"base": "plain-greek-yogurt"`), which the board would print as a
 note on that row.
 
-Signature `calories` / `protein` were computed with the yogurt each recipe
-named before 2026-08-28 (Moment and Recovery: Plain; the rest: Vanilla). A
-different base moves them by roughly 20 kcal / 1 g between the Greek
-yogurts and by about 10 g protein for Vegan Coconut; the board's footer
-already calls them estimates. The Recovery now defaults to Vanilla like
-every smoothie, so its printed figures (computed with Plain) are about 20
-kcal low and 1 g protein high for the default base.
+Bowl `calories` / `protein` were computed with the yogurt each recipe named
+before 2026-08-28 (The Moment: Plain; the rest: Vanilla). A different base
+moves them by roughly 20 kcal / 1 g between the Greek yogurts and by about
+10 g protein for Vegan Coconut; the board's footer already calls them
+estimates. Every smoothie was recomputed on 2026-09-04 against the 200 g
+Vanilla base it actually defaults to, so the smoothie half no longer
+carries that offset.
 
 ### Pricing modes
 
@@ -135,6 +135,22 @@ it; delete those references. Nothing else needs to change.
 **Rename an ingredient.** Change `name`. Keep `id` so persisted carts and
 recipes keep resolving. Only change `id` if you also update every reference;
 the validator will point at each one.
+
+**Retire a signature item.** Copy its entry into `docs/menu/retired-items.md`
+first, then delete it here and delete its row from `SMOOTHIE_ROWS` or
+`BOWL_ROWS` in `menuGallery.ts` (a test fails if the wall and the menu
+disagree). Leave the photographs on disk. There is no legacy remap for
+signature ids the way `legacyIdMap.ts` remaps ingredient ids, so a cart
+holding the retired item drops that line with a notice on its next load and
+checkout refuses it server-side; that is intended, not a bug. Grep the tests
+before you commit: they use a real item as a fixture, and `instagramFeed.ts`
+names item photographs by id.
+
+**Put a recipe-only enhancer in a recipe.** An ingredient offered in the
+`enhancers` step needs an explicit `"group": "finishes"` before a recipe can
+name it. The Menu TV files recipes under fruits, nuts-seeds and finishes only,
+and `sync-menu.sh` throws rather than guess. The website does not care, so this
+one fails at the board and nowhere earlier.
 
 **Add a step.** Append to `build.steps`. The builder, cart, checkout and Menu
 TV pick it up. The TV needs a column-count hint for the new step id in
@@ -208,7 +224,13 @@ constants in `signatureMods.ts`, not menu data.
 
 Signature `calories` / `protein` per size are hand-entered from the macro
 sheets. Recipes are references for integrity and display; they are not summed
-into the signature figures.
+into the signature figures. **Nothing enforces that they agree**, which is the
+one real gap in this file: a recipe can be rewritten and the figures left
+behind, and only a reader notices. The method for recomputing them is
+per-100 g from `~/Documents/Meros/meros-macros-sheets/Ingredient_Master.csv`
+and `Enhancers.csv` times the recipe's gram weights, summed; the 2026-09-04
+smoothie recompute is written out component by component in that folder's
+`2026-09-04_Smoothies_v2.csv` and is the worked example to copy.
 
 ## Notes for Trellum
 

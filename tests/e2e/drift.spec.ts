@@ -19,7 +19,7 @@ const staleBowl = {
 
 test("H1 / H2: a stale cart is repaired and the drawer explains the change once", async ({ page }) => {
   await seedCart(page, [staleBowl]);
-  await page.goto("/order");
+  await page.goto("/menu");
   await waitForPageReady(page);
 
   await cartButton(page).click();

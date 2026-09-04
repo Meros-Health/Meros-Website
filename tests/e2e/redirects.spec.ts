@@ -9,8 +9,8 @@ const LEGACY: Array<[from: string, to: string]> = [
   ["/about-us/", "/#about"],
   ["/build-a-bowl", "/build"],
   ["/build-a-bowl/", "/build"],
-  ["/our-menu", "/order"],
-  ["/our-menu/", "/order"],
+  ["/our-menu", "/menu"],
+  ["/our-menu/", "/menu"],
   ["/privacy-policy", "/privacy"],
   ["/privacy-policy/", "/privacy"],
   ["/contact", "/#footer"],
@@ -24,6 +24,16 @@ for (const [from, to] of LEGACY) {
     // Compare against the resolved absolute URL so a hash destination matches too.
     const expected = new URL(to, page.url()).toString();
     expect(page.url()).toBe(expected);
+  });
+}
+
+// The menu page moved from /order to /menu on 2026-09-03, after the path had
+// been live and crawlable for a week. Same reasoning as the legacy set above.
+for (const from of ["/order", "/order/"]) {
+  test(`${from} redirects to /menu`, async ({ page }) => {
+    const response = await page.goto(from);
+    expect(response?.status(), `${from} should resolve, not error`).toBeLessThan(400);
+    expect(page.url()).toBe(new URL("/menu", page.url()).toString());
   });
 }
 

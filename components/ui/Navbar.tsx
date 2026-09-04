@@ -4,13 +4,15 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { animate, motion, AnimatePresence } from "framer-motion";
+import { animate, motion, AnimatePresence, useReducedMotion, type Variants } from "framer-motion";
 import { NavMenuOverlay, type NavMenuCloseMode } from "./NavMenuOverlay";
 import { MobileNavPanel } from "./MobileNavPanel";
 import { NavKitchenNote } from "./NavKitchenNote";
 import { useLenis } from "@/components/animation/LenisProvider";
 import { glideToHash, scrollToTop } from "@/lib/scroll";
 import { useTransitionReady, useTransitionRouter } from "@/components/transition/TransitionProvider";
+import { usePreloadReady } from "@/components/ui/Preloader";
+import { HERO_EASE, HERO_ENTRANCE } from "@/lib/heroEntrance";
 import { MENU_EXIT_COVER_MS, NAV_WATCHDOG_MS } from "@/lib/motion";
 import { useCartStore } from "@/store/cartStore";
 import { useIsMobile } from "@/lib/useIsMobile";
@@ -22,22 +24,32 @@ import { NAV_LINKS } from "@/lib/nav";
 
 const HEADER_BG_Z = 110;
 const HEADER_CONTENT_Z = 120;
-const NAV_BAR_HEIGHT_PX = 72; // matches HeroSection.tsx's NAV_HEIGHT_PX assumption
+const NAV_BAR_HEIGHT_PX = 72; // matches --nav-bar-height in globals.css, which the hero reserves
 const MENU_ICON_SIZE = 18;
 const TOGGLE_FADE = { duration: 0.2, ease: "easeInOut" } as const;
-const HEADER_ENTRANCE = {
-  initial: { opacity: 0, y: -12 },
-  animate: { opacity: 1, y: 0 },
-  transition: { delay: 0.4, duration: 0.8, ease: [0.16, 1, 0.3, 1] as const },
+
+// Beat one of the landing entrance (lib/heroEntrance.ts): the bar arrives
+// first, then the lockup under it, then the image, then the actions.
+//
+// Two things about this that are not obvious. It is a fade with no travel: the
+// bar is a cream band on a cream page, so a slide has nothing to slide against
+// and only draws attention to the seam. And it is gated on the preloader
+// rather than on usePageReady, which the hero uses. usePageReady also drops
+// during a route change, and the bar is global chrome that stays put across
+// routes; gating on it would fade the header out and back in on every
+// navigation. The preloader gate lifts exactly once per document load, which
+// is the only moment the bar should arrive.
+const HEADER_ENTRANCE: Variants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1 },
 };
 
 // The nav bar is a flat cream panel at every breakpoint and every scroll
-// position. Icon/logo colour still crossfades, but only for the menu; see
-// chromeTRef / applyChromeState.
+// position, with no rule under it: the hero's band below is the same cream, so
+// the line only drew a seam through a continuous field. Icon/logo colour still
+// crossfades, but only for the menu; see chromeTRef / applyChromeState.
 const MENU_FADE_MS = 150;
 const BAND_RGB = "255, 247, 240"; // --color-cream
-const BORDER_RGB = "41, 45, 42"; // --color-midnight
-const BORDER_MAX_ALPHA = 0.18;
 
 const CREAM_RGB = [255, 247, 240] as const;
 const MIDNIGHT_RGB = [41, 45, 42] as const;
@@ -68,6 +80,11 @@ export function Navbar() {
   // overlay is then unmounted under that cover, where nothing can be seen.
   const [closeMode, setCloseMode] = useState<NavMenuCloseMode>("dismiss");
   const transitionReady = useTransitionReady();
+  const preloadReady = usePreloadReady();
+  const reducedMotion = useReducedMotion();
+  const headerEntrance = reducedMotion
+    ? { duration: 0 }
+    : { ...HERO_ENTRANCE.navbar, ease: HERO_EASE };
   // While the panels are closing inward a dismiss would snap them away and
   // expose the page the transition is about to leave, so it is ignored.
   const menuNavigating = menuOpen && closeMode === "navigate";
@@ -265,9 +282,10 @@ export function Navbar() {
           cover this rectangle entirely while the menu is open. */}
       <motion.div
         aria-hidden
-        initial={HEADER_ENTRANCE.initial}
-        animate={HEADER_ENTRANCE.animate}
-        transition={HEADER_ENTRANCE.transition}
+        initial="hidden"
+        animate={preloadReady ? "visible" : "hidden"}
+        variants={HEADER_ENTRANCE}
+        transition={headerEntrance}
         style={{
           position: "fixed",
           top: 0,
@@ -285,7 +303,6 @@ export function Navbar() {
             position: "absolute",
             inset: 0,
             background: `rgb(${BAND_RGB})`,
-            borderBottom: `1px solid rgba(${BORDER_RGB}, ${BORDER_MAX_ALPHA})`,
           }}
         />
       </motion.div>
@@ -293,9 +310,10 @@ export function Navbar() {
       {/* Content layer: always above the menu overlay, so icons/logo stay
           visible and clickable regardless of menu state. */}
       <motion.header
-        initial={HEADER_ENTRANCE.initial}
-        animate={HEADER_ENTRANCE.animate}
-        transition={HEADER_ENTRANCE.transition}
+        initial="hidden"
+        animate={preloadReady ? "visible" : "hidden"}
+        variants={HEADER_ENTRANCE}
+        transition={headerEntrance}
         style={{
           position: "fixed",
           top: 0,
@@ -323,7 +341,9 @@ export function Navbar() {
             transition: "opacity 200ms ease-in",
           }}
         >
-          {/* Menu toggle: left */}
+          {/* Menu toggle: left. An icon at every breakpoint, never the word
+              "Menu": that word belongs to the menu page, and putting it on the
+              control that opens the nav made one word mean two things. */}
           <div style={{ flex: 1, minWidth: 0, display: "flex", justifyContent: "flex-start" }}>
             <button
               ref={menuButtonRef}
@@ -335,23 +355,9 @@ export function Navbar() {
                 if (menuOpen) closeMenu();
                 else openMenu();
               }}
-              style={{
-                ...iconButtonStyle,
-                fontFamily: "var(--font-body)",
-                fontSize: "0.95rem",
-                fontWeight: 400,
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                width: isMobile ? "44px" : "auto",
-                minWidth: isMobile ? "44px" : "4.5rem",
-                padding: isMobile ? "0.5rem" : "0.5rem 0.75rem",
-              }}
+              style={{ ...iconButtonStyle, width: "44px" }}
             >
-              {isMobile ? (
-                <IconSlot open={menuOpen} />
-              ) : (
-                <TextSlot open={menuOpen} />
-              )}
+              <IconSlot open={menuOpen} />
             </button>
           </div>
 
@@ -590,41 +596,6 @@ function IconSlot({ open }: { open: boolean }) {
           }}
         >
           {open ? <CloseIcon /> : <HamburgerIcon />}
-        </motion.span>
-      </AnimatePresence>
-    </span>
-  );
-}
-
-function TextSlot({ open }: { open: boolean }) {
-  return (
-    <span
-      style={{
-        position: "relative",
-        display: "inline-block",
-        minWidth: "4.75ch",
-        height: "1em",
-        lineHeight: 1,
-        flexShrink: 0,
-      }}
-    >
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.span
-          key={open ? "close" : "open"}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={TOGGLE_FADE}
-          style={{
-            position: "absolute",
-            inset: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {open ? "Exit" : "Menu"}
         </motion.span>
       </AnimatePresence>
     </span>

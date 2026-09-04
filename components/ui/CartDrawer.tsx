@@ -9,7 +9,7 @@ import { useFocusTrap } from "@/lib/useFocusTrap";
 import { CartLineItem } from "@/components/cart/CartLineItem";
 import { CHECKOUT_ENABLED } from "@/lib/config";
 import { linesMissingBase } from "@/lib/checkout/lines";
-import { MISSING_BASE_HINT } from "@/lib/checkout/messages";
+import { MISSING_BASE_HINT, PICKUP_ONLY_NOTE } from "@/lib/checkout/messages";
 
 const DRAWER_Z = 130;
 const PANEL_DURATION = 0.5;
@@ -177,6 +177,12 @@ export function CartDrawer() {
 
             {/* Footer: subtotal + checkout */}
             <div className={`px-6 py-5 pb-[calc(1.25rem_+_env(safe-area-inset-bottom,0px))]`} style={{ borderTop: "0.5px solid rgba(41,45,42,0.12)" }}>
+              {/* Said here and again on /checkout, from one constant. Someone
+                  who gets to the payment screen still expecting delivery is a
+                  refund and a bad review. */}
+              <p className="font-body-mixed text-xs text-juniper leading-relaxed pb-4">
+                {PICKUP_ONLY_NOTE}
+              </p>
               <div className="flex justify-between pb-4">
                 <span className="font-body-caps text-[11px] text-midnight">Subtotal</span>
                 <span className="font-body-caps text-[11px] text-midnight">

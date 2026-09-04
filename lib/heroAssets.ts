@@ -1,20 +1,25 @@
-// The hero's above-the-fold assets. HeroSection renders them as `priority`
-// images marked CRITICAL_IMAGE (lib/criticalImages.ts), which is what the
-// Preloader and the page transition wait on.
+// The landing hero's above-the-fold assets. HeroSection renders them as
+// `priority` images marked CRITICAL_IMAGE (lib/criticalImages.ts), which is
+// what the Preloader and the page transition wait on.
 
-// Right-half portrait (desktop) / full-bleed background (mobile). Pick a frame
-// with a light, low-detail top so the layered title stays legible over it.
+// Panel 2, the band on the first screen: the flat-lay, cropped by
+// `object-fit: cover` against a row half the viewport's height. The
+// source is never scaled on one axis to fit; the row shows less of the frame
+// on a short screen, not a squeezed version of it.
 //
-// This is `Gallery-5-hero.jpg` with the bottom 12.5% removed (2880x1919 →
-// 2880x1680); the uncropped master is still beside it. The frame is taller
-// than it is wide, so `object-cover` scales the image by height and the whole
-// of it is visible vertically, which meant a quarter of the frame was empty
-// countertop while the nav band covered the top row of bowls. Cutting the dead
-// space lets object-cover scale up, so the bowls fill the frame instead.
-// Trimming further starts clipping the rims off the side bowls.
-export const HERO_RIGHT_IMAGE_SRC = "/images-web/Hero/Gallery-5-hero-cropped.jpg";
+// The 2880px Hero/ copy, not the 1024px Gallery/ one. The band is full-width,
+// so on a 1440px viewport at DPR 2 the browser asks for a 1920px variant, and
+// the gallery source cannot render one without upscaling. The uncropped
+// master, not the `-cropped` sibling the old portrait hero used: that trim
+// existed to fill a tall right-hand column, and this band is wide and shallow.
+export const HERO_IMAGE_SRC = "/images-web/Hero/Gallery-4-hero.jpg";
 
-// Combined "MERŌS" + "House of Yogurt" lockup, Montage Serif baked in.
-// Dark ink reads on the cream desktop canvas; light reads on the mobile scrim.
-export const HERO_LOGO_DARK_SRC = "/logos/name-dark.png";
-export const HERO_LOGO_LIGHT_SRC = "/logos/name-light.png";
+// Panel 3, below the fold: the tagline sits over it. Three bowls on a sunlit
+// counter, from the same shoot as the band above, so the two read as one table
+// seen twice rather than as two stock photographs.
+export const HERO_TAGLINE_IMAGE_SRC = "/images-web/Hero/Gallery-5-hero.jpg";
+
+// Combined "MERŌS" + "House of Yogurt" lockup, Montage Serif baked in. Only
+// the dark ink is needed now: the lockup sits in its own cream panel rather
+// than over a photograph, so there is no scrim to read light type against.
+export const HERO_LOCKUP_SRC = "/logos/name-dark.png";

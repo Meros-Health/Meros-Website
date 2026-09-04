@@ -1,12 +1,17 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import Image from "next/image";
 import { useLenis } from "@/components/animation/LenisProvider";
 import { waitForCriticalImages } from "@/lib/criticalImages";
 
 // ── Tunables ──────────────────────────────────────────────────────────────
-const MIN_DISPLAY_MS = 300; // floor so the skeleton never flashes for a single frame
+const MIN_DISPLAY_MS = 300; // floor so the mark never flashes for a single frame
 const FADE_OUT_MS = 600;    // overlay opacity transition, kept in sync with the inline style below
+
+// The square MERŌS mark, the same file the nav bar carries.
+const MARK_SRC = "/logos/logo-dark.png";
+const MARK_PX = 1376;
 
 // Default true so anything consuming this outside a <Preloader> (or during
 // its own unmount) never gets stuck waiting on a gate that isn't there.
@@ -29,7 +34,7 @@ export function Preloader({ children }: { children: React.ReactNode }) {
     const fontsReady = document.fonts ? document.fonts.ready : Promise.resolve();
 
     // Gate only on the images the current route marked critical (the hero on
-    // "/", the first menu cards on "/order"). Everything else lazy-loads, so
+    // "/", the first menu cards on "/menu"). Everything else lazy-loads, so
     // the gate never stalls on the full image set, and a route with nothing
     // marked pays only the floor.
     Promise.all([waitForCriticalImages(), fontsReady, minDelay]).then(() => {
@@ -66,66 +71,28 @@ export function Preloader({ children }: { children: React.ReactNode }) {
             inset: 0,
             zIndex: 300,
             display: "flex",
-            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
             background: "var(--color-cream)",
             opacity: ready ? 0 : 1,
             pointerEvents: ready ? "none" : "auto",
             transition: `opacity ${FADE_OUT_MS}ms ease`,
-            padding: "clamp(1rem, 3vw, 2rem)",
-            gap: "clamp(0.85rem, 1.4vw, 1.4rem)",
           }}
         >
-          {/* Both variants render on the server and client alike; CSS media
-              queries (not JS viewport state) decide which is visible, so the
-              correct one is on screen from first paint, with no post-hydration flash. */}
-          <div className="preloader-skeleton-desktop">
-            <div style={{ flex: "1 1 0%", minHeight: 0, display: "flex", gap: "clamp(0.85rem, 1.4vw, 1.4rem)" }}>
-              <div
-                className="skeleton-pulse"
-                style={{
-                  width: "50%",
-                  height: "100%",
-                  borderRadius: "0.5rem",
-                  background: "rgba(41, 45, 42, 0.12)",
-                }}
-              />
-              <div
-                className="skeleton-pulse"
-                style={{
-                  width: "50%",
-                  height: "100%",
-                  borderRadius: "0.5rem",
-                  background: "rgba(41, 45, 42, 0.12)",
-                  animationDelay: "0.15s",
-                }}
-              />
-            </div>
-            <div
-              className="skeleton-pulse"
-              style={{
-                width: "100%",
-                // Mirrors HeroSection's CAROUSEL_TILE; keep the two in step.
-                height: "clamp(150px, 20vh, 260px)",
-                flexShrink: 0,
-                borderRadius: "0.5rem",
-                background: "rgba(41, 45, 42, 0.12)",
-                animationDelay: "0.3s",
-              }}
-            />
-          </div>
-
-          {/* Mobile hero has no split/carousel layout, just a centered title. */}
-          <div className="preloader-skeleton-mobile">
-            <div
-              className="skeleton-pulse"
-              style={{
-                width: "clamp(220px, 72vw, 420px)",
-                height: "clamp(88px, 29vw, 168px)",
-                borderRadius: "0.5rem",
-                background: "rgba(41, 45, 42, 0.12)",
-              }}
-            />
-          </div>
+          {/* The mark alone, scaling on a fixed loop (.preloader-mark in
+              globals.css). `priority` so it is preloaded from the document
+              head: this is the only thing on screen while the gate holds, and
+              a preloader that has not loaded is a blank cream field. */}
+          <Image
+            src={MARK_SRC}
+            alt=""
+            aria-hidden
+            width={MARK_PX}
+            height={MARK_PX}
+            priority
+            sizes="(max-width: 1023px) 128px, 192px"
+            className="preloader-mark"
+          />
         </div>
       )}
     </PreloadReadyContext.Provider>

@@ -41,7 +41,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
               Try Again
             </button>
             <a
-              href="/order"
+              href="/menu"
               style={{
                 color: "#292d2a",
                 border: "0.5px solid rgba(41,45,42,0.28)",

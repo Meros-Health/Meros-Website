@@ -262,7 +262,7 @@ function ArrowButton({
   );
 }
 
-// ─── Mobile controls: eyebrow + title + arrows, side by side below the stage ─
+// ─── Mobile controls: "The" + title + arrows, side by side below the stage ──
 
 function MobileCarouselControls({
   role,
@@ -279,8 +279,9 @@ function MobileCarouselControls({
 }) {
   return (
     <div className="flex flex-col items-center gap-1.5 w-full">
-      {/* Static eyebrow: the item name itself replaces "The", so this column's
-          width never changes based on which item is selected */}
+      {/* "The" is held out of the name below so this column's width never
+          changes with which item is selected. Not a section kicker: it is one
+          word of the item's own name, parked so it cannot reflow. */}
       <span className="font-body-caps text-midnight/50 text-[9px] tracking-[0.25em]">
         THE
       </span>
@@ -559,9 +560,6 @@ export function PairingsSection() {
             viewport={ENTER_VIEWPORT_DELAYED}
             transition={{ duration: 1.2, ease: REVEAL_EASE }}
           >
-            <span className="font-body-caps text-midnight/50 text-[10px] tracking-[0.30em] mb-2 lg:mb-3">
-              Featured
-            </span>
             <h2
               className="
                 text-center
@@ -724,7 +722,7 @@ export function PairingsSection() {
                     </div>
                     <div style={{ width: PAIR_CTA_WIDTH_DESKTOP }}>
                       <CTAButton
-                        href="/order"
+                        href="/menu"
                         variant="dark"
                         className="w-full"
                         style={{ padding: PAIR_CTA_PADDING_DESKTOP, borderWidth: PAIR_CTA_BORDER_WIDTH }}
@@ -813,7 +811,7 @@ export function PairingsSection() {
 
           <div className="w-56 sm:w-60">
             <CTAButton
-              href="/order"
+              href="/menu"
               variant="dark"
               className="w-full"
               style={{ padding: PAIR_CTA_PADDING_MOBILE, borderWidth: PAIR_CTA_BORDER_WIDTH }}

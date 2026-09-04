@@ -1,7 +1,6 @@
 import Link from "next/link";
 
 interface ErrorScreenProps {
-  eyebrow: string;
   title: string;
   body: string;
   /** Rendered as the filled primary action. */
@@ -16,10 +15,9 @@ const PRIMARY =
 const SECONDARY = "font-body-caps text-[10px] tracking-widest text-midnight px-8 py-3 transition-opacity hover:opacity-70";
 const SECONDARY_STYLE = { border: "0.5px solid rgba(41,45,42,0.28)" };
 
-export function ErrorScreen({ eyebrow, title, body, primary, secondary, digest }: ErrorScreenProps) {
+export function ErrorScreen({ title, body, primary, secondary, digest }: ErrorScreenProps) {
   return (
     <main className="px-[7vw] pt-36 pb-24">
-      <span className="font-body-caps text-midnight/50 text-[10px] tracking-[0.30em]">{eyebrow}</span>
       <h1
         className="font-headline text-midnight leading-[0.9] uppercase mt-2"
         style={{ fontSize: "clamp(2.5rem, 5vw, 4rem)" }}

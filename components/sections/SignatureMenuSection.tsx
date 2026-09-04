@@ -1,455 +1,214 @@
 "use client";
 
-import Image from "next/image";
-import { useRef, useState } from "react";
-import { motion, useReducedMotion, type Variants } from "framer-motion";
+import { useRef } from "react";
 import { CTAButton } from "@/components/ui/CTAButton";
-import { SignatureTile } from "@/components/ui/SignatureTile";
+import { SignatureGallery } from "@/components/gallery/SignatureGallery";
+import { Reveal } from "@/components/ui/ScrollReveal";
 import { useRevealReady } from "@/lib/useRevealReady";
-import { useAddedBeat } from "@/lib/useAddedBeat";
-import { useCartStore } from "@/store/cartStore";
-import { addSignatureDirect, needsConfiguration } from "@/lib/menu/signatureAdd";
-import { formatSizeStat, getSizeTiers, listBowls, listSmoothies, type SignatureCategory, type SignatureItem } from "@/lib/menu/signatures";
+import { HOME_MENU_ROWS } from "@/lib/menu/menuGallery";
+import { bowlPriceSummary } from "@/lib/menu/pricing";
+import { listBowls, listSmoothies } from "@/lib/menu/signatures";
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
-// Read from lib/menu/menu.json (via signatures.ts): the same file the in-store
-// Menu TV renders from, so this section and the board never drift.
-
-const BOWLS = listBowls();
-const SMOOTHIES = listSmoothies();
-const ALL_ITEMS = [...BOWLS, ...SMOOTHIES];
-
-// "Medium $12 · Large $15" / "24 oz $15". Tier prices are flat per category,
-// so the first item's prices stand in for the group.
-function priceNote(category: SignatureCategory): string {
-  const sample = category === "bowl" ? BOWLS[0] : SMOOTHIES[0];
-  return getSizeTiers(category)
-    .filter((tier) => sample.sizes[tier.id] !== undefined)
-    .map((tier) => `${tier.label} $${sample.sizes[tier.id].price}`)
-    .join(" · ");
-}
-
-// ─── Motion ───────────────────────────────────────────────────────────────────
-// House entrance curve; rows cascade in visual order, hairlines draw left to
-// right. Item swaps on the stage are interactive feedback, so they use the
-// snappier curve the Pairings carousel uses. Every reveal waits on its own
-// on-screen images having decoded (useRevealReady), never on scroll position
-// alone. The row thumbnails are display:none above lg and are excluded there.
-
-const REVEAL_EASE = [0.22, 1, 0.36, 1] as const;
-const SWAP_EASE = [0.16, 1, 0.3, 1] as const;
-const ENTER_MARGIN = "-100px";
-const NAV_HEIGHT_PX = 72; // matches Navbar.tsx / HeroSection.tsx
-const HAIRLINE = "0.5px solid rgba(41,45,42,0.15)";
-const ROW_TINT = "rgba(41,45,42,0.05)";
-
-function makeVariants(reduced: boolean) {
-  const d = (seconds: number) => (reduced ? 0 : seconds);
-  const header: Variants = {
-    hidden: {},
-    show: { transition: { staggerChildren: d(0.14), delayChildren: d(0.05) } },
-  };
-  const rise: Variants = {
-    hidden: { opacity: 0, y: reduced ? 0 : 16 },
-    show: { opacity: 1, y: 0, transition: { duration: d(1.1), ease: REVEAL_EASE } },
-  };
-  const group: Variants = {
-    hidden: {},
-    show: { transition: { staggerChildren: d(0.12) } },
-  };
-  const row: Variants = {
-    hidden: { opacity: 0, y: reduced ? 0 : 14 },
-    show: { opacity: 1, y: 0, transition: { duration: d(1.0), ease: REVEAL_EASE } },
-  };
-  const hairline: Variants = {
-    hidden: { scaleX: 0 },
-    show: { scaleX: 1, transition: { duration: d(1.3), ease: REVEAL_EASE } },
-  };
-  return { header, rise, group, row, hairline };
-}
-
-type MenuVariants = ReturnType<typeof makeVariants>;
-
-// ─── Add button (icon) ───────────────────────────────────────────────────────
-// Feedback after a successful add: the box inverts (white with a grapefruit
-// check) for the length of the Added beat, then returns to the orange "+".
-// A bowl's "+" opens the add modal (size and yogurt are required there); a
-// smoothie's "+" adds outright. Either way the beat lands on this button.
-
-function AddIconButton({
-  name,
-  added,
-  onClick,
-  className = "",
-}: {
-  name: string;
-  added: boolean;
-  onClick: () => void;
-  className?: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={added ? `${name} added to cart` : `Add ${name} to cart`}
-      data-added={added ? "true" : undefined}
-      // The button is the 44px touch target; the 32px box inside is the
-      // visual, so the row looks as it did.
-      className={`
-        group/add h-11 w-11 items-center justify-center
-        focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-grapefruit
-        ${added ? "cursor-default" : ""}
-        ${className}
-      `}
-    >
-      <span
-        aria-hidden="true"
-        className={`
-          flex h-8 w-8 items-center justify-center
-          border border-grapefruit
-          transition-[background-color,color,border-color] duration-300
-          ${added ? "bg-[#fff] text-grapefruit" : "bg-grapefruit text-[#fff] group-hover/add:bg-grapefruit/75"}
-        `}
-      >
-      {added ? (
-        <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-          <path d="m4.5 10.5 3.5 3.5 7.5-8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      ) : (
-        <svg width="16" height="16" viewBox="0 0 20 20" aria-hidden="true">
-          <path d="M9 3h2v6h6v2h-6v6H9v-6H3V9h6V3Z" fill="currentColor" />
-        </svg>
-      )}
-      </span>
-    </button>
-  );
-}
-
-// ─── Row ──────────────────────────────────────────────────────────────────────
-
-function MenuRow({
-  item,
-  index,
-  active,
-  onActivate,
-  variants,
-}: {
-  item: SignatureItem;
-  index: number;
-  active: boolean;
-  onActivate: () => void;
-  variants: MenuVariants;
-}) {
-  // Both come back "" when the item has no macro figures at all (The
-  // Seasonal, pending a recompute from the macro sheets). Neither field is
-  // ever partially missing today, so the two lines below just fall back to
-  // "N/A" together rather than printing a bare label with no number.
-  const calories = formatSizeStat(item, "calories");
-  const protein = formatSizeStat(item, "protein");
-  const hasMacros = calories !== "" || protein !== "";
-  const addItem = useCartStore((s) => s.addItem);
-  const openAdd = useCartStore((s) => s.openAdd);
-  const { added, flash } = useAddedBeat(item.id);
-
-  const handleAdd = () => {
-    // A second press during the beat is almost always a double-tap, not a
-    // request for two. Quantity lives in the cart.
-    if (added) return;
-    // Bowls need a size and a yogurt, chosen in the modal, the way the store
-    // takes the order. Smoothies have one size and come with vanilla.
-    if (needsConfiguration(item)) {
-      openAdd(item.id);
-      return;
-    }
-    if (addSignatureDirect(item, addItem) === "added") flash();
-  };
-
-  return (
-    <motion.li variants={variants.row}>
-      <div
-        onMouseEnter={onActivate}
-        onFocus={onActivate}
-        className="
-          group relative w-full text-left
-          grid grid-cols-[4rem_1fr] lg:grid-cols-[2.5rem_1fr_auto]
-          gap-x-4 lg:gap-x-6 py-5 lg:py-6 px-4 lg:px-5
-          transition-[opacity,background-color] duration-500
-        "
-        style={{
-          borderBottom: HAIRLINE,
-          opacity: active ? 1 : 0.8,
-          // Hover/active feedback: a soft tint on the row so the ledger reads as interactive.
-          backgroundColor: active ? ROW_TINT : "transparent",
-        }}
-      >
-        {/* First column below lg: thumbnail with the Add button centered directly
-            beneath it, so the two read as one group (no sticky stage there).
-            Above lg: the row index. */}
-        <div className="lg:hidden flex w-16 flex-col items-center gap-3.5">
-          {/* An item without photography (The Seasonal) renders no image
-              region here rather than a generic stand-in photo. */}
-          {item.images && (
-            <div className="relative w-16 aspect-square">
-              <Image
-                src={item.images.transparent}
-                alt=""
-                width={1080}
-                height={1080}
-                sizes="64px"
-                loading="lazy"
-                style={{ width: "100%", height: "auto" }}
-              />
-            </div>
-          )}
-          <AddIconButton name={item.name} added={added} onClick={handleAdd} className="flex" />
-        </div>
-        <span
-          className="hidden lg:block font-body-caps text-[10px] tracking-[0.30em] pt-1.5 transition-colors duration-500"
-          style={{ color: active ? "var(--color-grapefruit)" : "rgba(41,45,42,0.4)" }}
-        >
-          {String(index + 1).padStart(2, "0")}
-        </span>
-
-        <div className="min-w-0 flex flex-col gap-1.5">
-          <h3 className="font-headline text-midnight uppercase tracking-headline leading-none text-[clamp(1.25rem,2vw,1.75rem)]">
-            {item.name}
-          </h3>
-          <p className="font-body-caps text-grapefruit-text text-[10px] tracking-[0.22em]">
-            {item.tags.join(" · ")}
-          </p>
-          <p className="font-body-mixed text-juniper text-sm leading-relaxed">{item.ingredients}</p>
-          {hasMacros && (
-            <p className="lg:hidden font-body-caps text-midnight/50 text-[10px] tracking-[0.2em] mt-1">
-              {calories || "N/A"} cal · {protein || "N/A"} g protein
-            </p>
-          )}
-        </div>
-
-        {hasMacros && (
-          <div className="hidden lg:flex flex-col items-end gap-1 pt-1.5 whitespace-nowrap font-body-caps text-midnight/50 text-[10px] tracking-[0.2em]">
-            <span>{calories || "N/A"} cal</span>
-            <span>{protein || "N/A"} g protein</span>
-          </div>
-        )}
-
-        {/* Desktop: bottom-right of the row */}
-        <AddIconButton
-          name={item.name}
-          added={added}
-          onClick={handleAdd}
-          className="hidden lg:flex absolute right-5 bottom-4"
-        />
-      </div>
-    </motion.li>
-  );
-}
-
-// ─── Group (Bowls / Smoothies) ────────────────────────────────────────────────
-
-function MenuGroup({
-  label,
-  category,
-  items,
-  activeId,
-  onActivate,
-  variants,
-  reduced,
-}: {
-  label: string;
-  category: SignatureCategory;
-  items: SignatureItem[];
-  activeId: string;
-  onActivate: (id: string) => void;
-  variants: MenuVariants;
-  reduced: boolean;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const show = useRevealReady(ref, ENTER_MARGIN);
-  return (
-    <motion.div
-      ref={ref}
-      variants={variants.group}
-      initial={reduced ? false : "hidden"}
-      animate={reduced || show ? "show" : "hidden"}
-    >
-      <motion.div variants={variants.rise} className="flex items-baseline justify-between gap-4 pb-3 px-4 lg:px-5">
-        <span className="font-body-caps text-midnight/50 text-[10px] tracking-[0.30em]">{label}</span>
-        <span className="font-body-caps text-midnight text-[10px] tracking-[0.22em] text-right">
-          {priceNote(category)}
-        </span>
-      </motion.div>
-      <motion.div variants={variants.hairline} className="h-px bg-midnight/40 origin-left" aria-hidden />
-      <ul>
-        {items.map((item, i) => (
-          <MenuRow
-            key={item.id}
-            item={item}
-            index={i}
-            active={item.id === activeId}
-            onActivate={() => onActivate(item.id)}
-            variants={variants}
-          />
-        ))}
-      </ul>
-    </motion.div>
-  );
-}
-
-// ─── Stage (desktop only) ─────────────────────────────────────────────────────
-// Every item's PNG is stacked in the same box and cross-faded by opacity, so
-// every image is fetched as the stage nears the viewport and a hover never
-// waits on the network. Below lg the stage is display:none, so the lazy
-// images are never requested there.
-
-function MenuStage({ active, reduced }: { active: SignatureItem; reduced: boolean }) {
-  const swap = reduced
-    ? { duration: 0 }
-    : { duration: 0.5, ease: SWAP_EASE };
-  const ref = useRef<HTMLDivElement>(null);
-  const show = useRevealReady(ref, ENTER_MARGIN);
-
-  return (
-    <motion.div
-      ref={ref}
-      className="sticky"
-      style={{ top: `calc(${NAV_HEIGHT_PX}px + 2rem)` }}
-      initial={reduced ? false : { opacity: 0 }}
-      animate={{ opacity: reduced || show ? 1 : 0 }}
-      transition={{ duration: reduced ? 0 : 1.2, ease: REVEAL_EASE, delay: reduced ? 0 : 0.3 }}
-    >
-      <div className="relative w-full aspect-square">
-        {ALL_ITEMS.map((item) => {
-          const isActive = item.id === active.id;
-          return (
-            <motion.div
-              key={item.id}
-              className="absolute inset-0"
-              initial={false}
-              animate={{ opacity: isActive ? 1 : 0, y: isActive || reduced ? 0 : 8 }}
-              transition={swap}
-              // The Seasonal renders a card that turns, so the active item has
-              // to take clicks. Everything else in the stack stays inert.
-              style={{ zIndex: isActive ? 1 : 0, pointerEvents: isActive && !item.images ? "auto" : "none" }}
-              aria-hidden={!isActive}
-            >
-              {item.images ? (
-                <Image
-                  src={item.images.transparent}
-                  alt={isActive ? active.name : ""}
-                  width={1080}
-                  height={1080}
-                  sizes="(min-width: 1024px) 40vw, 0px"
-                  loading="lazy"
-                  style={{ width: "100%", height: "auto" }}
-                />
-              ) : (
-                <SignatureTile item={item} active={isActive} />
-              )}
-            </motion.div>
-          );
-        })}
-      </div>
-
-      <div className="mt-6 flex flex-col gap-2" aria-live="polite">
-        <span className="font-body-caps text-midnight/50 text-[10px] tracking-[0.30em]">
-          {active.category === "bowl" ? "Signature Bowl" : "Signature Smoothie"}
-        </span>
-        <motion.h3
-          key={active.id}
-          className="heading-3 text-midnight uppercase tracking-headline"
-          initial={reduced ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={swap}
-        >
-          {active.name}
-        </motion.h3>
-        <span className="font-body-caps text-grapefruit-text text-[10px] tracking-[0.22em]">
-          {active.tags.join(" · ")}
-        </span>
-      </div>
-    </motion.div>
-  );
-}
-
-// ─── Section ──────────────────────────────────────────────────────────────────
+// The home page's menu section: a header, the same gallery wall /menu is built
+// from showing the four bestsellers, then a cream bar that hands off to the
+// builder section below it.
+//
+// It replaced a sticky image stage beside a scrolling ledger of all ten
+// signatures. Two reasons. The wall is the layout the rest of the site now
+// uses, and reprinting the whole menu here made /menu a page with nothing on it
+// the home page had not already shown.
+//
+// The way to the full menu is stated twice, above the wall and again in the bar
+// below it. Four items is exactly enough to be mistaken for the whole menu, and
+// the bar is the last thing read before the section ends, which is where that
+// misreading would otherwise stick.
+//
+// Both are the outlined variant, the same one BuildSection's button uses. They
+// were grapefruit fills. Two loud buttons on one cream screen compete for the
+// same click, and the one in the bar sits a few lines from COMPOSE YOUR OWN's
+// button, where a filled button and an outlined one would have implied a
+// ranking between two routes that are meant to be a genuine either/or.
+//
+// Rows are shorter than /menu's: a full menu row is sized to hold an
+// eight-ingredient recipe with room around it, and three of those under a hero
+// is most of a screen each.
+const ROW_HEIGHT = "clamp(21rem, 36vw, 34rem)";
 
 export function SignatureMenuSection() {
-  const reduced = useReducedMotion() ?? false;
-  const variants = makeVariants(reduced);
-  const [activeId, setActiveId] = useState(BOWLS[0].id);
-  const active = ALL_ITEMS.find((item) => item.id === activeId) ?? BOWLS[0];
   const headerRef = useRef<HTMLDivElement>(null);
-  const headerShow = useRevealReady(headerRef, ENTER_MARGIN);
+  const show = useRevealReady(headerRef, "-120px");
 
   return (
-    <section className="relative w-full bg-cream px-section-x py-section overflow-x-clip">
-      <div className="mx-auto w-full max-w-[min(100%,90rem)]">
-        {/* Header */}
-        <motion.div
-          ref={headerRef}
-          className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between lg:gap-12"
-          variants={variants.header}
-          initial={reduced ? false : "hidden"}
-          animate={reduced || headerShow ? "show" : "hidden"}
-        >
-          <div className="flex flex-col">
-            <motion.span
-              variants={variants.rise}
-              className="font-body-caps text-midnight/50 text-[10px] tracking-[0.30em] mb-2 lg:mb-3"
-            >
-              Menu
-            </motion.span>
-            <motion.h2
-              variants={variants.rise}
-              className="font-headline text-midnight tracking-headline leading-tight text-[clamp(2.25rem,7vw,4.75rem)]"
-            >
-              SIGNATURE BOWLS &amp; SMOOTHIES
-            </motion.h2>
-          </div>
-          <motion.div
-            variants={variants.rise}
-            className="flex flex-col items-start gap-4 lg:items-end"
+    <section className="relative w-full bg-cream overflow-x-clip">
+      <div ref={headerRef} className="px-section-x pt-section pb-14">
+        <Reveal show={show} index={0}>
+          <h2
+            className="font-headline text-midnight tracking-headline leading-[0.9] uppercase"
+            style={{ fontSize: "clamp(2.25rem, 7vw, 4.75rem)" }}
           >
-            <p className="font-body-mixed text-juniper text-sm leading-relaxed max-w-xs lg:text-right">
-              Bowls served Medium $12 or Large $15. Smoothies 24 oz, $15.
-            </p>
-            <CTAButton href="/order" variant="dark">
-              Order Now
-            </CTAButton>
-          </motion.div>
-        </motion.div>
+            Our Favourites
+          </h2>
+        </Reveal>
 
-        {/* Body: sticky stage (lg+) beside the ledger */}
-        <div
-          className="mt-12 lg:mt-20 lg:grid lg:grid-cols-[5fr_7fr]"
-          style={{ columnGap: "clamp(2rem, 5vw, 6rem)" }}
-        >
-          <div className="hidden lg:block">
-            <MenuStage active={active} reduced={reduced} />
-          </div>
+        <Reveal show={show} index={1}>
+          {/* Derived from menu.json, so a price change on the board reaches
+              this sentence without anyone editing it. */}
+          <p className="font-body-mixed text-juniper text-sm leading-relaxed mt-5">
+            {bowlPriceSummary()}
+          </p>
+        </Reveal>
 
-          <div className="flex flex-col gap-14 lg:gap-20">
-            <MenuGroup
-              label="Signature Bowls"
-              category="bowl"
-              items={BOWLS}
-              activeId={activeId}
-              onActivate={setActiveId}
-              variants={variants}
-              reduced={reduced}
-            />
-            <MenuGroup
-              label="Signature Smoothies"
-              category="smoothie"
-              items={SMOOTHIES}
-              activeId={activeId}
-              onActivate={setActiveId}
-              variants={variants}
-              reduced={reduced}
-            />
-          </div>
-        </div>
+        <Reveal show={show} index={2}>
+          <CTAButton href="/menu" variant="dark" className="mt-8">
+            See the full menu
+          </CTAButton>
+        </Reveal>
       </div>
+
+      <SignatureGallery rows={HOME_MENU_ROWS} rowHeight={ROW_HEIGHT} />
+
+      <FullMenuBar />
     </section>
+  );
+}
+
+// The wall's cream panel, run the full width of the page: the section's closing
+// block and the hinge into the one after it. It borrows gallery-tone-cream for
+// the light ground and the wall's own type scale for its type, so a change to
+// either reaches this too. It sits on the same cream as the header above the
+// wall and as the builder section below, so the three read as one ground.
+//
+// The shape is a choice, not a summary: the full menu stated with its own
+// heading, subline and button, then "or", and then the next section's own
+// heading answers it with "Compose Your Own". The rule is that the hinge only
+// works if it stays incomplete. The bar names one option and stops mid
+// sentence; BuildSection finishes it. That is also why the bottom padding is
+// roughly half the top: the block leans toward what follows rather than
+// closing the section.
+//
+// The subline counts real signatures out of menu.json rather than saying
+// "more", so pulling an item off the board corrects this sentence too.
+//
+// Centred, and on the site's section inset rather than the wall's. Alignment
+// and inset go together: a block set against the wall's leading edge wants the
+// wall's narrow --gallery-pad, and a centred block wants room on both sides,
+// which is what px-section-x is.
+//
+// It is a container so the wall's cqw type scale has a width to measure. The
+// scale resolves against .gallery-row on the wall itself, and this bar is not
+// in one; without a container of its own these values would silently fall back
+// to the viewport, which is close to right here only because the bar happens to
+// be full-bleed. Declaring it means the bar is still correct in a narrower slot.
+function FullMenuBar() {
+  const bowls = listBowls().length;
+  const smoothies = listSmoothies().length;
+
+  return (
+    <div
+      className="gallery-tone-cream w-full flex flex-col items-center text-center px-section-x"
+      style={{
+        containerType: "inline-size",
+        borderTop: "var(--gallery-rule) solid var(--color-cream)",
+        // Vertical room is the band's own, not the wall's. A wall panel is
+        // centred in a row tall enough to hold a recipe; this one is only as
+        // tall as it makes itself, so it sets the space it stands in.
+        paddingTop: "clamp(2.75rem, 5vw, 4.5rem)",
+        // Nothing below the hinge. The space under it is BuildSection's
+        // SEAM_TOP, and the hinge sets its own space above, which is what puts
+        // "or" between the two headings. Any padding here would push it off by
+        // exactly that amount.
+        paddingBottom: 0,
+        background: "var(--color-cream)",
+      }}
+    >
+      {/* The builder's title stack, repeated: heading, 1rem, subline, 1.75rem,
+          button. Those two numbers are BuildSection's, not the wall's, because
+          this block and COMPOSE YOUR OWN are read as a pair and a pair with two
+          different internal rhythms reads as two unrelated blocks. */}
+      <div className="flex flex-col items-center">
+        <h3
+          className="font-headline uppercase leading-[0.92]"
+          style={{ fontSize: "var(--gallery-name-size)", color: "var(--gallery-ink)" }}
+        >
+          Browse the full menu
+        </h3>
+
+        <p
+          className="font-body-mixed leading-relaxed"
+          style={{
+            marginTop: "1rem",
+            fontSize: "var(--gallery-body-size)",
+            color: "var(--gallery-ink-quiet)",
+          }}
+        >
+          {bowls} signature bowls and {smoothies} smoothies, built to order.
+        </p>
+
+        {/* Byte for byte BuildSection's button apart from the label and the
+            href. It used to carry the wall's panel metrics: container-relative
+            padding, a 44px floor, and --gallery-cta-size on the label. Those
+            exist so a button sitting inside a photograph's caption stays in
+            proportion to its panel, and this one is not in a panel. Next to
+            COMPOSE YOUR OWN's button it just read as a second, slightly
+            different button, which is exactly what an either/or must not look
+            like. Default metrics, so the two are the same object. */}
+        <CTAButton href="/menu" variant="dark" className="mt-7">
+          Browse
+        </CTAButton>
+      </div>
+
+      <OrHinge />
+    </div>
+  );
+}
+
+// "or", flanked by two hairlines, holding the seam between this section and the
+// builder. Read aloud it is one word between two calls to action, which is what
+// it is; the rules are decoration and are hidden from assistive tech.
+//
+// The rules are capped rather than run edge to edge. A full-width line would be
+// a divider, and a divider says the section ended, which is the opposite of
+// what this does. A short one reads as punctuation inside a sentence that
+// continues past it.
+//
+// The top margin is the whole placement argument. The space below "or" is
+// BuildSection's SEAM_TOP, a fixed clamp rather than a leftover, which is the
+// only reason a margin here can be measured against anything. The two are
+// within a couple of pixels of each other by eye at desktop widths, which is
+// where this landed after being walked in from both ends: a wider seam read as
+// two sections that happened to follow one another rather than one handing off
+// to the next. Both sides scale off a clamp, so the balance holds at every
+// width.
+//
+// Inline, and not the "section" token as a class. That token is registered
+// under padding in the Tailwind config, not spacing, so pt-section exists and
+// mt-section does not: written as a class it compiles to nothing and the word
+// lands directly under the button. Padding is not an option here because the
+// gap has to be outside the hairlines.
+function OrHinge() {
+  const rule = {
+    flex: 1,
+    height: "1px",
+    background: "rgba(41, 45, 42, 0.18)", // --color-midnight, at hairline weight
+  } as const;
+
+  return (
+    <div
+      className="flex w-full items-center"
+      style={{
+        maxWidth: "min(22rem, 70cqw)",
+        gap: "clamp(0.75rem, 3cqw, 1.25rem)",
+        marginTop: "clamp(2.25rem, 4.75vw, 4.75rem)",
+      }}
+    >
+      <span aria-hidden style={rule} />
+      <span
+        className="font-body tracking-body-caps uppercase"
+        style={{ fontSize: "0.6875rem", color: "var(--gallery-ink-quiet)" }}
+      >
+        or
+      </span>
+      <span aria-hidden style={rule} />
+    </div>
   );
 }

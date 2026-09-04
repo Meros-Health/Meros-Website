@@ -1,5 +1,5 @@
 // Metadata inherits down the App Router tree, so a canonical set once in the
-// root layout silently claims every route is the home page. That folds /order,
+// root layout silently claims every route is the home page. That folds /menu,
 // /build, /privacy and /terms out of the index, and nothing else in the suite
 // would notice. These assert each route speaks for itself.
 import { expect, test } from "@playwright/test";
@@ -8,7 +8,7 @@ const SITE = "https://merosyogurt.com";
 
 const PAGES = [
   { path: "/", canonical: "/", title: /MERŌS/ },
-  { path: "/order", canonical: "/order", title: /Our Menu/ },
+  { path: "/menu", canonical: "/menu", title: /Our Menu/ },
   { path: "/build", canonical: "/build", title: /Build a Bowl/ },
   { path: "/catering", canonical: "/catering", title: /Catering/ },
   { path: "/privacy", canonical: "/privacy", title: /Privacy Policy/ },
@@ -41,7 +41,7 @@ test("robots.txt and the sitemap point at the live domain, not the Worker host",
   expect(robots).toContain("Disallow: /checkout");
 
   const sitemap = await (await request.get("/sitemap.xml")).text();
-  for (const path of ["/", "/order", "/build", "/privacy", "/terms"]) {
+  for (const path of ["/", "/menu", "/build", "/privacy", "/terms"]) {
     expect(sitemap).toContain(`<loc>${SITE}${path === "/" ? "/" : path}</loc>`);
   }
   // Transactional routes must never be advertised for crawling.
@@ -85,7 +85,7 @@ test("the home page carries a Restaurant schema that agrees with the footer", as
   await expect(page.locator("footer")).toContainText("(778) 345-3023");
 });
 
-for (const path of ["/order", "/build", "/privacy", "/terms"]) {
+for (const path of ["/menu", "/build", "/privacy", "/terms"]) {
   test(`${path} carries a BreadcrumbList back to the home page`, async ({ page }) => {
     await page.goto(path);
     const crumbs = (await jsonLd(page)).find((d) => d["@type"] === "BreadcrumbList");

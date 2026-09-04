@@ -29,8 +29,8 @@ import type { SignatureItem } from "@/lib/menu/signatures";
 //     resamples, which softens the text and the photograph, and in WebKit the
 //     hidden back bleeds through mirrored. Do not "simplify" that away.
 //
-// This is the only slot this file fills. /order and the ledger thumbnail
-// (components/sections/SignatureMenuSection.tsx, app/order/page.tsx) used to
+// This is the only slot this file fills. /menu and the ledger thumbnail
+// (components/sections/SignatureMenuSection.tsx, app/menu/page.tsx) used to
 // reuse it for a plain photograph in the image well ("card" and "thumb"
 // variants), standing in a generic gallery shot where the item's own photo
 // would go. As of 2026-09-01 both surfaces render no image region at all for

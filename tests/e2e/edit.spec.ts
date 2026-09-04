@@ -24,28 +24,28 @@ test("A1: removing the line being edited shows a notice, and Add to Cart restore
 
   await notice.getByRole("button", { name: "Add to Cart" }).click();
   await expect(notice.getByRole("button", { name: "Added" })).toBeVisible();
-  await page.waitForURL("**/order");
+  await page.waitForURL("**/menu");
   await expect(drawer(page)).toBeVisible();
   expect(await readCart(page)).toHaveLength(1);
 });
 
-test("A1 control: saving a live line reports Saved and lands on /order with the drawer open", async ({ page }) => {
+test("A1 control: saving a live line reports Saved and lands on /menu with the drawer open", async ({ page }) => {
   await seedCart(page, [plainBowl("edit-me")]);
   await page.goto("/cart/edit/edit-me");
   await waitForPageReady(page);
   await page.getByRole("button", { name: "Large" }).click();
   await page.getByRole("button", { name: "Save Changes" }).click();
   await expect(page.getByRole("button", { name: "Saved" })).toBeVisible();
-  await page.waitForURL("**/order");
+  await page.waitForURL("**/menu");
   await expect(drawer(page)).toBeVisible();
   const cart = (await readCart(page)) as Array<{ unitPrice: number }>;
   expect(cart[0].unitPrice).toBe(15);
 });
 
-test("A3: an edit URL for a missing line lands on /order with a rendered page", async ({ page }) => {
+test("A3: an edit URL for a missing line lands on /menu with a rendered page", async ({ page }) => {
   await seedCart(page, [plainBowl("other")]);
   await page.goto("/cart/edit/does-not-exist");
-  await page.waitForURL("**/order");
+  await page.waitForURL("**/menu");
   await waitForPageReady(page);
   await expect(page.locator("main")).toBeVisible();
 });
@@ -68,7 +68,7 @@ test("B1: navigating within the Added beat on /build lands on the clicked route 
   await page.getByRole("button", { name: /Plain Greek Yogurt/ }).first().click();
   await page.getByRole("button", { name: "Add to Cart" }).click();
   await navigateViaMenu(page, "Order");
-  await page.waitForURL("**/order");
+  await page.waitForURL("**/menu");
   await page.waitForTimeout(1500);
   await expect(drawer(page)).toBeHidden();
   expect(await readCart(page)).toHaveLength(1);
@@ -77,7 +77,7 @@ test("B1: navigating within the Added beat on /build lands on the clicked route 
 test("E1: corrupted storage does not hang the edit page", async ({ page }) => {
   await seedRawCart(page, "{{{");
   await page.goto("/cart/edit/anything");
-  await page.waitForURL("**/order", { timeout: 4000 });
+  await page.waitForURL("**/menu", { timeout: 4000 });
   await waitForPageReady(page);
   await expect(cartButton(page)).toHaveAttribute("aria-label", "Cart (0 items)");
 });

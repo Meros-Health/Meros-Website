@@ -51,14 +51,14 @@ describe("submitCheckout: happy path", () => {
 
   it("prices the yogurt surcharge and names the yogurt on the order line", async () => {
     const vegan = { ...momentMedium(), lineId: "vegan", base: "vegan-coconut-yogurt", unitPrice: 14 };
-    const smoothie = { ...signatureLine("smoothie", "rise", "standard", 15), base: undefined };
+    const smoothie = { ...signatureLine("smoothie", "cabana", "standard", 15), base: undefined };
     const result = await submit([vegan, smoothie]);
     expect(result.status).toBe("success");
     const logged = logSpy.mock.calls[0][1] as { total: number; items: { name: string }[] };
     expect(logged.total).toBe(29);
     expect(logged.items.map((i) => i.name)).toEqual([
       "The Moment · Medium · Vegan Coconut Yogurt",
-      "The Rise · 24 oz · Vanilla Greek Yogurt",
+      "The Cabana · 24 oz · Vanilla Greek Yogurt",
     ]);
   });
 
@@ -239,7 +239,7 @@ describe("F5: validation matrix (confirmed-correct boundaries stay locked)", () 
     ["wrong step", [customLine("w", "medium", { base: ["plain-greek-yogurt"], fruits: ["almonds"] }, { unitPrice: 12 })], "unavailable"],
     ["unknown step", [customLine("s", "medium", { base: ["plain-greek-yogurt"], junk: ["strawberries"] }, { unitPrice: 12 })], "unavailable"],
     ["unknown size", [customLine("z", "huge", { base: ["plain-greek-yogurt"] }, { unitPrice: 12 })], "unavailable"],
-    ["signature wrong size", [signatureLine("sm", "rise", "large", 15)], "unavailable"],
+    ["signature wrong size", [signatureLine("sm", "cabana", "large", 15)], "unavailable"],
     ["unknown product", [signatureLine("np", "nope", "medium", 12)], "unavailable"],
     ["bowl with no yogurt", [{ ...momentMedium(), base: undefined }], "base"],
     ["unknown yogurt", [{ ...momentMedium(), base: "nope" }], "unavailable"],
@@ -330,7 +330,7 @@ describe("signature additions and removals", () => {
   }
 
   it("still rejects an unknown size when mods are present", async () => {
-    const line = signatureLine("sz", "rise", "large", 17, { mods: { additions: ["mangoes"], removals: [] } });
+    const line = signatureLine("sz", "cabana", "large", 17, { mods: { additions: ["mangoes"], removals: [] } });
     expect((await submit([line])).code).toBe("unavailable");
   });
 });

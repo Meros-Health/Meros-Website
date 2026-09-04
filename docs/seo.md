@@ -17,7 +17,7 @@ Graph, robots and sitemap in agreement) was sound; this adds what was missing.
 - The geo coordinates are OpenStreetMap's for 1207 Hamilton Street. The
   postal code is V6B 6K5, confirmed by Thomas against the lease on 2026-08-28;
   OSM's V6B 2X6 for the street address is wrong for the unit.
-- `/order`, `/build`, `/privacy` and `/terms` carry a `BreadcrumbList` back to
+- `/menu`, `/build`, `/privacy` and `/terms` carry a `BreadcrumbList` back to
   the home page. `components/seo/JsonLd.tsx` renders the blocks server-side.
 
 ## Icons and preview image
@@ -55,7 +55,7 @@ nor disallowed.
 - Search Console (done 2026-08-28): the Domain property is verified by a
   `google-site-verification` TXT at the apex, the sitemap was resubmitted
   (the Aug 2 entry was the agency site's sitemap index at the same URL), and
-  indexing was requested for `/` and `/order`. Watch Pages for the five legacy
+  indexing was requested for `/` and `/menu`. Watch Pages for the five legacy
   URLs folding into their targets. Each takes two 308 hops (trailing slash
   strip, then the redirect rule); see `docs/dns-cutover.md` section 9.
 - Claim or update the Google Business Profile so the knowledge panel and the

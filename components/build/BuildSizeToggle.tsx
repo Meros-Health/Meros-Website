@@ -4,7 +4,7 @@ import { BUILD_CONFIG } from "@/lib/menu/buildConfig";
 import { useBowlBuilderStore } from "@/store/bowlBuilderStore";
 
 // Squared segmented control, same treatment as the signature size toggle on
-// /order. Renders nothing when the menu defines a single build size.
+// /menu. Renders nothing when the menu defines a single build size.
 export function BuildSizeToggle() {
   const sizeId = useBowlBuilderStore((s) => s.selection.sizeId);
   const setSize = useBowlBuilderStore((s) => s.setSize);

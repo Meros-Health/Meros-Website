@@ -8,6 +8,15 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+
+  // Workers Logs. Off by default, which meant a 2026-09-01 traffic surge could
+  // only be read from zone analytics: shape but no source, and the Free plan
+  // withholds client IP and ASN there. Request-level logs make the next one
+  // answerable. Free tier covers well past this site's volume.
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
   // Order record, checkout idempotency, and catering inquiries (schema in
   // migrations/). One database, two unrelated tables: a second binding for one
   // table would be a second thing to create, migrate and forget about.

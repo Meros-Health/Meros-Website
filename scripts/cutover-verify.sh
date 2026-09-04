@@ -68,24 +68,24 @@ contains() {
 printf '%s\n\n' "Verifying $BASE"
 
 printf '%s\n' "Routes"
-for p in / /order /build /privacy /terms /checkout /robots.txt /sitemap.xml; do
+for p in / /menu /build /privacy /terms /checkout /robots.txt /sitemap.xml; do
   code "$p" 200
 done
 code /this-route-does-not-exist 404
 
 printf '\n%s\n' "Legacy URLs from the agency site"
-redirect /our-menu       /order
+redirect /our-menu       /menu
 redirect /build-a-bowl   /build
 redirect /about-us       "/#about"
 redirect /privacy-policy /privacy
 redirect /contact        "/#footer"
 # The indexed forms all carry a trailing slash, so check them end to end.
-lands /our-menu/        /order
+lands /our-menu/        /menu
 lands /build-a-bowl/    /build
 lands /privacy-policy/  /privacy
 
 printf '\n%s\n' "SEO"
-for pair in "/:$SITE" "/order:$SITE/order" "/build:$SITE/build" "/privacy:$SITE/privacy" "/terms:$SITE/terms"; do
+for pair in "/:$SITE" "/menu:$SITE/menu" "/build:$SITE/build" "/privacy:$SITE/privacy" "/terms:$SITE/terms"; do
   path="${pair%%:*}"; want="${pair#*:}"
   got=$(curl -sS -m 20 "$BASE$path" 2>/dev/null \
         | grep -o '<link rel="canonical" href="[^"]*"' | head -1 | sed 's/.*href="//;s/"$//')
@@ -94,7 +94,7 @@ for pair in "/:$SITE" "/order:$SITE/order" "/build:$SITE/build" "/privacy:$SITE/
 done
 contains /checkout 'noindex' "/checkout is noindex"
 contains /robots.txt "Sitemap: $SITE/sitemap.xml" "robots.txt names the live sitemap"
-contains /sitemap.xml "<loc>$SITE/order</loc>" "sitemap names the live domain"
+contains /sitemap.xml "<loc>$SITE/menu</loc>" "sitemap names the live domain"
 
 printf '\n%s\n' "Transport"
 if [ "$HOST" = "merosyogurt.com" ]; then

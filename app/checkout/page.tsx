@@ -9,7 +9,7 @@ import { CartLineItem } from "@/components/cart/CartLineItem";
 import { submitCheckout, type CheckoutFormState } from "@/app/actions/checkout";
 import { makeIdempotencyKey } from "@/lib/checkout/idempotency";
 import { linesMissingBase, toCheckoutLines } from "@/lib/checkout/lines";
-import { LINE_MESSAGES, MISSING_BASE_HINT } from "@/lib/checkout/messages";
+import { LINE_MESSAGES, MISSING_BASE_HINT, PICKUP_ONLY_NOTE } from "@/lib/checkout/messages";
 import { CHECKOUT_ENABLED } from "@/lib/config";
 
 const LAST_ORDER_KEY = "meros-last-order";
@@ -88,7 +88,7 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (!CHECKOUT_ENABLED) {
-      router.replace("/order");
+      router.replace("/menu");
       return;
     }
     if (!hydrated || state.status === "success") return;
@@ -107,7 +107,7 @@ export default function CheckoutPage() {
     } catch {
       // Nothing to clear.
     }
-    router.replace("/order");
+    router.replace("/menu");
   }, [hydrated, items.length, state.status, router]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -187,6 +187,10 @@ export default function CheckoutPage() {
         Checkout
       </h1>
 
+      <p className="font-body-mixed text-sm text-juniper leading-relaxed mt-3 max-w-md">
+        {PICKUP_ONLY_NOTE}
+      </p>
+
       {state.status === "success" ? (
         <div className="mx-auto flex max-w-lg flex-col items-center gap-3 py-16 text-center">
           <span className="font-body-caps text-grapefruit-text text-[10px] tracking-[0.25em]">
@@ -197,7 +201,7 @@ export default function CheckoutPage() {
           )}
           <p className="font-body-mixed text-sm text-juniper">{state.message}</p>
           <Link
-            href="/order"
+            href="/menu"
             className="mt-4 font-body-caps text-[10px] tracking-widest text-cream bg-midnight px-8 py-3 hover:opacity-85 transition-opacity duration-300"
           >
             Back to Menu

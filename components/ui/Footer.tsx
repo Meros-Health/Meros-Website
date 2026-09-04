@@ -5,7 +5,7 @@ import { useState, useRef, type ReactElement } from "react";
 import { TransitionLink } from "@/components/transition/TransitionLink";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { INSTAGRAM_POSTS, INSTAGRAM_URL, INSTAGRAM_HANDLE } from "@/lib/instagramFeed";
+import { INSTAGRAM_POSTS, footerInstagramPosts, INSTAGRAM_URL, INSTAGRAM_HANDLE } from "@/lib/instagramFeed";
 import { BUSINESS, SOCIAL_LINKS, hoursDisplay, mapsQuery, mapsUrl, appleMapsUrl } from "@/lib/business";
 import { FOOTER_DESTINATIONS, HELP_LINKS } from "@/lib/nav";
 import { useRevealReady } from "@/lib/useRevealReady";
@@ -49,24 +49,14 @@ const SOCIAL_ICONS: Record<string, (props: { size: number }) => ReactElement> = 
   TikTok: TikTokIcon,
 };
 
-// The footer's six tiles, named rather than sliced off the top of the feed, so
-// which six show and in what order is one editable line instead of a
-// consequence of the feed's authoring order. The homepage Instagram section
-// still renders INSTAGRAM_POSTS as authored; only the footer picks.
+// The ordering flow only: a footer full of exits does not belong under someone
+// halfway through building a bowl. Prefix-matched so dynamic routes (e.g.
+// /cart/edit/[lineId]) are covered too.
 //
-// The Tropics shot is deliberately out: it reads as the retired Bloom, which
-// is the same collision that retired the Bloom in the first place. Every id
-// here resolves to a photo in public/images-web/Instagram/.
-const FOOTER_POST_IDS = ["9", "2", "3", "4", "5", "7"] as const;
-
-const FOOTER_INSTAGRAM_POSTS = FOOTER_POST_IDS.map((id) => {
-  const post = INSTAGRAM_POSTS.find((p) => p.id === id);
-  if (!post) throw new Error(`Footer feed: no Instagram post with id "${id}"`);
-  return post;
-});
-
-// Prefix-matched so dynamic routes (e.g. /cart/edit/[lineId]) are covered too.
-const HIDDEN_ON = ["/order", "/build", "/checkout", "/cart"];
+// /menu is deliberately not here. It was, back when the path was /order and the
+// page was the first step of the flow. It is a page someone reads and leaves
+// from now, so it gets the footer like every other page on the site.
+const HIDDEN_ON = ["/build", "/checkout", "/cart"];
 
 export function Footer() {
   const pathname = usePathname();
@@ -169,7 +159,7 @@ export function Footer() {
 
           {/* 6-post grid */}
           <div className="grid grid-cols-3" style={{ gap: "2px" }}>
-            {FOOTER_INSTAGRAM_POSTS.map((post, i) => (
+            {footerInstagramPosts().map((post, i) => (
               <FooterInstagramTile key={post.id} post={post} index={i} />
             ))}
           </div>

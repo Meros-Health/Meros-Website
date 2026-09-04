@@ -39,7 +39,6 @@ const RING_TRACK = "rgba(255, 247, 240, 0.07)";
 // section behave differently from the rest of the site, and it bought nothing
 // a scroll does not already give.
 const TYPE_SCALE = {
-  "--stack-eyebrow": "clamp(0.625rem, 1.1vw, 0.6875rem)",
   "--stack-headline": "clamp(2.25rem, 4.6vw, 4rem)",
   "--stack-payoff": "clamp(1.125rem, 1.9vw, 1.25rem)",
   "--stack-group": "0.6875rem",
@@ -73,9 +72,11 @@ const TAGLINE_LINES = ["Food That Moves", "With You"];
 export function StacksSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const typeRef = useRef<HTMLDivElement>(null);
-  const eyebrowRef = useRef<HTMLParagraphElement>(null);
   const lineRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const payoffRef = useRef<HTMLParagraphElement>(null);
+  // Wraps everything the section draws. Not positioned, so the ring's
+  // lg:absolute still resolves to the section and stays centred on it.
+  const contentRef = useRef<HTMLDivElement>(null);
   const columnRefs = useRef<(HTMLDivElement | null)[]>([]);
   const ringRefs = useRef<(SVGCircleElement | null)[]>([]);
 
@@ -92,20 +93,18 @@ export function StacksSection() {
   // Watches the type column, NOT the section. The section carries ~176px of
   // top padding, so a section-level observer fired while the tagline was still
   // a screen-height below the fold and the whole reveal played to nobody. The
-  // column starts at the eyebrow, and the negative margin holds the reveal
+  // column starts at the tagline, and the negative margin holds the reveal
   // until it is properly on screen.
   const show = useRevealReady(typeRef, "-12%");
 
   const groups = resolveEnhancerGroups();
 
-  // ── Entrance: eyebrow, tagline line by line, payoff, then the columns ─────
+  // ── Entrance: tagline line by line, then the payoff and the columns ──────
   useGSAP(
     () => {
       const lines = lineRefs.current.filter(Boolean) as HTMLSpanElement[];
       const columns = columnRefs.current.filter(Boolean) as HTMLDivElement[];
-      const targets = [eyebrowRef.current, ...lines, payoffRef.current, ...columns].filter(
-        Boolean
-      ) as HTMLElement[];
+      const targets = [...lines, payoffRef.current, ...columns].filter(Boolean) as HTMLElement[];
 
       if (prefersReducedMotion) {
         gsap.set(targets, { opacity: 1, y: 0 });
@@ -114,7 +113,7 @@ export function StacksSection() {
 
       // Rendered markup is the end state; the start state is set here so the
       // section is never blank for a reader with JavaScript disabled.
-      gsap.set([eyebrowRef.current, payoffRef.current, ...columns], { opacity: 0, y: 16 });
+      gsap.set([payoffRef.current, ...columns], { opacity: 0, y: 16 });
       gsap.set(lines, { opacity: 0, y: LINE_TRAVEL });
 
       if (!show) return;
@@ -126,7 +125,6 @@ export function StacksSection() {
           gsap.set(targets, { willChange: "auto" });
         },
       });
-      tl.to(eyebrowRef.current, { opacity: 1, y: 0, duration: 1.1, ease: EASE }, 0);
       // Line by line, largest element first. Transform and opacity only: the
       // clip-path wipe this replaced was restyled from JavaScript on every
       // frame, which repaints the whole headline each time, and on the same
@@ -162,7 +160,11 @@ export function StacksSection() {
       const tl = gsap.timeline({
         defaults: { ease: "none" },
         scrollTrigger: {
-          trigger: sectionRef.current,
+          // The content, not the section: the section is at least a viewport
+          // tall now, and a section-triggered scrub would stretch its window
+          // with the padding and slow the fill. The tuned 26-point gap below
+          // measures the same box it was set against.
+          trigger: contentRef.current,
           start: SCRUB_START,
           end: SCRUB_END,
           scrub: SCRUB_LAG,
@@ -180,158 +182,155 @@ export function StacksSection() {
   return (
     <section
       ref={sectionRef}
-      // Height comes from the contents and the padding, never from the
-      // viewport. A window too short to hold the section scrolls, which is the
-      // same deal every other section on the page offers.
-      className="relative flex w-full flex-col overflow-x-clip bg-midnight px-section-x py-[clamp(4rem,9vw,8rem)]"
-      style={TYPE_SCALE}
+      // Prefers a full viewport, and content sets the floor: on most desktop
+      // widths this section is already taller than the window, so min-height
+      // only does anything on a tall monitor. A window too short to hold it
+      // scrolls, which is the same deal every other section offers.
+      className="relative flex w-full flex-col justify-center overflow-x-clip bg-midnight px-section-x py-section"
+      style={{ ...TYPE_SCALE, minHeight: "100svh" }}
       aria-label="Enhancers"
     >
-      {/* Everything else keeps to the left so the ring owns the right half.
-          Below lg the ring is not beside this block but under it, so this is
-          simply the top of the column. */}
-      <div ref={typeRef} className="relative w-full lg:max-w-[54%]">
-        <p
-          ref={eyebrowRef}
-          className="font-body-caps text-[length:var(--stack-eyebrow)] tracking-[0.30em] text-cream/50"
-          style={{ willChange: "transform, opacity" }}
-        >
-          Enhancers
-        </p>
-
-        <h2 className="font-headline mt-4 uppercase leading-none tracking-headline text-cream lg:mt-5">
-          {TAGLINE_LINES.map((line, i) => (
-            // No overflow-hidden and no clip: a mask tight enough to hide the
-            // line before it slides would shave the serif's ascenders at
-            // leading-none, which is what the old padding hack was working
-            // around. Fading each line in place needs neither.
-            <span key={line} className="block">
-              <span
-                ref={(el) => {
-                  lineRefs.current[i] = el;
-                }}
-                className="block text-[length:var(--stack-headline)]"
-                style={{ willChange: "transform, opacity" }}
-              >
-                {i === TAGLINE_LINES.length - 1 ? (
-                  <>
-                    With <span className="text-grapefruit">You</span>
-                  </>
-                ) : (
-                  line
-                )}
+      {/* Deliberately unpositioned: the ring below is lg:absolute and centres
+          on the section, and giving this a position would recentre it here. */}
+      <div ref={contentRef} className="flex w-full flex-col">
+        {/* Everything else keeps to the left so the ring owns the right half.
+            Below lg the ring is not beside this block but under it, so this is
+            simply the top of the column. */}
+        <div ref={typeRef} className="relative w-full lg:max-w-[54%]">
+          <h2 className="font-headline uppercase leading-none tracking-headline text-cream">
+            {TAGLINE_LINES.map((line, i) => (
+              // No overflow-hidden and no clip: a mask tight enough to hide the
+              // line before it slides would shave the serif's ascenders at
+              // leading-none, which is what the old padding hack was working
+              // around. Fading each line in place needs neither.
+              <span key={line} className="block">
+                <span
+                  ref={(el) => {
+                    lineRefs.current[i] = el;
+                  }}
+                  className="block text-[length:var(--stack-headline)]"
+                  style={{ willChange: "transform, opacity" }}
+                >
+                  {i === TAGLINE_LINES.length - 1 ? (
+                    <>
+                      With <span className="text-grapefruit">You</span>
+                    </>
+                  ) : (
+                    line
+                  )}
+                </span>
               </span>
-            </span>
-          ))}
-        </h2>
-
-        {/* No width cap: one line wherever the column allows it, wrapping only
-            when it genuinely cannot. */}
-        <p
-          ref={payoffRef}
-          className="font-body-mixed mt-5 text-[length:var(--stack-payoff)] leading-snug text-cream/80 lg:mt-6"
-          style={{ willChange: "transform, opacity" }}
-        >
-          Stack with {STACK_SIZE} enhancers. Get more for less.
-        </p>
-      </div>
-
-      {/* In the flow between the headline and the names below lg; the right
-          half of the composition from lg up. */}
-      <div
-        aria-hidden
-        // The lg branch (1024-1279, tablet landscape) stays where it was: 44vw
-        // hung 6% off the right edge puts its left edge at 62% of the viewport,
-        // clear of the 54% type column with ~60px to spare, and there is not
-        // much more room than that at 1024.
-        //
-        // Desktop gets a bigger ring by growing the box and pushing more of it
-        // off the edge at the same time, which scales the arc without walking
-        // the left edge any closer to the type: 56vw hung 15% off the right
-        // lands that edge at 59% of the viewport. The 900px cap is the section
-        // height, roughly 1015-1050px across desktop widths, minus room to
-        // breathe. The section only clips horizontally, so a ring taller than
-        // that would spill into Build above and Our Story below.
-        className="pointer-events-none relative mx-auto mt-9 aspect-square w-[clamp(150px,62vw,260px)] shrink-0 sm:mt-10 sm:w-[clamp(180px,52vw,320px)] lg:absolute lg:-right-[6%] lg:top-1/2 lg:mx-0 lg:mt-0 lg:w-[clamp(360px,44vw,640px)] lg:-translate-y-1/2 xl:-right-[15%] xl:w-[clamp(560px,56vw,900px)]"
-        // strokeDashoffset is a paint property, not a composited one, so the
-        // scrub repaints this ring on every scroll frame. Its own layer keeps
-        // that repaint off the headline's, which is what the entrance is
-        // competing with.
-        style={{ willChange: "transform" }}
-      >
-        <svg viewBox={`0 0 ${RING_BOX} ${RING_BOX}`} className="block h-full w-full">
-          <g>
-            {RING_RADII.map((r) => (
-              <circle
-                key={`track-${r}`}
-                cx={RING_BOX / 2}
-                cy={RING_BOX / 2}
-                r={r}
-                fill="none"
-                stroke={RING_TRACK}
-                strokeWidth={RING_STROKE}
-              />
             ))}
-          </g>
-          <g transform={`rotate(-90 ${RING_BOX / 2} ${RING_BOX / 2})`}>
-            {RING_RADII.slice(0, STACK_SIZE).map((r, i) => (
-              <circle
-                key={`ring-${r}`}
-                ref={(el) => {
-                  ringRefs.current[i] = el;
-                }}
-                cx={RING_BOX / 2}
-                cy={RING_BOX / 2}
-                r={r}
-                fill="none"
-                stroke={RING_COLORS[i]}
-                strokeWidth={RING_STROKE}
-                strokeLinecap="butt"
-              />
-            ))}
-          </g>
-        </svg>
-      </div>
+          </h2>
 
-      {/* The whole shelf: four groups, two by two. Every name is its own link;
-          `?add=` is read by components/build/PrefillNotice.tsx. */}
-      <div className="mt-9 grid w-full grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-2 lg:mt-14 lg:max-w-[54%] lg:gap-x-12 lg:gap-y-12">
-        {groups.map((group, i) => (
-          <div
-            key={group.id}
-            // min-w-0 so a long ingredient name wraps inside its column
-            // instead of widening the grid track and pushing the stat off.
-            className="min-w-0"
-            ref={(el) => {
-              columnRefs.current[i] = el;
-            }}
+          {/* No width cap: one line wherever the column allows it, wrapping only
+              when it genuinely cannot. */}
+          <p
+            ref={payoffRef}
+            className="font-body-mixed mt-5 text-[length:var(--stack-payoff)] leading-snug text-cream/80 lg:mt-6"
             style={{ willChange: "transform, opacity" }}
           >
-            <h3 className="font-body-caps text-[length:var(--stack-group)] tracking-[0.26em] text-cream">
-              {group.title}
-            </h3>
+            Stack with {STACK_SIZE} enhancers. Get more for less.
+          </p>
+        </div>
 
-            <ul className="mt-4 list-none p-0 lg:mt-5">
-              {group.items.map((item) => (
-                <li key={item.ingredientId} className="border-t border-cream/[0.14]">
-                  <TransitionLink
-                    href={`/build?add=${item.ingredientId}`}
-                    // 44px minimum on touch; from lg up the pointer is
-                    // precise and the row can sit tighter.
-                    className="group flex min-h-[2.75rem] items-baseline justify-between gap-3 py-2.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cream lg:min-h-0 lg:py-3"
-                  >
-                    <span className="font-body-mixed min-w-0 text-[length:var(--stack-name)] leading-snug text-cream transition-opacity duration-200 group-hover:opacity-70">
-                      {item.ingredient.name}
-                    </span>
-                    <span className="font-body-mixed shrink-0 text-[length:var(--stack-stat)] tabular-nums text-grapefruit">
-                      {item.statLine}
-                    </span>
-                  </TransitionLink>
-                </li>
+        {/* In the flow between the headline and the names below lg; the right
+            half of the composition from lg up. */}
+        <div
+          aria-hidden
+          // The lg branch (1024-1279, tablet landscape) stays where it was: 44vw
+          // hung 6% off the right edge puts its left edge at 62% of the viewport,
+          // clear of the 54% type column with ~60px to spare, and there is not
+          // much more room than that at 1024.
+          //
+          // Desktop gets a bigger ring by growing the box and pushing more of it
+          // off the edge at the same time, which scales the arc without walking
+          // the left edge any closer to the type: 56vw hung 15% off the right
+          // lands that edge at 59% of the viewport. The 900px cap is the section
+          // height, roughly 1015-1050px across desktop widths, minus room to
+          // breathe. The section only clips horizontally, so a ring taller than
+          // that would spill into Build above and Our Story below.
+          className="pointer-events-none relative mx-auto mt-9 aspect-square w-[clamp(150px,62vw,260px)] shrink-0 sm:mt-10 sm:w-[clamp(180px,52vw,320px)] lg:absolute lg:-right-[6%] lg:top-1/2 lg:mx-0 lg:mt-0 lg:w-[clamp(360px,44vw,640px)] lg:-translate-y-1/2 xl:-right-[15%] xl:w-[clamp(560px,56vw,900px)]"
+          // strokeDashoffset is a paint property, not a composited one, so the
+          // scrub repaints this ring on every scroll frame. Its own layer keeps
+          // that repaint off the headline's, which is what the entrance is
+          // competing with.
+          style={{ willChange: "transform" }}
+        >
+          <svg viewBox={`0 0 ${RING_BOX} ${RING_BOX}`} className="block h-full w-full">
+            <g>
+              {RING_RADII.map((r) => (
+                <circle
+                  key={`track-${r}`}
+                  cx={RING_BOX / 2}
+                  cy={RING_BOX / 2}
+                  r={r}
+                  fill="none"
+                  stroke={RING_TRACK}
+                  strokeWidth={RING_STROKE}
+                />
               ))}
-            </ul>
-          </div>
-        ))}
+            </g>
+            <g transform={`rotate(-90 ${RING_BOX / 2} ${RING_BOX / 2})`}>
+              {RING_RADII.slice(0, STACK_SIZE).map((r, i) => (
+                <circle
+                  key={`ring-${r}`}
+                  ref={(el) => {
+                    ringRefs.current[i] = el;
+                  }}
+                  cx={RING_BOX / 2}
+                  cy={RING_BOX / 2}
+                  r={r}
+                  fill="none"
+                  stroke={RING_COLORS[i]}
+                  strokeWidth={RING_STROKE}
+                  strokeLinecap="butt"
+                />
+              ))}
+            </g>
+          </svg>
+        </div>
+
+        {/* The whole shelf: four groups, two by two. Every name is its own link;
+            `?add=` is read by components/build/PrefillNotice.tsx. */}
+        <div className="mt-9 grid w-full grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-2 lg:mt-14 lg:max-w-[54%] lg:gap-x-12 lg:gap-y-12">
+          {groups.map((group, i) => (
+            <div
+              key={group.id}
+              // min-w-0 so a long ingredient name wraps inside its column
+              // instead of widening the grid track and pushing the stat off.
+              className="min-w-0"
+              ref={(el) => {
+                columnRefs.current[i] = el;
+              }}
+              style={{ willChange: "transform, opacity" }}
+            >
+              <h3 className="font-body-caps text-[length:var(--stack-group)] tracking-[0.26em] text-cream">
+                {group.title}
+              </h3>
+
+              <ul className="mt-4 list-none p-0 lg:mt-5">
+                {group.items.map((item) => (
+                  <li key={item.ingredientId} className="border-t border-cream/[0.14]">
+                    <TransitionLink
+                      href={`/build?add=${item.ingredientId}`}
+                      // 44px minimum on touch; from lg up the pointer is
+                      // precise and the row can sit tighter.
+                      className="group flex min-h-[2.75rem] items-baseline justify-between gap-3 py-2.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cream lg:min-h-0 lg:py-3"
+                    >
+                      <span className="font-body-mixed min-w-0 text-[length:var(--stack-name)] leading-snug text-cream transition-opacity duration-200 group-hover:opacity-70">
+                        {item.ingredient.name}
+                      </span>
+                      <span className="font-body-mixed shrink-0 text-[length:var(--stack-stat)] tabular-nums text-grapefruit">
+                        {item.statLine}
+                      </span>
+                    </TransitionLink>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );

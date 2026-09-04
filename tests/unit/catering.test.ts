@@ -26,7 +26,6 @@ const stripComments = (src: string) =>
   src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
 
 const everyString = [
-  CATERING_HERO.eyebrow,
   CATERING_HERO.title,
   CATERING_HERO.lead,
   CATERING_ACCOUNT_NOTE,

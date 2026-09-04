@@ -5,6 +5,13 @@ interface AddToCartButtonProps {
   label?: string;
   addedLabel?: string;
   added?: boolean;
+  /**
+   * Names the item this button adds. Required wherever more than one of these
+   * sits on a page: the visible text is "Add to Cart" on every one of them, so
+   * without this a screen reader hears the same button ten times over.
+   */
+  ariaLabel?: string;
+  addedAriaLabel?: string;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -14,6 +21,8 @@ export function AddToCartButton({
   label = "Add to Cart",
   addedLabel = "Added",
   added = false,
+  ariaLabel,
+  addedAriaLabel,
   className = "",
   style,
 }: AddToCartButtonProps) {
@@ -24,6 +33,7 @@ export function AddToCartButton({
       // the "Added" beat, so focus can return to it when the add dialog
       // closes. Callers ignore clicks while `added`.
       onClick={added ? undefined : onClick}
+      aria-label={(added ? addedAriaLabel : ariaLabel) ?? undefined}
       aria-disabled={added || undefined}
       className={[
         "w-full font-body-caps tracking-widest transition-colors duration-200",

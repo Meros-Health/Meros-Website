@@ -9,8 +9,7 @@ export function BuildLayout() {
     <BowlConfigurator
       mode="create"
       header={{
-        eyebrow: "Build Your Own",
-        title: "Your Bowl",
+        title: "Compose Your Own",
         description: "Pick your base, stack your toppings, and watch your macros rise in real time.",
       }}
       // useSearchParams needs a Suspense boundary above it, or the whole

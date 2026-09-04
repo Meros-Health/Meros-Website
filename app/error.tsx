@@ -13,11 +13,10 @@ export default function RouteError({ error, reset }: { error: Error & { digest?:
 
   return (
     <ErrorScreen
-      eyebrow="Error"
       title="Something Went Wrong"
       body="This page could not be shown. Your cart is saved on this device."
       primary={{ label: "Try Again", onClick: reset }}
-      secondary={{ label: "Our Menu", href: "/order" }}
+      secondary={{ label: "Our Menu", href: "/menu" }}
       digest={error.digest}
     />
   );

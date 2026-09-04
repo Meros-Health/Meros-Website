@@ -6,16 +6,19 @@ type Line = { productId: string; base?: string; size: { id: string }; unitPrice:
 
 const addModal = (page: Page, name: string) => page.getByRole("dialog", { name });
 
-test("a bowl on /order is configured in the add modal: size and yogurt required, then added", async ({ page }) => {
-  await page.goto("/order");
+test("a bowl on /menu is configured in the add modal: size and yogurt required, then added", async ({ page }) => {
+  await page.goto("/menu");
   await waitForPageReady(page);
 
-  // No choices on the card itself; "+" opens the modal, blank.
+  // No choices on the panel itself; the button opens the modal, blank.
   const card = page.locator("#bowls article").first();
   await expect(card.getByRole("group", { name: "Yogurt" })).toHaveCount(0);
   await expect(card.getByRole("group", { name: "Size" })).toHaveCount(0);
-  await expect(card).toContainText("From $12.00");
-  await card.getByRole("button", { name: "Add to Cart" }).click();
+  // The price is stated once for the whole category, not on each panel: every
+  // bowl costs the same, so ten panels quoting it printed one number ten times.
+  await expect(page.locator("#bowls")).toContainText("Medium $12");
+  await expect(card).not.toContainText("$");
+  await card.getByRole("button", { name: /^Add .+ to cart$/ }).click();
 
   const modal = addModal(page, "The Moment");
   await expect(modal).toBeVisible();
@@ -39,8 +42,8 @@ test("a bowl on /order is configured in the add modal: size and yogurt required,
   await expect(modal).toBeHidden();
 
   // The card that opened the modal confirms, then returns to rest.
-  await expect(card.getByRole("button", { name: "Added" })).toBeVisible();
-  await expect(card.getByRole("button", { name: "Add to Cart" })).toBeVisible();
+  await expect(card.getByRole("button", { name: /added to cart$/ })).toBeVisible();
+  await expect(card.getByRole("button", { name: /^Add .+ to cart$/ })).toBeVisible();
 
   await expect(cartButton(page)).toHaveAttribute("aria-label", "Cart (1 item)");
   const cart = (await readCart(page)) as Line[];
@@ -51,10 +54,10 @@ test("a bowl on /order is configured in the add modal: size and yogurt required,
 });
 
 test("the add modal takes additions and removals within the caps, and a fresh open is blank", async ({ page }) => {
-  await page.goto("/order");
+  await page.goto("/menu");
   await waitForPageReady(page);
   const card = page.locator("#bowls article").first();
-  await card.getByRole("button", { name: "Add to Cart" }).click();
+  await card.getByRole("button", { name: /^Add .+ to cart$/ }).click();
   const modal = addModal(page, "The Moment");
   await expect(modal).toBeVisible();
 
@@ -75,7 +78,7 @@ test("the add modal takes additions and removals within the caps, and a fresh op
   expect(cart[0].mods).toEqual({ additions: ["mangoes", "pineapples"], removals: ["house-granola"] });
 
   // Cancel discards, and the next open starts over.
-  await card.getByRole("button", { name: "Add to Cart" }).click();
+  await card.getByRole("button", { name: /^Add .+ to cart$/ }).click();
   await expect(modal).toBeVisible();
   await expect(modal.getByRole("button", { name: "Add to cart" })).toBeDisabled();
   await expect(modal.getByRole("button", { name: "Mangoes +$2.00" })).toHaveAttribute("aria-pressed", "false");
@@ -85,27 +88,29 @@ test("the add modal takes additions and removals within the caps, and a fresh op
 });
 
 test("a smoothie card has nothing to choose and adds in one click", async ({ page }) => {
-  await page.goto("/order");
+  await page.goto("/menu");
   await waitForPageReady(page);
 
   const card = page.locator("#smoothies article").first();
   await expect(card.getByRole("group", { name: "Yogurt" })).toHaveCount(0);
-  await expect(card).toContainText("$15.00");
-  await expect(card).not.toContainText("From");
-  await card.getByRole("button", { name: "Add to Cart" }).click();
+  // One size, so the heading needs no "from" and the panel needs no price.
+  await expect(page.locator("#smoothies")).toContainText("24 oz $15");
+  await expect(page.locator("#smoothies")).not.toContainText("From");
+  await expect(card).not.toContainText("$");
+  await card.getByRole("button", { name: /^Add .+ to cart$/ }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  await expect(card.getByRole("button", { name: "Added" })).toBeVisible();
+  await expect(card.getByRole("button", { name: /added to cart$/ })).toBeVisible();
   const cart = (await readCart(page)) as Line[];
   expect(cart).toHaveLength(1);
   expect(cart[0].base).toBe("vanilla-greek-yogurt");
   expect(cart[0].size.id).toBe("standard");
 });
 
-test("the homepage ledger opens the add modal for a bowl and adds a smoothie outright", async ({ page }) => {
+test("the home page preview opens the add modal for a bowl and adds a smoothie outright", async ({ page }) => {
   await page.goto("/");
   await waitForPageReady(page);
 
-  // No yogurt chips in the rows; a bowl's "+" opens the modal.
+  // No yogurt chips in the panels; a bowl's button opens the modal.
   await expect(page.getByRole("group", { name: /^Yogurt for/ })).toHaveCount(0);
   const addMoment = page.getByRole("button", { name: "Add The Moment to cart" });
   await addMoment.scrollIntoViewIfNeeded();
@@ -126,45 +131,62 @@ test("the homepage ledger opens the add modal for a bowl and adds a smoothie out
   await modal.getByRole("group", { name: "Yogurt" }).getByRole("button", { name: "Plain", exact: true }).click();
   await modal.getByRole("button", { name: "Add to cart" }).click();
   await expect(modal).toBeHidden();
-  // The "+" that opened the modal confirms, then returns to rest.
+  // The button that opened the modal confirms, then returns to rest.
   await expect(page.getByRole("button", { name: "The Moment added to cart" })).toBeVisible();
   await expect(addMoment).toBeVisible();
 
-  const addRise = page.getByRole("button", { name: "Add The Rise to cart" });
+  const addRise = page.getByRole("button", { name: "Add The Cabana to cart" });
   await addRise.scrollIntoViewIfNeeded();
   await addRise.click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "The Rise added to cart" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "The Cabana added to cart" })).toBeVisible();
 
   await expect(cartButton(page)).toHaveAttribute("aria-label", "Cart (2 items)");
   const cart = (await readCart(page)) as Line[];
   expect(cart.map((l) => [l.productId, l.size.id, l.base, l.unitPrice])).toEqual([
     ["moment", "large", "plain-greek-yogurt", 15],
-    ["rise", "standard", "vanilla-greek-yogurt", 15],
+    ["cabana", "standard", "vanilla-greek-yogurt", 15],
   ]);
 });
 
-test("an item without photography still renders a photo card on /order and in the ledger", async ({ page }) => {
-  await page.goto("/order");
+test("an item with no photography is a full menu entry, as type", async ({ page }) => {
+  await page.goto("/menu");
   await waitForPageReady(page);
-  const card = page.locator("#bowls article").last();
 
-  // The image well is an image well: the stand-in photo fills it exactly the
-  // way every photographed bowl's does, with nothing drawn over it.
-  const tile = card.locator('[data-signature-tile="card"]');
-  await expect(tile).toBeVisible();
-  await expect(tile.locator("img")).toHaveAttribute("src", /Gallery-6/);
-  await expect(tile).toHaveText("");
+  // The Seasonal has no photo by design: its fruit rotates. On the wall that
+  // makes it a text panel rather than a card with an empty image well or a
+  // stand-in photograph of some other bowl.
+  const seasonal = page.locator("#bowls article", { hasText: "Seasonal" });
+  await expect(seasonal).toHaveCount(1);
+  await seasonal.scrollIntoViewIfNeeded();
 
-  // Name, price, tags and recipe all come from the card around it.
-  // "Seasonal" in the DOM; the all-caps look is the display face, not a class.
-  await expect(card).toContainText("Seasonal");
-  await expect(card).toContainText("From $12.00");
-  await expect(card).toContainText("Seasonal Stone Fruits, Seasonal Berries");
+  // Everything a photographed item says, it says too.
+  await expect(seasonal).toContainText("Seasonal Stone Fruits, Seasonal Berries");
+  await expect(seasonal).toContainText("Featuring");
+  await expect(seasonal.getByRole("button", { name: /^Add .+ to cart$/ })).toBeVisible();
+
+  // And no image anywhere in its row's own panel.
+  await expect(seasonal.locator("img")).toHaveCount(0);
+});
+
+test("the home page previews the menu without reprinting it", async ({ page }) => {
+  await page.goto("/menu");
+  await waitForPageReady(page);
+  const full = await page.locator("#bowls article, #smoothies article").count();
 
   await page.goto("/");
   await waitForPageReady(page);
-  const row = page.locator("#menu section ul li", { hasText: "The Seasonal" });
-  await row.scrollIntoViewIfNeeded();
-  await expect(row).toContainText("Seasonal Stone Fruits, Seasonal Berries");
+  const preview = page.locator("#menu article");
+  const shown = await preview.count();
+
+  // A preview that shows everything makes /menu a page with nothing on it the
+  // home page has not already shown.
+  expect(shown).toBeGreaterThan(0);
+  expect(shown).toBeLessThan(full);
+  // Two ways out to the full menu, above the wall and in the bar below it: four
+  // items is exactly enough to be mistaken for the whole menu, and the bar is
+  // the last thing read before the section ends.
+  const menuSection = page.locator("#menu");
+  await expect(menuSection.getByRole("link", { name: "See the full menu" })).toHaveAttribute("href", "/menu");
+  await expect(menuSection.getByRole("link", { name: "Browse", exact: true })).toHaveAttribute("href", "/menu");
 });

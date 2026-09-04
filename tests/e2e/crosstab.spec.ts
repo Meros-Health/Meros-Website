@@ -14,7 +14,7 @@ test("A11: a bowl removed in tab B is not resurrected by a save in tab A", async
   await expect(a.getByRole("button", { name: "Save Changes" })).toBeVisible();
 
   const b = await context.newPage();
-  await b.goto("/order");
+  await b.goto("/menu");
   await waitForPageReady(b);
   await cartButton(b).click();
   await drawer(b).getByRole("button", { name: "Remove" }).click();
@@ -28,18 +28,18 @@ test("A11: a bowl removed in tab B is not resurrected by a save in tab A", async
 test("E8: a bowl added in tab A survives a quantity change in stale tab B", async ({ context }) => {
   const a = await context.newPage();
   await seedCart(a, [plainBowl("x")]);
-  await a.goto("/order");
+  await a.goto("/menu");
   await waitForPageReady(a);
 
   const b = await context.newPage();
-  await b.goto("/order");
+  await b.goto("/menu");
   await waitForPageReady(b);
   await cartButton(b).click();
   await expect(drawer(b)).toBeVisible();
 
   // The first card is a bowl: size and yogurt are chosen in the add modal.
   const firstCard = a.locator("article").first();
-  await firstCard.getByRole("button", { name: "Add to Cart" }).click();
+  await firstCard.getByRole("button", { name: /^Add .+ to cart$/ }).click();
   const modal = a.getByRole("dialog", { name: "The Moment" });
   await expect(modal).toBeVisible();
   await modal.getByRole("group", { name: "Size" }).getByRole("button", { name: "Medium" }).click();

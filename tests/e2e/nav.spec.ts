@@ -9,7 +9,7 @@ const bodyOverflow = (page: Page) => page.evaluate(() => document.body.style.ove
 
 test("G7: resizing from mobile to desktop with the menu open leaves no overlay behind", async ({ page }) => {
   await page.setViewportSize({ width: 500, height: 800 });
-  await page.goto("/order");
+  await page.goto("/menu");
   await waitForPageReady(page);
 
   await menuToggle(page).click();
@@ -33,7 +33,7 @@ test("G7: resizing from mobile to desktop with the menu open leaves no overlay b
 });
 
 test("G7: resizing from desktop to mobile with the menu open closes it cleanly", async ({ page }) => {
-  await page.goto("/order");
+  await page.goto("/menu");
   await waitForPageReady(page);
 
   await menuToggle(page).click();
@@ -70,7 +70,7 @@ test("D4: the scroll lock is released after the menu and the drawer close togeth
 });
 
 test("Escape returns focus to the menu toggle on desktop and mobile", async ({ page }) => {
-  await page.goto("/order");
+  await page.goto("/menu");
   await waitForPageReady(page);
   await menuToggle(page).click();
   await page.waitForTimeout(900);
@@ -96,7 +96,7 @@ test("G8: an unknown route shows the site's own not-found page", async ({ page }
 // The panels close inward until they meet, and the transition cover that
 // takes over is the same colour, so nothing of the outgoing page shows.
 test("choosing a route in the desktop menu closes the panels inward under a matching cover", async ({ page }) => {
-  await page.goto("/order");
+  await page.goto("/menu");
   await waitForPageReady(page);
 
   await menuToggle(page).click();

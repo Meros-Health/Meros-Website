@@ -60,11 +60,14 @@ chunks, shipped `max-age=0, must-revalidate`.
 media query that is `false` during server rendering. Every phone therefore
 received desktop HTML, whose `<link rel="preload">` fetched the desktop hero
 candidate, then hydrated, flipped to the mobile tree, and fetched the mobile
-candidate. It is now one tree: one portrait `<Image>` with
-`sizes="(max-width: 1023px) 100vw, 50vw"`, both logo lockups in the DOM, and
-`.hero-*` rules in `globals.css` deciding what shows. The browser picks the
-one right variant from the HTML. `useIsMobile` is still used in the hero, for
-animation timing only.
+candidate. It is now one tree at every breakpoint: three panels of
+`50svh` each, so the section is 150svh and the first screen holds exactly the
+first two. Panel 1 is cream with the lockup and the two calls to action, panel
+2 is a full-bleed photograph at `sizes="100vw"`, and panel 3, under the fold,
+carries the tagline over a second one. The `.hero-*` rules in `globals.css`
+hold all of it, and nothing about the layout differs between breakpoints. The
+browser picks the one right variant from the HTML, and the hero no longer
+reads `useIsMobile` at all.
 
 `useIsMobile` itself moved to `useSyncExternalStore`, so it is correct on the
 first client render rather than in a later effect. Its docblock says what it
@@ -73,7 +76,7 @@ CSS media queries and the hook reserved for behaviour.
 
 ### Critical images by element, not by URL
 
-The Preloader gated on three hard-coded hero URLs, on every route, so `/order`
+The Preloader gated on three hard-coded hero URLs, on every route, so `/menu`
 and `/build` downloaded a 1.4 MB hero they never showed. The transition
 provider held on `ROUTE_CRITICAL_ASSETS`, which listed two routes.
 
@@ -94,20 +97,44 @@ longer animate in around a picture that is still arriving.
 
 ### Lazy where hidden or below the fold
 
-The hero carousel, the Build section's static bowl, the menu stage and the
-ledger thumbnails are `loading="lazy"`. Below 1024px the carousel and stage
-are `display: none`, and a lazy image that never intersects is never
-requested; on desktop they sit in or near the first viewport and load at
-once, behind the preloaded hero.
+The Build section's static bowl, the menu stage and the ledger thumbnails are
+`loading="lazy"`. Below 1024px the stage is `display: none`, and a lazy image
+that never intersects is never requested; on desktop it sits in or near the
+first viewport and loads at once, behind the preloaded hero.
+
+The hero used to carry a marquee of eighteen photographs across its bottom
+edge. The three-row layout has no band for it, so it and its images are gone,
+which takes the largest block of first-screen work with them.
 
 ### Hero timing
 
-Chrome records LCP when a fading element reaches full opacity, so the LCP
-element's delay plus duration is paid in full against the 2.5 s threshold.
-The hero fades were 2.25 to 3.0 s; they are now 1.2 to 1.4 s, the top of the
-house range, with the delays shortened to match. The preloader's minimum
-display dropped from 500 ms to 300 ms. All of it is in `TIMING` at the top of
-`HeroSection.tsx`.
+Chrome records LCP when the LCP element finishes arriving, so that element's
+delay plus duration is paid in full against the 2.5 s threshold, on top of
+however long the preloader gate held. The hero fades were 2.25 to 3.0 s; they
+are now 1.0 to 1.25 s, the top of the house range, with the delays shortened
+to match. The preloader's minimum display dropped from 500 ms to 300 ms.
+
+The four beats live in one table, `HERO_ENTRANCE` in `lib/heroEntrance.ts`:
+nav bar, lockup, image band, calls to action, top of the screen down. The
+navbar reads its own beat from there too, which is why a global component
+imports a hero module.
+
+Both photographs parallax as they cross the screen, `lib/useParallax.ts`. It
+runs on `gsap.ticker` rather than on a scroll listener or framer's
+`useScroll`, because Lenis virtualises scrolling and is itself stepped by that
+ticker: a callback there runs on the same frame as the scroll it reacts to and
+reads a rect that is already current. The layer overhangs its panel by exactly
+the distance it travels, so no edge is ever briefly empty, and the two rates
+differ (12% and 19%) because equal rates read as one background sliding behind
+two windows. The rate is also coupled to the crop: the layer overhangs its
+panel by exactly the distance it travels and has not spent that travel at
+rest, so a pinned edge of the frame is held off screen by a fraction of the
+rate, about 0.67x at the top edge and about 1.33x at the bottom. Reduced motion registers no ticker callback at all.
+
+The image band is the LCP element and it is revealed with a clip path rather
+than a fade. Chrome refuses to count an element at `opacity: 0`, so a fade
+defers the LCP mark to the end of the fade; it does not track a clip path the
+same way. The budget still holds if it did: 0.62 s + 1.25 s is 1.87 s.
 
 ## Measuring
 
@@ -139,14 +166,14 @@ After, local production build (`docs/qa/web-vitals-local-2026-08-28.json`):
 | `/` desktop | 40 ms | 2,180 ms | 0 | 1.36 MB | 1.0 MB in 32 |
 | `/` iPhone, Fast 4G | 180 ms | 3,344 ms | 0 | 665 KB | 318 KB in 15 |
 | `/` iPhone, Lighthouse mobile | 592 ms | 5,520 ms | 0 | 665 KB | 318 KB in 15 |
-| `/order` desktop | 28 ms | 28 ms | 0 | 490 KB | 171 KB in 9 |
-| `/order` iPhone, Fast 4G | 180 ms | 528 ms | 0 | 539 KB | 219 KB in 7 |
+| `/menu` desktop | 28 ms | 28 ms | 0 | 490 KB | 171 KB in 9 |
+| `/menu` iPhone, Fast 4G | 180 ms | 528 ms | 0 | 539 KB | 219 KB in 7 |
 | `/build` desktop | 28 ms | 1,640 ms | 0.0077 | 327 KB | 6 KB in 2 |
 | `/build` iPhone, Fast 4G | 168 ms | 2,300 ms | 0 | 333 KB | 12 KB in 2 |
 
 Live, the same afternoon, after the deploy (`docs/qa/web-vitals-live-2026-08-28.json`):
 desktop `/` LCP 2,476 ms at 1.37 MB; iPhone Fast 4G 3,352 ms at 676 KB; iPhone
-Lighthouse mobile 5,528 ms. `/order` and `/build` within a few hundred
+Lighthouse mobile 5,528 ms. `/menu` and `/build` within a few hundred
 milliseconds of the local figures. `cutover-verify.sh` 31 of 31, and the
 variants, static chunks and icons carry the intended cache headers at the edge.
 

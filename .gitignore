@@ -90,3 +90,10 @@ next-env.d.ts
 # Committed template, no secrets
 !.env.example
 /public/img/
+
+# Security and quality audits: accurate maps of what is currently unmitigated
+# (open findings, attack scenarios, exact file:line). No secrets in them, but
+# this repo is public, so an audit that names an unfixed gap is a roadmap until
+# the gap is closed. Same reasoning as the two runbooks above.
+/docs/security/
+/docs/qa/quality-pass-2026-09-04.md

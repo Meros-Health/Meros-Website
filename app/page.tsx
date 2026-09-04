@@ -9,10 +9,9 @@ import { OurStorySection } from "@/components/sections/OurStorySection";
 // The import stays commented out so PairingsSection and its assets are excluded
 // from the bundle. Restore this line and the <div id="pairs"> block below to re-enable.
 // import { PairingsSection } from "@/components/sections/PairingsSection";
-import { GallerySection } from "@/components/sections/GallerySection";
+import { HomeGallerySection } from "@/components/sections/HomeGallerySection";
 import { BuildSection } from "@/components/sections/BuildSection";
 import { StacksSection } from "@/components/sections/StacksSection";
-import { SectionBand } from "@/components/ui/SectionBand";
 
 export const metadata = pageMetadata({
   title: "MERŌS - House of Yogurt",
@@ -27,11 +26,14 @@ export default function HomePage() {
           knowledge panel in search. Built from the same lib/business.ts the
           footer renders from. */}
       <JsonLd data={restaurantSchema(SITE_URL, "/icons/icon-512.png", OG_IMAGE.url)} />
+      {/* Three panels, 150svh: the lockup, the image band, and "A day's fuel,
+          defined by you" over a second photograph. That line used to be a
+          cream SectionBand sitting here between the hero and the menu; it
+          reads as part of the opening, not as a divider, so it moved inside.
+          The menu section's own title now follows the hero directly. */}
       <div id="hero">
         <HeroSection />
       </div>
-
-      <SectionBand>{"A DAY'S FUEL, DEFINED BY YOU"}</SectionBand>
 
       <div id="menu">
         <SignatureMenuSection />
@@ -55,8 +57,12 @@ export default function HomePage() {
         <OurStorySection />
       </div>
 
+      {/* The closing wall: the same GalleryWall /menu is built from, fed the
+          four places a visitor can go next. Two photographs with a button each
+          over a row of type, so the menu and the builder are shown and catering
+          and the store, which have never been shot, are named. */}
       <div id="gallery">
-        <GallerySection />
+        <HomeGallerySection />
       </div>
     </main>
   );

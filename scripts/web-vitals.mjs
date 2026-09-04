@@ -2,7 +2,7 @@
 // Repeatable Core Web Vitals measurement, so the numbers in the performance
 // plan can be shown to have moved rather than remembered.
 //
-//   node scripts/web-vitals.mjs https://merosyogurt.com [/ /order /build]
+//   node scripts/web-vitals.mjs https://merosyogurt.com [/ /menu /build]
 //   node scripts/web-vitals.mjs http://localhost:3011 --json out.json --top 20
 //
 // Three profiles per route: desktop 1440x900 unthrottled; an iPhone 14 on
@@ -25,7 +25,7 @@ if (!origin) {
   console.error("usage: node scripts/web-vitals.mjs <origin> [routes...] [--json file]");
   process.exit(1);
 }
-const routes = routeArgs.length ? routeArgs : ["/", "/order", "/build"];
+const routes = routeArgs.length ? routeArgs : ["/", "/menu", "/build"];
 
 const mbps = (n) => (n * 1024 * 1024) / 8;
 const FAST_4G = { latency: 20, downloadThroughput: mbps(4), uploadThroughput: mbps(3), cpu: 2 };

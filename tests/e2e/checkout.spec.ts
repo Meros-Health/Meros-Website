@@ -12,9 +12,9 @@ async function fillCustomer(page: Page) {
 
 const placeOrder = (page: Page) => page.getByRole("button", { name: /Place Order|Placing Order/ });
 
-test("F1: an empty cart redirects /checkout to /order", async ({ page }) => {
+test("F1: an empty cart redirects /checkout to /menu", async ({ page }) => {
   await page.goto("/checkout");
-  await page.waitForURL("**/order");
+  await page.waitForURL("**/menu");
 });
 
 test("F1b: a successful order clears the cart and the confirmation survives reload", async ({ page }) => {

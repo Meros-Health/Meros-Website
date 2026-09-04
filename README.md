@@ -19,7 +19,7 @@ Marketing and build-your-own-bowl ordering site. Opening Yaletown, Vancouver, la
 
 - `/`: Landing page
 - `/build`: Build-your-own-bowl configurator (stateful, live price calc)
-- `/order`: Full menu (smoothies, bowls, etc.) ordering page. Cart review lives at the bottom (`#cart`); checkout button is visibly disabled ("Coming Soon"), no payment integration yet
+- `/menu`: Full menu (smoothies, bowls, etc.) ordering page. Cart review lives at the bottom (`#cart`); checkout button is visibly disabled ("Coming Soon"), no payment integration yet
 
 ## Animation Architecture
 
@@ -88,7 +88,7 @@ Future auth integration point: add `partialize` to the persist config to strip o
 No auth is implemented. To add it (NextAuth/Auth.js or Clerk):
 
 1. Add a `/app/(auth)/login/page.tsx` route under a route group, no restructuring needed
-2. Add middleware at `middleware.ts` to protect `/build` and `/order` if required
+2. Add middleware at `middleware.ts` to protect `/build` and `/menu` if required
 3. The cart store's `persist` config accepts a custom `storage`: swap to a user-scoped store once accounts exist
 
 ## Dev

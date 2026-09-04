@@ -18,7 +18,7 @@ import {
 import { getSignatureItem } from "@/lib/menu/signatures";
 
 const moment = () => getSignatureItem("moment")!;
-const rise = () => getSignatureItem("rise")!;
+const cabana = () => getSignatureItem("cabana")!;
 
 describe("what the menu allows", () => {
   it("offers every multi-select builder option the recipe does not already contain", () => {
@@ -38,7 +38,7 @@ describe("what the menu allows", () => {
   });
 
   it("never offers a recipe-only ingredient as an addition (nothing prices it)", () => {
-    // Almond butter is in The Rise and The Focus but not in any builder step.
+    // Almond butter is in The Crave but not in any builder step.
     expect(isAddable(moment(), "almond-butter")).toBe(false);
   });
 
@@ -94,7 +94,7 @@ describe("pricing", () => {
   });
 
   it("prices a smoothie at its one size", () => {
-    expect(calcSignaturePrice("rise", "standard", { additions: ["mangoes"], removals: [] })).toBe(17);
+    expect(calcSignaturePrice("cabana", "standard", { additions: ["mangoes"], removals: [] })).toBe(17);
   });
 
   it("adds the chosen yogurt's surcharge on top, and nothing for a free yogurt or no choice", () => {
@@ -102,7 +102,7 @@ describe("pricing", () => {
     expect(calcSignaturePrice("moment", "large", undefined, "vegan-coconut-yogurt")).toBe(17);
     expect(calcSignaturePrice("moment", "medium", undefined, "plain-greek-yogurt")).toBe(12);
     expect(calcSignaturePrice("moment", "medium", undefined, undefined)).toBe(12);
-    expect(calcSignaturePrice("rise", "standard", undefined, "vegan-coconut-yogurt")).toBe(17);
+    expect(calcSignaturePrice("cabana", "standard", undefined, "vegan-coconut-yogurt")).toBe(17);
     // Yogurt surcharge and additions stack.
     expect(calcSignaturePrice("moment", "medium", { additions: ["mangoes"], removals: [] }, "vegan-coconut-yogurt")).toBe(16);
   });
@@ -110,7 +110,7 @@ describe("pricing", () => {
   it("returns undefined, not 0, for an unknown item, size, addition, or yogurt", () => {
     expect(calcSignaturePrice("nope", "medium")).toBeUndefined();
     expect(calcSignaturePrice("moment", "huge")).toBeUndefined();
-    expect(calcSignaturePrice("rise", "large")).toBeUndefined();
+    expect(calcSignaturePrice("cabana", "large")).toBeUndefined();
     expect(calcSignaturePrice("moment", "medium", { additions: ["nope"], removals: [] })).toBeUndefined();
     expect(calcSignaturePrice("moment", "medium", { additions: ["plain-greek-yogurt"], removals: [] })).toBeUndefined();
     expect(calcSignaturePrice("moment", "medium", undefined, "nope")).toBeUndefined();
@@ -137,6 +137,6 @@ describe("key and display", () => {
     );
     expect(formatSignatureMods({ additions: [], removals: ["bananas"] })).toBe("No Bananas");
     expect(formatSignatureMods(undefined)).toBe("");
-    expect(rise().recipe).toContain("chia-seeds");
+    expect(cabana().recipe).toContain("chia-seeds");
   });
 });

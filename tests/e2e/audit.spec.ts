@@ -16,9 +16,9 @@ async function chooseMediumPlain(page: Page, name = "The Moment") {
 }
 
 test("S1-07: a double-tap on a bowl's Add to Cart leaves the add dialog open", async ({ page }) => {
-  await page.goto("/order");
+  await page.goto("/menu");
   await waitForPageReady(page);
-  await bowlCard(page).getByRole("button", { name: "Add to Cart" }).dblclick();
+  await bowlCard(page).getByRole("button", { name: /^Add .+ to cart$/ }).dblclick();
   await page.waitForTimeout(800);
   await expect(modal(page, "The Moment")).toBeVisible();
   // A real dismissal still works once the dialog has settled.
@@ -28,9 +28,9 @@ test("S1-07: a double-tap on a bowl's Add to Cart leaves the add dialog open", a
 
 test("S1-06: adding at the 99 cap keeps the dialog open and says why", async ({ page }) => {
   await seedCart(page, [moment("full", 99)]);
-  await page.goto("/order");
+  await page.goto("/menu");
   await waitForPageReady(page);
-  await bowlCard(page).getByRole("button", { name: "Add to Cart" }).click();
+  await bowlCard(page).getByRole("button", { name: /^Add .+ to cart$/ }).click();
   const m = await chooseMediumPlain(page);
   await m.getByRole("button", { name: "Add to cart" }).click();
   await expect(m).toBeVisible();
@@ -45,7 +45,7 @@ test("S1-06: adding at the 99 cap keeps the dialog open and says why", async ({ 
 });
 
 test("S1-20: after a keyboard add through the dialog, focus returns to the card's button", async ({ page }) => {
-  await page.goto("/order");
+  await page.goto("/menu");
   await waitForPageReady(page);
   const opener = bowlCard(page).locator("button").first();
   await opener.focus();
@@ -61,7 +61,7 @@ test("S1-20: after a keyboard add through the dialog, focus returns to the card'
 
 test("C3-11: the cart drawer traps Tab and returns focus to the cart button on close", async ({ page }) => {
   await seedCart(page, [moment("a")]);
-  await page.goto("/order");
+  await page.goto("/menu");
   await waitForPageReady(page);
   await cartButton(page).focus();
   await page.keyboard.press("Enter");
@@ -83,7 +83,7 @@ test("C3-05: a line with no yogurt holds Checkout and Place Order until it is ch
   const noBase = moment("nb") as Record<string, unknown>;
   delete noBase.base;
   await seedCart(page, [noBase, moment("ok")]);
-  await page.goto("/order");
+  await page.goto("/menu");
   await waitForPageReady(page);
 
   await cartButton(page).click();
@@ -141,10 +141,10 @@ test("K6-07: after an order, a fresh visit to /checkout goes to the menu while a
   await waitForPageReady(page);
   await expect(page.getByText("Order Received", { exact: true })).toBeVisible();
 
-  await page.goto("/order");
+  await page.goto("/menu");
   await waitForPageReady(page);
   await page.goto("/checkout");
-  await page.waitForURL("**/order");
+  await page.waitForURL("**/menu");
 });
 
 test("B4-02: the builder's instruction colour change collapses under reduced motion", async ({ page }) => {
@@ -169,11 +169,11 @@ test("F8-01: the footer's contact path is a mailto, with no form behind it", asy
 });
 
 test("S1-13: the viewport opts into the safe area and the sheet footer pads for it", async ({ page }) => {
-  await page.goto("/order");
+  await page.goto("/menu");
   await waitForPageReady(page);
   const viewport = await page.locator("meta[name='viewport']").getAttribute("content");
   expect(viewport).toContain("viewport-fit=cover");
-  await bowlCard(page).getByRole("button", { name: "Add to Cart" }).click();
+  await bowlCard(page).getByRole("button", { name: /^Add .+ to cart$/ }).click();
   const footer = modal(page, "The Moment").locator("[data-edit-price]").locator("xpath=ancestor::div[2]");
   await expect(footer).toHaveClass(/safe-area-inset-bottom/);
 });

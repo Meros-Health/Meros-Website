@@ -28,7 +28,6 @@ export const CATERING_CONTACT = {
 } as const;
 
 export const CATERING_HERO = {
-  eyebrow: "For business",
   title: "Catering",
   lead: "We cater offices, meetings and events across Vancouver. Yogurt in volume, built at the store and delivered ready to serve. Tell us the headcount and the date and we will quote it.",
 } as const;

@@ -68,7 +68,7 @@ const config: Config = {
       // ── Spacing additions (full-bleed helpers) ───────────────────────
       // Sections use w-full + these for edge-to-edge breathing room.
       padding: {
-        section: "clamp(3rem, 8vw, 7rem)",    // standard section y-padding
+        section: "clamp(4rem, 9vw, 9rem)",    // standard section y-padding
         "section-x": "clamp(1.5rem, 7vw, 8rem)", // standard section x-padding
       },
     },

@@ -191,7 +191,7 @@ export default function PrivacyPage() {
           </a>
           , subject to legal or contractual restrictions, for example we may need
           to retain records of a completed order for accounting purposes. Withdrawing
-          consent may mean we cannot fulfill an order in progress.
+          consent may mean we cannot fulfil an order in progress.
         </p>
       </LegalSection>
 

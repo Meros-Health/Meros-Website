@@ -8,18 +8,22 @@
 
 export type SiteLink = { label: string; href: string };
 
+// Three content routes and home. The menu page was at /order until 2026-09-03,
+// which made "order" name two different things: a page you cannot order from,
+// and the act of ordering. /menu says what the page is, and the label matches
+// the path, so the nav word and the URL never tell different stories.
 export const NAV_LINKS: SiteLink[] = [
   { label: "Home", href: "/" },
+  { label: "Menu", href: "/menu" },
   { label: "Build", href: "/build" },
-  { label: "Order", href: "/order" },
   { label: "Catering", href: "/catering" },
 ];
 
 /** The footer's "Go" column. Mirrors the nav, Home included. */
 export const FOOTER_DESTINATIONS: SiteLink[] = [
   { label: "Home", href: "/" },
+  { label: "Menu", href: "/menu" },
   { label: "Build", href: "/build" },
-  { label: "Order", href: "/order" },
   { label: "Catering", href: "/catering" },
 ];
 

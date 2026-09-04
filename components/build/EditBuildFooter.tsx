@@ -56,7 +56,7 @@ export function EditBuildFooter({ lineId, lineExists }: EditBuildFooterProps) {
       // If another navigation started during the beat, the push is refused
       // and the drawer must not open over whichever page that click chose.
       // Return the footer to its live state in case this page stays mounted.
-      if (transitionRouter.push("/order")) {
+      if (transitionRouter.push("/menu")) {
         openCart();
       } else {
         busyRef.current = false;

@@ -11,10 +11,9 @@ export const metadata: Metadata = {
 export default function NotFound() {
   return (
     <ErrorScreen
-      eyebrow="404"
       title="Page Not Found"
       body="There is nothing at this address. The menu and the bowl builder are one click away."
-      primary={{ label: "Our Menu", href: "/order" }}
+      primary={{ label: "Our Menu", href: "/menu" }}
       secondary={{ label: "Home", href: "/" }}
     />
   );

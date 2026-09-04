@@ -16,7 +16,7 @@ import {
 import { getSignatureItem, listBowls, listSmoothies } from "@/lib/menu/signatures";
 
 const moment = () => getSignatureItem("moment")!;
-const rise = () => getSignatureItem("rise")!;
+const cabana = () => getSignatureItem("cabana")!;
 
 describe("what the menu offers", () => {
   it("lists the Base step's options with the board's short names, surcharged last", () => {
@@ -44,15 +44,15 @@ describe("defaults", () => {
   it("bowls have no default and require a choice; smoothies default to the category base", () => {
     expect(getDefaultBaseId(moment())).toBeUndefined();
     expect(isBaseRequired(moment())).toBe(true);
-    expect(getDefaultBaseId(rise())).toBe("vanilla-greek-yogurt");
-    expect(isBaseRequired(rise())).toBe(false);
+    expect(getDefaultBaseId(cabana())).toBe("vanilla-greek-yogurt");
+    expect(isBaseRequired(cabana())).toBe(false);
   });
 
   it("an item's own base wins over its category default, when the menu offers it", () => {
-    expect(getDefaultBaseId({ ...rise(), base: "plain-greek-yogurt" })).toBe("plain-greek-yogurt");
+    expect(getDefaultBaseId({ ...cabana(), base: "plain-greek-yogurt" })).toBe("plain-greek-yogurt");
     expect(getDefaultBaseId({ ...moment(), base: "high-protein-yogurt" })).toBe("high-protein-yogurt");
     // A base the step no longer offers falls through to the category default.
-    expect(getDefaultBaseId({ ...rise(), base: "gone" })).toBe("vanilla-greek-yogurt");
+    expect(getDefaultBaseId({ ...cabana(), base: "gone" })).toBe("vanilla-greek-yogurt");
     expect(getDefaultBaseId({ ...moment(), base: "gone" })).toBeUndefined();
   });
 });
@@ -60,10 +60,10 @@ describe("defaults", () => {
 describe("sanitizeBaseId", () => {
   it("keeps an offered id, falls back to the default, and leaves a bowl unset otherwise", () => {
     expect(sanitizeBaseId(moment(), "vegan-coconut-yogurt")).toBe("vegan-coconut-yogurt");
-    expect(sanitizeBaseId(rise(), "plain-greek-yogurt")).toBe("plain-greek-yogurt");
+    expect(sanitizeBaseId(cabana(), "plain-greek-yogurt")).toBe("plain-greek-yogurt");
     for (const raw of [undefined, null, "", "nope", "blueberries", 7, {}, ["plain-greek-yogurt"]]) {
       expect(sanitizeBaseId(moment(), raw)).toBeUndefined();
-      expect(sanitizeBaseId(rise(), raw)).toBe("vanilla-greek-yogurt");
+      expect(sanitizeBaseId(cabana(), raw)).toBe("vanilla-greek-yogurt");
     }
   });
 });
@@ -71,12 +71,12 @@ describe("sanitizeBaseId", () => {
 describe("caption", () => {
   it("matches the board: bowls ask, smoothies say what they are made with, surcharge last", () => {
     expect(formatBaseCaption(moment())).toBe("Choose your yogurt · Plain, Vanilla, High Protein or Vegan Coconut +$2");
-    expect(formatBaseCaption(rise())).toBe("Made with Vanilla Greek Yogurt · Swap for Plain, High Protein or Vegan Coconut +$2");
+    expect(formatBaseCaption(cabana())).toBe("Made with Vanilla Greek Yogurt · Swap for Plain, High Protein or Vegan Coconut +$2");
     expect(formatBaseChoice(listBaseOptions().find((o) => o.id === "vegan-coconut-yogurt")!)).toBe("Vegan Coconut +$2");
   });
 
   it("follows a per-item base override", () => {
-    expect(formatBaseCaption({ ...rise(), base: "plain-greek-yogurt" })).toBe(
+    expect(formatBaseCaption({ ...cabana(), base: "plain-greek-yogurt" })).toBe(
       "Made with Plain Greek Yogurt · Swap for Vanilla, High Protein or Vegan Coconut +$2"
     );
   });

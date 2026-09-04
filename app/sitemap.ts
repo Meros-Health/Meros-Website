@@ -6,7 +6,7 @@ import { SITE_URL } from "@/lib/config";
 // belongs here; robots.ts disallows both.
 const ROUTES = [
   { path: "/", changeFrequency: "weekly", priority: 1 },
-  { path: "/order", changeFrequency: "weekly", priority: 0.9 },
+  { path: "/menu", changeFrequency: "weekly", priority: 0.9 },
   { path: "/build", changeFrequency: "weekly", priority: 0.9 },
   { path: "/catering", changeFrequency: "monthly", priority: 0.8 },
   { path: "/privacy", changeFrequency: "yearly", priority: 0.2 },

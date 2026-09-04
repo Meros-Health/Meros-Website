@@ -8,7 +8,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { waitForPageReady } from "./helpers/cart";
 
-const ROUTES = ["/", "/build", "/order", "/catering", "/checkout", "/privacy", "/terms"] as const;
+const ROUTES = ["/", "/build", "/menu", "/catering", "/checkout", "/privacy", "/terms"] as const;
 
 /**
  * Anything wider than the viewport, reported with enough detail to fix it.
@@ -56,44 +56,46 @@ for (const route of ROUTES) {
   });
 }
 
-// The Signature Menu ledger gates its entrance on its images decoding. Above
-// lg its row thumbnails are display:none and, at device pixel ratio 2, Chrome
-// never starts their lazy load, so decode() on them never settles. That once
-// held the whole ledger invisible until useRevealReady's safety valve fired.
-// The 2.5s bound sits under that valve, so passing means the gate resolved on
-// its own, not that the valve rescued it. The hidpi project is the one that
-// reproduced the bug; the other projects keep the non-retina paths honest.
-test("the signature menu ledger reveals when it enters view", async ({ page }) => {
+// The home page's menu section gates its header entrance on useRevealReady,
+// which waits for the section's images to decode. That hook once held a whole
+// section invisible until its safety valve fired, because at device pixel ratio
+// 2 Chrome never starts the lazy load of a display:none image, so decode() on it
+// never settles. The 2.5s bound sits under that valve, so passing means the gate
+// resolved on its own rather than being rescued by it. The hidpi project is the
+// one that reproduced the bug; the others keep the non-retina paths honest.
+test("the home page's menu section reveals when it enters view", async ({ page }) => {
   await page.goto("/");
   await waitForPageReady(page);
 
-  const firstRow = page.locator("#menu section ul li").first();
-  await expect(firstRow).toHaveCount(1);
+  const heading = page.locator("#menu h2").first();
+  await expect(heading).toHaveCount(1);
 
-  // Land the first group 150px under the top edge: clear of the fixed nav and
-  // inside the hook's -100px root margin on even the shortest window.
-  await firstRow.evaluate((li) => {
-    const group = li.closest("ul")!.parentElement!;
-    window.scrollTo(0, group.getBoundingClientRect().top + window.scrollY - 150);
+  // Land it 150px under the top edge: clear of the fixed nav and inside the
+  // hook's root margin on even the shortest window.
+  await heading.evaluate((el) => {
+    window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 150);
   });
 
   await expect
-    .poll(() => firstRow.evaluate((el) => parseFloat(getComputedStyle(el).opacity)), {
-      message: "the first menu row never reached full opacity after entering view",
-      timeout: 2500,
-    })
+    .poll(
+      () => heading.evaluate((el) => parseFloat(getComputedStyle(el.parentElement!).opacity)),
+      {
+        message: "the menu section header never reached full opacity after entering view",
+        timeout: 2500,
+      }
+    )
     .toBe(1);
 });
 
 test("primary calls to action are large enough to tap", async ({ page }, testInfo) => {
   test.skip(!testInfo.project.use.hasTouch, "tap targets only matter on touch devices");
 
-  await page.goto("/order");
+  await page.goto("/menu");
   await waitForPageReady(page);
 
   // 44px is the floor both Apple's HIG and WCAG 2.2 target size (AAA) land on.
   const MIN = 44;
-  const buttons = page.getByRole("button", { name: "Add to Cart" });
+  const buttons = page.getByRole("button", { name: /^Add .+ to cart$/ });
   const count = await buttons.count();
   expect(count).toBeGreaterThan(0);
 
@@ -145,7 +147,7 @@ test("primary calls to action are large enough to tap", async ({ page }, testInf
 });
 
 test("the nav menu opens, and closing it hands the page back", async ({ page }) => {
-  await page.goto("/order");
+  await page.goto("/menu");
   await waitForPageReady(page);
 
   const toggle = page.getByRole("button", { name: /Open menu|Close menu/ });

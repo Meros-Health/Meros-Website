@@ -17,3 +17,11 @@ export const LINE_MESSAGES: Record<LineErrorCode, string> = {
 
 /** Under the Checkout button and the Place Order button while a line has no yogurt. */
 export const MISSING_BASE_HINT = "Choose a yogurt for the marked item to check out.";
+
+/**
+ * Shown in the cart drawer and at checkout, from one constant so the two
+ * cannot drift. Meros does not deliver its own orders: delivery is Uber Eats
+ * and DoorDash, in their apps. Someone who reaches the payment screen still
+ * expecting delivery is a refund and a bad review.
+ */
+export const PICKUP_ONLY_NOTE = "Pickup only. Orders placed here are collected at the store in Yaletown.";

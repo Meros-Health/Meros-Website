@@ -435,13 +435,13 @@ describe("signature yogurt", () => {
     expect(store.getState().addItem({ ...noBase("a"), lineId: undefined } as never)).toBe("invalid");
     expect(store.getState().addItem({ ...signatureLine("b", "moment", "medium", 12, { base: "nope" }), lineId: undefined } as never)).toBe("invalid");
     expect(store.getState().items).toHaveLength(0);
-    expect(store.getState().addItem({ ...signatureLine("c", "rise", "standard", 15, { base: undefined }), lineId: undefined } as never)).toBe("added");
+    expect(store.getState().addItem({ ...signatureLine("c", "cabana", "standard", 15, { base: undefined }), lineId: undefined } as never)).toBe("added");
     expect(store.getState().items[0].base).toBe("vanilla-greek-yogurt");
     expect(store.getState().items[0].unitPrice).toBe(15);
   });
 
   it("rehydrates a bowl persisted without a yogurt as unset, and a smoothie on its default", async () => {
-    seedCart([noBase("bowl"), signatureLine("smoothie", "rise", "standard", 15, { base: undefined })]);
+    seedCart([noBase("bowl"), signatureLine("smoothie", "cabana", "standard", 15, { base: undefined })]);
     const { cartStore } = await loadWithMenu();
     const store = cartStore.useCartStore;
     const [bowl, smoothie] = store.getState().items;
@@ -452,11 +452,11 @@ describe("signature yogurt", () => {
     // notice for it; the smoothie came back on a default the customer never
     // chose, and is told once.
     const messages = store.getState().notice!.map((c) => c.message);
-    expect(messages).toEqual(["The Rise · 24 oz is now on Vanilla Greek Yogurt. Edit it to choose another yogurt."]);
+    expect(messages).toEqual(["The Cabana · 24 oz is now on Vanilla Greek Yogurt. Edit it to choose another yogurt."]);
   });
 
   it("C3-03: the legacy-line notice shows once; the next load, with the yogurt persisted, is silent", async () => {
-    seedCart([signatureLine("smoothie", "rise", "standard", 15, { base: undefined })]);
+    seedCart([signatureLine("smoothie", "cabana", "standard", 15, { base: undefined })]);
     const first = await loadWithMenu();
     expect(first.cartStore.useCartStore.getState().notice).toHaveLength(1);
     // The store writes the migrated line back on its next change; simulate
@@ -472,7 +472,7 @@ describe("signature yogurt", () => {
     seedCart([
       { ...noBase("empty"), base: "" },
       { ...noBase("topping"), base: "strawberries" },
-      { ...signatureLine("smoothie", "rise", "standard", 15), base: "mangoes" },
+      { ...signatureLine("smoothie", "cabana", "standard", 15), base: "mangoes" },
     ]);
     const { cartStore } = await loadWithMenu();
     const state = cartStore.useCartStore.getState();
@@ -480,14 +480,14 @@ describe("signature yogurt", () => {
     const messages = (state.notice ?? []).map((c) => c.message);
     expect(messages).toEqual([
       "Your previous yogurt is no longer available. Choose a yogurt for The Moment · Medium.",
-      "Your previous yogurt is no longer available; The Rise · 24 oz is now on Vanilla Greek Yogurt.",
+      "Your previous yogurt is no longer available; The Cabana · 24 oz is now on Vanilla Greek Yogurt.",
     ]);
   });
 
   it("S2-06: an edit naming a yogurt the Base step does not offer is refused on a smoothie as on a bowl", async () => {
     const { cartStore } = await loadWithMenu();
     const store = cartStore.useCartStore;
-    store.getState().addItem({ ...signatureLine("s", "rise", "standard", 15), lineId: undefined, base: "vanilla-greek-yogurt" } as never);
+    store.getState().addItem({ ...signatureLine("s", "cabana", "standard", 15), lineId: undefined, base: "vanilla-greek-yogurt" } as never);
     const [smoothie] = store.getState().items;
     expect(store.getState().updateSignatureLine(smoothie.lineId, { sizeId: "standard", base: "nope", mods: { additions: [], removals: [] } })).toBe("invalid");
     expect(store.getState().items[0].base).toBe("vanilla-greek-yogurt");
@@ -510,7 +510,7 @@ describe("signature yogurt", () => {
   });
 
   it("drops a yogurt the Base step no longer offers and says so", async () => {
-    seedCart([vegan("bowl"), signatureLine("smoothie", "rise", "standard", 17, { base: "vegan-coconut-yogurt" })]);
+    seedCart([vegan("bowl"), signatureLine("smoothie", "cabana", "standard", 17, { base: "vegan-coconut-yogurt" })]);
     const { cartStore } = await loadWithMenu((menu) => {
       const step = menu.build.steps.find((s: { id: string }) => s.id === "base");
       step.options = step.options.filter((o: { ingredientId: string }) => o.ingredientId !== "vegan-coconut-yogurt");
@@ -523,7 +523,7 @@ describe("signature yogurt", () => {
     expect(smoothie.unitPrice).toBe(15);
     const messages = store.getState().notice!.map((c) => c.message);
     expect(messages).toContain("Vegan Coconut Yogurt is no longer available. Choose a yogurt for The Moment · Medium.");
-    expect(messages).toContain("Vegan Coconut Yogurt is no longer available; The Rise · 24 oz is now on Vanilla Greek Yogurt.");
+    expect(messages).toContain("Vegan Coconut Yogurt is no longer available; The Cabana · 24 oz is now on Vanilla Greek Yogurt.");
   });
 
   it("updateSignatureLine changes the yogurt, re-prices, keeps it when unmentioned, and refuses an unknown one on a bowl", async () => {

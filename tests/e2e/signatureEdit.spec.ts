@@ -29,7 +29,7 @@ const modal = (page: Page) => page.getByRole("dialog", { name: "The Moment" });
 const editButton = (page: Page) => drawer(page).getByRole("button", { name: "Edit The Moment · Medium" }).first();
 
 async function openModal(page: Page) {
-  await page.goto("/order");
+  await page.goto("/menu");
   await waitForPageReady(page);
   await cartButton(page).click();
   await editButton(page).click();
@@ -66,7 +66,7 @@ test("swaps the yogurt, prices the surcharge, and saves it to the line", async (
 test("a bowl saved before the yogurt was a choice asks for one before it can be saved", async ({ page }) => {
   // JSON drops the undefined, so the seeded line has no `base` at all.
   await seedCart(page, [{ ...moment("a"), base: undefined }]);
-  await page.goto("/order");
+  await page.goto("/menu");
   await waitForPageReady(page);
   await cartButton(page).click();
   await expect(drawer(page).locator("[data-line-base-missing]")).toHaveText("Choose your yogurt");

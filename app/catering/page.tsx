@@ -41,7 +41,6 @@ export default function CateringPage() {
       <CateringSection
         id={CATERING_CONTACT.servesAnchor}
         tone="cream"
-        eyebrow="What we serve"
         title="Feeding a room"
         intro="Four ways we serve a group. They combine in one order if that suits the room better than any single format does."
         items={CATERING_FORMATS}
@@ -52,7 +51,6 @@ export default function CateringPage() {
       <CateringSection
         id={CATERING_CONTACT.yogurtsAnchor}
         tone="midnight"
-        eyebrow="The yogurts"
         title="Pick your base"
         intro="The same four yogurts the store pours, in volume. Choose one for the room or put out more than one."
         items={CATERING_YOGURTS}

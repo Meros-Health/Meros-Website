@@ -28,11 +28,11 @@ export type NutritionSegmentGroup = "macro" | "fiber" | "mineral";
 
 export const NUTRITION_SEGMENT_GROUPS: Record<NutritionSegmentGroup, string> = {
   macro: "Macros",
-  fiber: "Fiber",
+  fiber: "Fibre",
   mineral: "Minerals & vitamins",
 };
 
-/** Keys shown on the allocation ring (excludes calories, which are shown in the center). */
+/** Keys shown on the allocation ring (excludes calories, which are shown in the centre). */
 export type NutritionSegmentId = Exclude<keyof NutritionFacts, "calories">;
 
 export type NutritionSegmentConfig = {
@@ -77,7 +77,7 @@ export const NUTRITION_SEGMENTS: readonly NutritionSegmentConfig[] = [
   },
   {
     id: "fiber",
-    label: "Fiber",
+    label: "Fibre",
     group: "fiber",
     color: "var(--color-blue)",
     unit: "g",

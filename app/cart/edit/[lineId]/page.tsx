@@ -28,7 +28,7 @@ export default function EditBowlPage() {
     const leave = () => {
       // Covered transition on a direct load; plain replace if a transition is
       // already in flight so the page can never sit blank.
-      if (!transitionRouter.replace("/order")) router.replace("/order");
+      if (!transitionRouter.replace("/menu")) router.replace("/menu");
     };
 
     if (!cartItem || cartItem.kind !== "custom" || !cartItem.selection) {
@@ -68,7 +68,6 @@ export default function EditBowlPage() {
         editLineId={lineId}
         editLineExists={cartItem !== undefined}
         header={{
-          eyebrow: "Edit Your Bowl",
           title: "Modify Bowl",
           description:
             "Update your selections below. Changes apply to all quantities of this bowl in your cart.",

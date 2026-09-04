@@ -951,13 +951,23 @@ export function OurStorySection() {
   return (
     <section
       ref={sectionRef}
-      className="relative w-full overflow-hidden bg-cream text-midnight"
-      style={cssVars}
+      className="relative flex w-full overflow-hidden bg-cream text-midnight"
+      // Prefers a full viewport, takes more when the content needs it. svh, not
+      // vh: on mobile Safari vh is the tallest the viewport ever gets, so a
+      // 100vh section is cut off by the browser chrome until the user scrolls.
+      // Every other unit on this page (cqw, container queries) already assumes a
+      // browser new enough for svh.
+      //
+      // min-height rather than height, because the stacked mobile layout is four
+      // values plus a card deck and is taller than any phone. The section grows;
+      // it never clips.
+      style={{ ...cssVars, minHeight: "100svh" }}
       aria-label="Our Story"
     >
-      <div className="flex flex-col px-section-x py-16 md:py-24">
-        <span className="font-body-caps text-[10px] tracking-[0.30em] text-midnight/50">Our Story</span>
-
+      {/* Fills the section so the composition's my-auto has room to centre in,
+          which is what turns the extra height into space around the content
+          rather than a gap under it. */}
+      <div className="flex w-full flex-1 flex-col justify-center px-section-x py-section">
         {/* Composition: headline stack with the numbered rail, and the fan. */}
         <div
           ref={compositionRef}

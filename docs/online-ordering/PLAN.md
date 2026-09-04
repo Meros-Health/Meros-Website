@@ -20,7 +20,7 @@ The customer-facing half already exists:
 
 | Piece | Where | Status |
 |---|---|---|
-| Signature bowls + custom bowl builder | `app/order/`, `store/bowlBuilderStore.ts`, `lib/menu/menu.json` | Built |
+| Signature bowls + custom bowl builder | `app/menu/`, `store/bowlBuilderStore.ts`, `lib/menu/menu.json` | Built |
 | Cart (Zustand, edit lines) | `store/cartStore.ts`, `components/cart/*` | Built |
 | Server-side re-pricing (client never trusted) | `app/actions/checkout.ts` (`priceLine`, `resolveItems`) | Built |
 | Checkout form (name/email/phone) | `app/checkout/page.tsx` → `submitCheckout` | Built |
@@ -76,7 +76,7 @@ Cost of this trade: checkout leaves our beautifully built cart/bowl-builder for 
 3. Build the online menu in Toast Web: signature bowls + "Custom Bowl" item with modifier groups mirroring `menu.json` (base / fruits & berries / nuts & seeds / finish / enhancers, with the same surcharge prices).
 4. Pickup settings: hours, quote-time strategy (start Manual, e.g. 10–15 min), auto-fire device designated (the counter terminal), decide printer vs. screen for the make-line. **Buy a kitchen ticket printer if they don't have one; a bowl line needs a durable artifact, not a POS screen glance.**
 5. Train staff: Orders Hub, approval vs auto-fire (recommend auto-fire + throttle permissions for Paul), snooze/delay, marking Order Ready.
-6. Website: swap checkout CTA → Toast page; keep our `/order` menu as the showcase; place a test order end-to-end and watch it hit the make-line.
+6. Website: swap checkout CTA → Toast page; keep our `/menu` menu as the showcase; place a test order end-to-end and watch it hit the make-line.
 
 ### Track B: Website-native ordering on the Orders API (phase 2, target ~2–6 weeks post-access)
 

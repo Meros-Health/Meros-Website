@@ -261,7 +261,9 @@ function Dialog({
     setNotice(outcome.kind === "notice" ? outcome.message : null);
   };
 
-  const eyebrow = mode === "add" ? "Add" : "Edit";
+  // The dialog's mode, not a section kicker: without it there is nothing on
+  // screen that distinguishes adding a bowl from editing one already in the cart.
+  const modeLabel = mode === "add" ? "Add" : "Edit";
   const submitLabel = mode === "add" ? "Add to cart" : "Save";
   const priceText =
     sizeId === undefined ? "Choose a size" : price === undefined ? "Unavailable" : formatPrice(price);
@@ -310,7 +312,7 @@ function Dialog({
         {/* Header */}
         <div className="flex items-start justify-between gap-4 px-6 py-5" style={{ borderBottom: HAIRLINE }}>
           <div className="min-w-0">
-            <p className="font-body-caps text-[10px] tracking-widest text-grapefruit-text">{eyebrow}</p>
+            <p className="font-body-caps text-[10px] tracking-widest text-grapefruit-text">{modeLabel}</p>
             <h2 id={titleId} className="font-headline text-midnight leading-none mt-1" style={{ fontSize: "1.35rem" }}>
               {catalogItem.name}
             </h2>
