@@ -10,7 +10,7 @@ import { useLenis } from "@/components/animation/LenisProvider";
 import { splitDeck } from "@/lib/ourStory/splitDeck";
 
 import { useRevealReady } from "@/lib/useRevealReady";
-import { CLIP_REVEAL_TIMING } from "@/lib/motion";
+import { CLIP_REVEAL_TIMING, SCRUB_LAG_S } from "@/lib/motion";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -99,7 +99,6 @@ const DESKTOP_PROGRESS_GAP = "gap-10";
 // screen, then it holds its end state while the section scrolls away.
 const SCRUB_START = "top 80%";
 const SCRUB_END = "center 46%";   // ends with the subtitle still clear of the sticky header
-const SCRUB_LAG = 1;              // seconds of catch-up; smooths trackpad spikes
 // Rail states. Progressive: once the line reaches a value it stays lit.
 // The dim values are ink levels rather than one of the four semantic alphas:
 // a numeral waiting to be lit and a point waiting to be lit are not the same
@@ -563,7 +562,7 @@ export function OurStorySection() {
           trigger: compositionRef.current,
           start: SCRUB_START,
           end: SCRUB_END,
-          scrub: SCRUB_LAG,
+          scrub: SCRUB_LAG_S,
           invalidateOnRefresh: true,
           onUpdate: syncOpenCard,
         },
@@ -602,7 +601,7 @@ export function OurStorySection() {
           trigger: stackRef.current,
           start: "top 70%",
           end: "bottom 65%",
-          scrub: SCRUB_LAG,
+          scrub: SCRUB_LAG_S,
           invalidateOnRefresh: true,
         },
       });
@@ -625,7 +624,7 @@ export function OurStorySection() {
               trigger: stage,
               start: "top 92%",
               end: "top 45%",
-              scrub: SCRUB_LAG,
+              scrub: SCRUB_LAG_S,
               invalidateOnRefresh: true,
               onUpdate: syncOpenCard,
             },

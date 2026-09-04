@@ -12,7 +12,7 @@ import type { SignatureCategory } from "@/lib/menu/signatures";
 export function CategoryHeading({ title, category }: { title: string; category: SignatureCategory }) {
   const price = categoryPriceLine(category);
   return (
-    <div className="px-section-x-fluid pt-24 pb-16 text-center">
+    <div className="px-section-x pt-24 pb-16 text-center">
       <h2
         className="font-headline text-midnight leading-[0.9] uppercase"
         style={{ fontSize: "clamp(2rem, 4.5vw, 4.25rem)" }}

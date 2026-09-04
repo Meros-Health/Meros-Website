@@ -54,6 +54,23 @@ export const REVEAL_REDUCED_S = 0.15;
 export const CLIP_REVEAL_S = 1.2;
 export const CLIP_REVEAL_TIMING = `${CLIP_REVEAL_S}s ${ENTRANCE_EASE_CSS}`;
 
+/**
+ * Seconds of catch-up on a GSAP `scrub`. The lag is what smooths a trackpad
+ * spike into a glide instead of letting the animation snap to the scroll
+ * position; both scrubbed sections had it, with the same value and the same
+ * comment, and a scroll feel that differs between two sections on one page is
+ * a bug rather than a choice.
+ */
+export const SCRUB_LAG_S = 1;
+
+/**
+ * The beat after the nav overlay's panels open before its content starts. The
+ * links and the kitchen note stagger out of the same moment, so they read as
+ * one thing arriving rather than two; that only holds while they share a
+ * starting point, which is why it is here rather than in either component.
+ */
+export const NAV_CONTENT_DELAY_S = 0.35;
+
 // ── Page transitions ──────────────────────────────────────────────────────────
 
 export const EXIT_MS = 420; // cover fade-in over the outgoing page

@@ -7,6 +7,7 @@ import ScrollTrigger from "gsap/ScrollTrigger";
 import { STACK_SIZE, resolveEnhancerGroups } from "@/lib/menu/featuredEnhancers";
 import { TransitionLink } from "@/components/transition/TransitionLink";
 import { useRevealReady } from "@/lib/useRevealReady";
+import { SCRUB_LAG_S } from "@/lib/motion";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -53,7 +54,6 @@ const TYPE_SCALE = {
 // clears the fold, so moving it further would start the fill off screen.
 const SCRUB_START = "top 95%";
 const SCRUB_END = "center 69%";
-const SCRUB_LAG = 1; // seconds of catch-up; smooths trackpad spikes
 
 const circumference = (r: number) => 2 * Math.PI * r;
 
@@ -167,7 +167,7 @@ export function StacksSection() {
           trigger: contentRef.current,
           start: SCRUB_START,
           end: SCRUB_END,
-          scrub: SCRUB_LAG,
+          scrub: SCRUB_LAG_S,
           invalidateOnRefresh: true,
         },
       });

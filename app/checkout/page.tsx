@@ -179,7 +179,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <main className="px-section-x-fluid pt-36 pb-24">
+    <main className="px-section-x pt-36 pb-24">
       <h1
         className="font-headline text-midnight leading-[0.9] uppercase"
         style={{ fontSize: "clamp(2.5rem, 5vw, 4rem)" }}

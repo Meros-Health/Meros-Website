@@ -234,7 +234,7 @@ export function BuildSection() {
     return (
       <section
         ref={staticSectionRef}
-        className="relative flex w-full flex-col justify-start overflow-hidden bg-cream px-section-x-fluid pb-section"
+        className="relative flex w-full flex-col justify-start overflow-hidden bg-cream px-section-x pb-section"
         // No 100svh floor and no vertical centring. Both were here to make this
         // a full-screen panel, and together they put a viewport's worth of
         // leftover space above the heading, which is the space the previous
