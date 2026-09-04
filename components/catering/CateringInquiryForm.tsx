@@ -81,14 +81,14 @@ export function CateringInquiryForm() {
               </h2>
             </Reveal>
             <Reveal show={show} index={1}>
-              <p className="font-body-mixed mt-6 max-w-md leading-relaxed text-[0.95rem] text-cream/65">
+              <p className="font-body-mixed mt-6 max-w-md leading-relaxed text-body text-cream/65">
                 Send us the shape of what you need. We read every one of these and reply with a
                 written quote.
               </p>
             </Reveal>
             <Reveal show={show} index={2}>
               <div className="mt-10 flex flex-col gap-3">
-                <span className="font-body-caps text-cream/40 text-[9px] tracking-[0.30em]">
+                <span className="font-body-caps text-cream/40 text-meta tracking-micro-wide">
                   Or reach us directly
                 </span>
                 <a
@@ -112,7 +112,7 @@ export function CateringInquiryForm() {
             {state.status === "success" ? (
               <Reveal show={show} index={3}>
                 <div role="status" className="flex flex-col gap-3 py-6">
-                  <span className="font-body-caps text-grapefruit text-[10px] tracking-[0.25em]">
+                  <span className="font-body-caps text-grapefruit text-label tracking-micro">
                     Received
                   </span>
                   <p className="font-body-mixed max-w-lg leading-relaxed text-cream/75 text-sm">
@@ -190,7 +190,7 @@ export function CateringInquiryForm() {
                   <div className="flex flex-col gap-1.5">
                     <label
                       htmlFor="catering-message"
-                      className="font-body-caps text-cream/40 text-[9px] tracking-[0.25em]"
+                      className="font-body-caps text-cream/40 text-meta tracking-micro"
                     >
                       Anything else
                     </label>
@@ -214,7 +214,7 @@ export function CateringInquiryForm() {
                   <button
                     type="submit"
                     disabled={pending}
-                    className="mt-2 self-start bg-cream px-8 py-3.5 font-body-caps text-[10px] tracking-[0.25em] text-midnight transition-colors duration-300 hover:bg-grapefruit disabled:cursor-not-allowed disabled:opacity-50"
+                    className="mt-2 self-start bg-cream px-8 py-3.5 font-body-caps text-label tracking-micro text-midnight transition-colors duration-300 hover:bg-grapefruit disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {pending ? "Sending..." : "Send inquiry"}
                   </button>
@@ -260,7 +260,7 @@ function Field({
 }) {
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
-      <label htmlFor={id} className="font-body-caps text-cream/40 text-[9px] tracking-[0.25em]">
+      <label htmlFor={id} className="font-body-caps text-cream/40 text-meta tracking-micro">
         {label}
         {required && <span aria-hidden className="text-grapefruit"> *</span>}
       </label>

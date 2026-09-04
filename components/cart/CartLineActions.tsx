@@ -33,9 +33,9 @@ export function CartLineActions({ lineId, kind, name, quantity }: CartLineAction
 
   // 44px boxes: the touch target floor. The glyphs and type are unchanged.
   const stepBtn =
-    "font-body-caps text-[12px] leading-none min-h-11 min-w-11 px-3 transition-opacity hover:opacity-70 disabled:opacity-30 disabled:cursor-not-allowed";
+    "font-body-caps text-xs leading-none min-h-11 min-w-11 px-3 transition-opacity hover:opacity-70 disabled:opacity-30 disabled:cursor-not-allowed";
   const actionBtn =
-    "flex-1 font-body-caps text-[10px] tracking-widest min-h-11 py-2.5 transition-opacity hover:opacity-80";
+    "flex-1 font-body-caps text-label tracking-headline min-h-11 py-2.5 transition-opacity hover:opacity-80";
 
   return (
     <div className="flex items-stretch gap-2 mt-3">
@@ -56,7 +56,7 @@ export function CartLineActions({ lineId, kind, name, quantity }: CartLineAction
         </button>
         <span
           aria-live="polite"
-          className="font-body-caps text-[10px] text-midnight text-center"
+          className="font-body-caps text-label text-midnight text-center"
           style={{ minWidth: "2ch" }}
         >
           {quantity}

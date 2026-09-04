@@ -262,8 +262,8 @@ function FanCard({
                 />
               </div>
               <div className="flex items-center justify-between px-4" style={{ height: "var(--card-foot)" }}>
-                <span className="font-body-caps text-[10px] text-midnight">{value.num}</span>
-                <span className="font-body-caps text-[10px] text-midnight">{value.label}</span>
+                <span className="font-body-caps text-label text-midnight">{value.num}</span>
+                <span className="font-body-caps text-label text-midnight">{value.label}</span>
               </div>
               <div
                 ref={(el) => { refs.veil.current[index] = el; }}
@@ -302,8 +302,8 @@ function FanCard({
                 <CloseIcon />
               </button>
               <div className="flex items-center gap-3 pr-10">
-                <span className="font-body-caps text-[10px]">{value.num}</span>
-                <span className="font-body-caps text-[10px]">{value.label}</span>
+                <span className="font-body-caps text-label">{value.num}</span>
+                <span className="font-body-caps text-label">{value.label}</span>
               </div>
               <h3
                 id={backHeadingId(index)}
@@ -327,7 +327,7 @@ function FanCard({
               >
                 {value.backBody}
               </p>
-              <span className="mt-auto shrink-0 pt-2 font-body-caps text-[10px] leading-relaxed text-midnight/60">
+              <span className="mt-auto shrink-0 pt-2 font-body-caps text-label leading-relaxed text-midnight/60">
                 {value.factLine}
               </span>
             </div>
@@ -378,7 +378,7 @@ function FanStage({
           />
         ))}
       </div>
-      <span className="font-body-caps text-[10px] text-midnight/50">{CARD_HINT}</span>
+      <span className="font-body-caps text-label text-midnight/50">{CARD_HINT}</span>
     </div>
   );
 }
@@ -426,7 +426,7 @@ function CardStage({
           onHover={onHover}
         />
       </div>
-      {hint && <span className="font-body-caps text-[10px] text-midnight/50">{CARD_HINT}</span>}
+      {hint && <span className="font-body-caps text-label text-midnight/50">{CARD_HINT}</span>}
     </div>
   );
 }
@@ -1017,7 +1017,7 @@ export function OurStorySection() {
                     <>
                       <span
                         ref={(el) => { numeralRefs.current[i] = el; }}
-                        className="font-body-caps text-[10px]"
+                        className="font-body-caps text-label"
                         style={{ paddingTop: "calc(var(--hl) * 0.40)", color: NUMERAL_ON }}
                       >
                         {value.num}
@@ -1032,7 +1032,7 @@ export function OurStorySection() {
                     {stackedMode && (
                       <span
                         ref={(el) => { numeralRefs.current[i] = el; }}
-                        className="font-body-caps text-[10px] text-midnight/50"
+                        className="font-body-caps text-label text-midnight/50"
                       >
                         {value.num} / 04
                       </span>
@@ -1053,7 +1053,7 @@ export function OurStorySection() {
                     {stackedMode && (
                       <p
                         ref={(el) => { bodyRefs.current[i] = el; }}
-                        className="font-body-mixed text-[15px] leading-relaxed text-midnight/60"
+                        className="font-body-mixed text-body leading-relaxed text-midnight/60"
                       >
                         {value.body}
                       </p>

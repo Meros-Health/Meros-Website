@@ -74,7 +74,7 @@ export function CateringSection({
         </Reveal>
 
         <Reveal show={show} index={1}>
-          <p className={`font-body-mixed mt-6 max-w-2xl leading-relaxed text-[0.95rem] ${theme.body}`}>
+          <p className={`font-body-mixed mt-6 max-w-2xl leading-relaxed text-body ${theme.body}`}>
             {intro}
           </p>
         </Reveal>
@@ -88,13 +88,13 @@ export function CateringSection({
                 className="flex flex-col gap-3 py-8"
                 style={{ borderTop: `0.5px solid ${theme.rule}` }}
               >
-                <span className={`font-body-caps text-[10px] tracking-[0.25em] ${theme.accent}`}>
+                <span className={`font-body-caps text-label tracking-micro ${theme.accent}`}>
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <h3 className={`font-headline uppercase leading-tight ${theme.heading}`} style={{ fontSize: "clamp(1.1rem, 1.8vw, 1.5rem)" }}>
                   {item.name}
                 </h3>
-                <p className={`font-body-mixed leading-relaxed text-[0.9rem] ${theme.body}`}>
+                <p className={`font-body-mixed leading-relaxed text-sm ${theme.body}`}>
                   {item.body}
                 </p>
               </article>
@@ -110,10 +110,10 @@ export function CateringSection({
                   className="flex flex-col gap-2.5 pt-8"
                   style={{ borderTop: `0.5px solid ${theme.rule}` }}
                 >
-                  <h3 className={`font-body-caps text-[11px] tracking-[0.18em] ${theme.heading}`}>
+                  <h3 className={`font-body-caps text-note tracking-label ${theme.heading}`}>
                     {note.name}
                   </h3>
-                  <p className={`font-body-mixed leading-relaxed text-[0.85rem] ${theme.body}`}>
+                  <p className={`font-body-mixed leading-relaxed text-caption ${theme.body}`}>
                     {note.body}
                   </p>
                 </div>
@@ -128,12 +128,12 @@ export function CateringSection({
               className="mt-16 flex flex-col gap-4 pt-8 sm:flex-row sm:items-baseline sm:gap-10"
               style={{ borderTop: `0.5px solid ${theme.rule}` }}
             >
-              <span className={`font-body-caps shrink-0 text-[10px] tracking-[0.25em] ${theme.accent}`}>
+              <span className={`font-body-caps shrink-0 text-label tracking-micro ${theme.accent}`}>
                 {audienceLabel}
               </span>
               <ul className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-x-8">
                 {audience.map((entry) => (
-                  <li key={entry} className={`font-body-mixed text-[0.9rem] ${theme.body}`}>
+                  <li key={entry} className={`font-body-mixed text-sm ${theme.body}`}>
                     {entry}
                   </li>
                 ))}

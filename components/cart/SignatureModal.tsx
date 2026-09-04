@@ -312,7 +312,7 @@ function Dialog({
         {/* Header */}
         <div className="flex items-start justify-between gap-4 px-6 py-5" style={{ borderBottom: HAIRLINE }}>
           <div className="min-w-0">
-            <p className="font-body-caps text-[10px] tracking-widest text-grapefruit-text">{modeLabel}</p>
+            <p className="font-body-caps text-label tracking-headline text-grapefruit-text">{modeLabel}</p>
             <h2 id={titleId} className="font-headline text-midnight leading-none mt-1" style={{ fontSize: "1.35rem" }}>
               {catalogItem.name}
             </h2>
@@ -322,7 +322,7 @@ function Dialog({
             type="button"
             aria-label={mode === "add" ? "Close" : "Close edit"}
             onClick={onClose}
-            className="font-body-caps text-[10px] tracking-widest text-juniper px-3 py-2 min-h-11 transition-opacity hover:opacity-70"
+            className="font-body-caps text-label tracking-headline text-juniper px-3 py-2 min-h-11 transition-opacity hover:opacity-70"
           >
             Close
           </button>
@@ -371,7 +371,7 @@ function Dialog({
               <div className="space-y-4 mt-3">
                 {groups.map(({ step, ingredients }) => (
                   <div key={step.id}>
-                    <p className="font-body-caps text-[9px] tracking-widest text-juniper mb-2">{step.label}</p>
+                    <p className="font-body-caps text-meta tracking-headline text-juniper mb-2">{step.label}</p>
                     <div className="flex flex-wrap gap-2">
                       {ingredients.map((ingredient) => {
                         const added = additions.includes(ingredient.id);
@@ -404,8 +404,8 @@ function Dialog({
             </p>
           )}
           <div className="flex justify-between pb-4">
-            <span className="font-body-caps text-[11px] text-midnight">Item price</span>
-            <span className="font-body-caps text-[11px] text-midnight" data-edit-price>
+            <span className="font-body-caps text-note text-midnight">Item price</span>
+            <span className="font-body-caps text-note text-midnight" data-edit-price>
               {priceText}
               {delta > 0 && <span className="text-juniper ml-2">({formatSurcharge(delta)})</span>}
             </span>
@@ -414,7 +414,7 @@ function Dialog({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 font-body-caps text-[10px] tracking-widest py-3 min-h-11 transition-opacity hover:opacity-80"
+              className="flex-1 font-body-caps text-label tracking-headline py-3 min-h-11 transition-opacity hover:opacity-80"
               style={{ background: "transparent", color: "var(--color-midnight)", border: HAIRLINE_STRONG }}
             >
               Cancel
@@ -423,7 +423,7 @@ function Dialog({
               type="button"
               onClick={handleSubmit}
               disabled={!canSubmit}
-              className="flex-1 font-body-caps text-[10px] tracking-widest py-3 min-h-11 transition-opacity hover:opacity-85 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex-1 font-body-caps text-label tracking-headline py-3 min-h-11 transition-opacity hover:opacity-85 disabled:opacity-40 disabled:cursor-not-allowed"
               style={{
                 background: "var(--color-midnight)",
                 color: "var(--color-cream)",
@@ -445,7 +445,7 @@ function Dialog({
 function RequiredHeading({ title, chosen }: { title: string; chosen: boolean }) {
   return (
     <div className="flex items-baseline justify-between gap-4 mb-3">
-      <p className="font-body-caps text-[10px] tracking-widest text-midnight">{title}</p>
+      <p className="font-body-caps text-label tracking-headline text-midnight">{title}</p>
       {!chosen && <p className="font-body-mixed text-xs text-grapefruit-text">Choose one</p>}
     </div>
   );
@@ -467,12 +467,12 @@ function SectionHeading({
   return (
     <div className="flex items-baseline justify-between gap-4">
       <div>
-        <p id={id} className="font-body-caps text-[10px] tracking-widest text-midnight">
+        <p id={id} className="font-body-caps text-label tracking-headline text-midnight">
           {title}
         </p>
         <p className="font-body-mixed text-xs text-juniper mt-0.5">{caption}</p>
       </div>
-      <span className="font-body-caps text-[10px] tracking-widest text-juniper shrink-0" aria-live="polite">
+      <span className="font-body-caps text-label tracking-headline text-juniper shrink-0" aria-live="polite">
         {count} / {max}
       </span>
     </div>
@@ -482,7 +482,7 @@ function SectionHeading({
 // min-h-10: a 40px chip clears WCAG 2.2's 24px target floor with room; the
 // 44px floor is kept for the primary controls, where a wrap of forty chips
 // that tall would read as bloated.
-const CHIP_CLASS = "font-body-caps text-[10px] tracking-widest px-3 py-2 min-h-10 transition-colors duration-200 disabled:cursor-not-allowed";
+const CHIP_CLASS = "font-body-caps text-label tracking-headline px-3 py-2 min-h-10 transition-colors duration-200 disabled:cursor-not-allowed";
 
 function Chip({
   label,

@@ -95,7 +95,7 @@ export function CTAButton({
     "cta",
     `cta-${variant}`,
     "relative inline-flex items-center justify-center overflow-hidden",
-    "rounded-btn px-8 py-3.5",
+    "px-8 py-3.5",
     "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
     theme.outline,
     theme.fill,

@@ -23,7 +23,7 @@ export function LegalShell({
         >
           {title}
         </h1>
-        <p className="font-body-caps text-juniper text-[10px] tracking-[0.25em] mt-4">
+        <p className="font-body-caps text-juniper text-label tracking-micro mt-4">
           Effective {effectiveDate}
         </p>
         <div className="mt-12 flex flex-col gap-10">{children}</div>
@@ -50,7 +50,7 @@ export function LegalSection({
   const anchor = id ?? heading.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   return (
     <section id={anchor} className="flex flex-col gap-3 scroll-mt-32">
-      <h2 className="font-body-caps text-midnight text-[12px] tracking-[0.2em]">{heading}</h2>
+      <h2 className="font-body-caps text-midnight text-xs tracking-label">{heading}</h2>
       <div className="flex flex-col gap-3 font-body-mixed text-sm leading-relaxed text-midnight/80">
         {children}
       </div>

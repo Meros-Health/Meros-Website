@@ -305,7 +305,7 @@ export function StacksSection() {
               }}
               style={{ willChange: "transform, opacity" }}
             >
-              <h3 className="font-body-caps text-[length:var(--stack-group)] tracking-[0.26em] text-cream">
+              <h3 className="font-body-caps text-[length:var(--stack-group)] tracking-micro text-cream">
                 {group.title}
               </h3>
 

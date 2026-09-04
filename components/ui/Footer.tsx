@@ -86,14 +86,14 @@ export function Footer() {
         {/* ── LEFT: Google Maps ─────────────────────────────────────────── */}
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
-            <span className="font-body-caps text-cream/40 text-[9px] tracking-[0.30em]">Find Us</span>
+            <span className="font-body-caps text-cream/40 text-meta tracking-micro-wide">Find Us</span>
             <address className="not-italic flex flex-col gap-0.5">
               <span className="font-body-mixed text-cream text-xs leading-relaxed">{BUSINESS.address.street}</span>
               <span className="font-body-mixed text-cream/55 text-xs leading-relaxed">
                 {BUSINESS.address.neighbourhood}, {BUSINESS.address.city}, {BUSINESS.address.region} {BUSINESS.address.postalCode}
               </span>
             </address>
-            <span className="font-body-caps text-cream/55 text-[9px] tracking-[0.20em] mt-2">
+            <span className="font-body-caps text-cream/55 text-meta tracking-label mt-2">
               {hoursDisplay()}
             </span>
           </div>
@@ -146,7 +146,7 @@ export function Footer() {
                 href={INSTAGRAM_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-body-caps text-cream text-[13px] tracking-[0.20em] hover:text-cream/70 transition-colors duration-200"
+                className="font-body-caps text-cream text-caption tracking-label hover:text-cream/70 transition-colors duration-200"
               >
                 {INSTAGRAM_HANDLE}
               </a>
@@ -168,7 +168,7 @@ export function Footer() {
               link, not beside the icon: three marks this recognisable carry
               themselves, and a caption under each would crowd the row. */}
           <div className="flex flex-col items-center gap-4 pt-8">
-            <span className="font-body-caps text-cream/40 text-[9px] tracking-[0.30em]">Follow Us</span>
+            <span className="font-body-caps text-cream/40 text-meta tracking-micro-wide">Follow Us</span>
             <div className="flex items-center justify-center gap-9">
               {SOCIAL_LINKS.map(({ label, href }) => {
                 const Icon = SOCIAL_ICONS[label];
@@ -196,7 +196,7 @@ export function Footer() {
         <div className="columns-2 gap-x-8 md:pl-10 lg:pl-20">
           {FOOTER_GROUPS.map((group) => (
             <div key={group.heading} className="flex flex-col gap-3 break-inside-avoid mb-7">
-              <span className="font-body-caps text-cream/40 text-[9px] tracking-[0.30em]">
+              <span className="font-body-caps text-cream/40 text-meta tracking-micro-wide">
                 {group.heading}
               </span>
               <ul className="flex flex-col gap-1.5">
@@ -219,7 +219,7 @@ export function Footer() {
           grid's own bottom padding sets the gap above, and `pb` matches it, so
           the line sits in even space top and bottom. */}
       <div className="flex justify-center px-section-x pb-14 md:pb-16">
-        <span className="font-body-mixed text-cream/30 text-[10px]">
+        <span className="font-body-mixed text-cream/30 text-label">
           © {new Date().getFullYear()} MERŌS. All rights reserved.
         </span>
       </div>

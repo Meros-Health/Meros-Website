@@ -94,10 +94,13 @@ export function MacroRingChart({ nutrition }: MacroRingChartProps) {
         </svg>
 
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+          {/* Bespoke on purpose: the ring's centre numeral is sized to the
+              ring, not to the type scale, and nothing else on the site sets
+              this size. */}
           <span className="font-headline text-[1.65rem] leading-none text-midnight tabular-nums">
             {calories}
           </span>
-          <span className="mt-0.5 font-body-caps text-[8px] tracking-[0.2em] text-juniper">cal</span>
+          <span className="mt-0.5 font-body-caps text-badge tracking-label text-juniper">cal</span>
         </div>
       </div>
 
@@ -110,7 +113,7 @@ export function MacroRingChart({ nutrition }: MacroRingChartProps) {
 
               return (
                 <div key={group}>
-                  <p className="mb-1.5 font-body-caps text-[8px] tracking-[0.18em] text-juniper/80">
+                  <p className="mb-1.5 font-body-caps text-badge tracking-label text-juniper/80">
                     {NUTRITION_SEGMENT_GROUPS[group]}
                   </p>
                   <ul className="grid grid-cols-1 gap-x-4 gap-y-1.5 sm:grid-cols-2">
@@ -121,10 +124,10 @@ export function MacroRingChart({ nutrition }: MacroRingChartProps) {
                           style={{ background: slice.color }}
                           aria-hidden
                         />
-                        <span className="min-w-0 truncate font-body-caps text-[9px] tracking-widest text-midnight">
+                        <span className="min-w-0 truncate font-body-caps text-meta tracking-headline text-midnight">
                           {slice.label}
                         </span>
-                        <span className="ml-auto shrink-0 font-body-mixed text-[10px] tabular-nums text-juniper">
+                        <span className="ml-auto shrink-0 font-body-mixed text-label tabular-nums text-juniper">
                           {formatNutritionSegmentValue(slice.value, slice.unit)}
                         </span>
                       </li>
@@ -136,7 +139,7 @@ export function MacroRingChart({ nutrition }: MacroRingChartProps) {
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            <p className="font-body-mixed text-[11px] text-juniper">
+            <p className="font-body-mixed text-note text-juniper">
               Add ingredients to see how your bowl allocates protein, carbs, fat, fibre, and minerals.
             </p>
             <ul className="flex flex-wrap gap-x-3 gap-y-1">
@@ -147,7 +150,7 @@ export function MacroRingChart({ nutrition }: MacroRingChartProps) {
                     style={{ background: segment.color }}
                     aria-hidden
                   />
-                  <span className="font-body-caps text-[8px] tracking-widest text-juniper/70">
+                  <span className="font-body-caps text-badge tracking-headline text-juniper/70">
                     {segment.label}
                   </span>
                 </li>

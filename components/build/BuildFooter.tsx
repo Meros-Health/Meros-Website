@@ -76,7 +76,7 @@ export function BuildFooter() {
         <button
           type="button"
           onClick={prevStep}
-          className="font-body-caps text-[10px] tracking-widest text-juniper px-6 py-3 transition-opacity hover:opacity-70"
+          className="font-body-caps text-label tracking-headline text-juniper px-6 py-3 transition-opacity hover:opacity-70"
           style={{ border: "0.5px solid var(--rule-strong-midnight)" }}
         >
           Back
@@ -88,7 +88,7 @@ export function BuildFooter() {
           type="button"
           onClick={nextStep}
           disabled={!canAdd}
-          className="font-body-caps text-[10px] tracking-widest text-midnight px-6 py-3 transition-opacity hover:opacity-70 disabled:opacity-30 disabled:cursor-not-allowed"
+          className="font-body-caps text-label tracking-headline text-midnight px-6 py-3 transition-opacity hover:opacity-70 disabled:opacity-30 disabled:cursor-not-allowed"
           style={{ border: "0.5px solid var(--rule-strong-midnight)" }}
         >
           Next
@@ -98,7 +98,7 @@ export function BuildFooter() {
       <div className="flex-1" />
 
       {addedFeedback ? (
-        <span className="font-body-caps text-[10px] tracking-widest text-grapefruit-text">
+        <span className="font-body-caps text-label tracking-headline text-grapefruit-text">
           Added to cart
         </span>
       ) : canAdd ? (
@@ -107,7 +107,7 @@ export function BuildFooter() {
         <button
           type="button"
           disabled
-          className="font-body-caps text-[10px] tracking-widest px-8 py-3.5 cursor-not-allowed text-midnight/35 bg-midnight/veil"
+          className="font-body-caps text-label tracking-headline px-8 py-3.5 cursor-not-allowed text-midnight/35 bg-midnight/veil"
         >
           Select a {firstRequired?.label ?? "Base"}
         </button>

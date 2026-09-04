@@ -15,10 +15,10 @@ export function IngredientSummary() {
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="font-body-caps text-[9px] tracking-[0.25em] text-juniper">Your bowl</p>
+      <p className="font-body-caps text-meta tracking-micro text-juniper">Your bowl</p>
       {groups.map((group) => (
         <div key={group.label}>
-          <p className="font-body-caps text-[9px] tracking-widest text-midnight/50 mb-1">
+          <p className="font-body-caps text-meta tracking-headline text-midnight/50 mb-1">
             {group.label}
           </p>
           <ul className="flex flex-wrap gap-x-2 gap-y-1">

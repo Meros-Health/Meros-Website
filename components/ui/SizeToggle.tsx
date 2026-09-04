@@ -33,7 +33,7 @@ export function SizeToggle({
             type="button"
             aria-pressed={selected}
             onClick={() => onChange(tier.id)}
-            className="flex-1 font-body-caps tracking-widest transition-colors duration-200"
+            className="flex-1 font-body-caps tracking-headline transition-colors duration-200"
             style={{
               fontSize: "clamp(0.5rem, 3.4cqw, 0.625rem)",
               minHeight: 44, // touch target floor (Apple HIG, WCAG 2.2 AAA)

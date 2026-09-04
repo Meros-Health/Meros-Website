@@ -37,7 +37,7 @@ function HomePanel({ id, tone }: { id: string; tone: GalleryTone }) {
 
       {panel.detail && (
         <p
-          className="font-body-caps tracking-widest"
+          className="font-body-caps tracking-headline"
           style={{ fontSize: "var(--gallery-tag-size)", color: "var(--gallery-ink-quiet)" }}
         >
           {panel.detail}

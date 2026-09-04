@@ -69,17 +69,17 @@ export function CartLineItem({ item, showActions = true, error }: CartLineItemPr
             </p>
           )}
           {isCustom && item.nutrition.calories > 0 && (
-            <p className="font-body-caps text-[9px] tracking-widest text-grapefruit-text mt-1.5">
+            <p className="font-body-caps text-meta tracking-headline text-grapefruit-text mt-1.5">
               {formatMacroSummary(item.nutrition)}
             </p>
           )}
         </div>
-        <span className="font-body-caps text-[11px] text-midnight shrink-0">
+        <span className="font-body-caps text-note text-midnight shrink-0">
           ${(item.unitPrice * item.quantity).toFixed(2)}
         </span>
       </div>
       {error && (
-        <p role="alert" className="font-body-mixed text-grapefruit-text text-[11px] mt-1.5 leading-relaxed">
+        <p role="alert" className="font-body-mixed text-grapefruit-text text-note mt-1.5 leading-relaxed">
           {error}
         </p>
       )}

@@ -48,7 +48,7 @@ export function SignatureItemPanel({ item }: { item: SignatureItem }) {
       </h3>
 
       <p
-        className="font-body-caps tracking-widest"
+        className="font-body-caps tracking-headline"
         style={{ fontSize: "var(--gallery-tag-size)", color: "var(--gallery-ink-accent)" }}
       >
         {item.tags.join(" · ")}

@@ -43,7 +43,7 @@ export function SectionBand({ children, className = "" }: SectionBandProps) {
     >
       <div ref={ref} style={{ overflow: "hidden" }}>
         <p
-          className="font-body-caps text-midnight text-center text-sm sm:text-base tracking-[0.28em] sm:tracking-[0.32em]"
+          className="font-body-caps text-midnight text-center text-sm sm:text-base tracking-micro sm:tracking-micro-wide"
           style={{
             clipPath: revealed ? "inset(0 0 0 0)" : "inset(0 100% 0 0)",
             transition: "clip-path 1.2s cubic-bezier(0.22, 1, 0.36, 1)",

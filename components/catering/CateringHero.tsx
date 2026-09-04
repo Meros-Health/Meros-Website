@@ -28,7 +28,7 @@ export function CateringHero() {
           </EntranceReveal>
 
           <EntranceReveal index={2}>
-            <p className="font-body-mixed mt-7 max-w-xl text-midnight/75 leading-relaxed text-[0.95rem] sm:text-base">
+            <p className="font-body-mixed mt-7 max-w-xl text-midnight/75 leading-relaxed text-body sm:text-base">
               {CATERING_HERO.lead}
             </p>
           </EntranceReveal>

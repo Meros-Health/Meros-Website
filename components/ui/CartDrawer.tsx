@@ -130,7 +130,7 @@ export function CartDrawer() {
                 type="button"
                 aria-label="Close cart"
                 onClick={closeCart}
-                className="font-body-caps text-[10px] tracking-widest text-juniper px-3 py-2 min-h-11 transition-opacity hover:opacity-70"
+                className="font-body-caps text-label tracking-headline text-juniper px-3 py-2 min-h-11 transition-opacity hover:opacity-70"
               >
                 Close
               </button>
@@ -145,7 +145,7 @@ export function CartDrawer() {
                   className="mb-5 px-4 py-3"
                   style={{ border: "0.5px solid var(--rule-strong-midnight)" }}
                 >
-                  <p className="font-body-caps text-[10px] tracking-widest text-midnight">
+                  <p className="font-body-caps text-label tracking-headline text-midnight">
                     Your cart was updated to match the current menu.
                   </p>
                   <ul className="mt-2 space-y-1">
@@ -158,7 +158,7 @@ export function CartDrawer() {
                   <button
                     type="button"
                     onClick={dismissNotice}
-                    className="mt-3 font-body-caps text-[10px] tracking-widest text-juniper transition-opacity hover:opacity-70"
+                    className="mt-3 font-body-caps text-label tracking-headline text-juniper transition-opacity hover:opacity-70"
                   >
                     Dismiss
                   </button>
@@ -184,8 +184,8 @@ export function CartDrawer() {
                 {PICKUP_ONLY_NOTE}
               </p>
               <div className="flex justify-between pb-4">
-                <span className="font-body-caps text-[11px] text-midnight">Subtotal</span>
-                <span className="font-body-caps text-[11px] text-midnight">
+                <span className="font-body-caps text-note text-midnight">Subtotal</span>
+                <span className="font-body-caps text-note text-midnight">
                   ${subtotal.toFixed(2)}
                 </span>
               </div>
@@ -196,7 +196,7 @@ export function CartDrawer() {
                     onClick={handleCheckout}
                     disabled={items.length === 0 || missingBase}
                     aria-describedby={missingBase ? "cart-checkout-hint" : undefined}
-                    className="w-full font-body-caps text-[10px] tracking-widest px-10 py-3 min-h-11 transition-opacity hover:opacity-85 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="w-full font-body-caps text-label tracking-headline px-10 py-3 min-h-11 transition-opacity hover:opacity-85 disabled:opacity-40 disabled:cursor-not-allowed"
                     style={{
                       background: "var(--color-midnight)",
                       color: "var(--color-cream)",
@@ -217,7 +217,7 @@ export function CartDrawer() {
                     type="button"
                     disabled
                     aria-disabled="true"
-                    className="w-full font-body-caps text-[10px] tracking-widest px-10 py-3 min-h-11 cursor-not-allowed"
+                    className="w-full font-body-caps text-label tracking-headline px-10 py-3 min-h-11 cursor-not-allowed"
                     style={{
                       border: "0.5px solid var(--rule-strong-midnight)",
                       color: "var(--scrim-midnight)",
@@ -225,7 +225,7 @@ export function CartDrawer() {
                   >
                     Checkout
                   </button>
-                  <span className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap bg-midnight px-2 py-1 font-body-caps text-[10px] text-cream opacity-0 transition-opacity group-hover:opacity-100">
+                  <span className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap bg-midnight px-2 py-1 font-body-caps text-label text-cream opacity-0 transition-opacity group-hover:opacity-100">
                     Coming Soon
                   </span>
                 </div>

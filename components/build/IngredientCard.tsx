@@ -34,7 +34,7 @@ export function IngredientCard({ item, selected, priceLabel, onSelect }: Ingredi
       {selected && (
         <span
           aria-hidden
-          className="absolute top-2 right-2 font-body-caps text-[8px]"
+          className="absolute top-2 right-2 font-body-caps text-badge"
           style={{ color: "var(--color-cream)" }}
         >
           ✓
@@ -69,14 +69,14 @@ export function IngredientCard({ item, selected, priceLabel, onSelect }: Ingredi
 
       <div className="mt-auto flex flex-wrap items-center gap-2">
         <span
-          className="font-body-caps tracking-widest"
+          className="font-body-caps tracking-headline"
           style={{ color: subtextColor, fontSize: "var(--ingredient-meta-size)" }}
         >
           {item.servingLabel}
         </span>
         {proteinHighlight && (
           <span
-            className="font-body-caps tracking-widest px-1.5 py-0.5"
+            className="font-body-caps tracking-headline px-1.5 py-0.5"
             style={{
               color: accentColor,
               fontSize: "var(--ingredient-badge-size)",
@@ -94,7 +94,7 @@ export function IngredientCard({ item, selected, priceLabel, onSelect }: Ingredi
         )}
         {item.tags?.includes("vegan") && (
           <span
-            className="font-body-caps tracking-widest"
+            className="font-body-caps tracking-headline"
             style={{ color: subtextColor, fontSize: "var(--ingredient-badge-size)" }}
           >
             Vegan

@@ -290,7 +290,7 @@ function MobileCarouselControls({
       {/* "The" is held out of the name below so this column's width never
           changes with which item is selected. Not a section kicker: it is one
           word of the item's own name, parked so it cannot reflow. */}
-      <span className="font-body-caps text-midnight/50 text-[9px] tracking-[0.25em]">
+      <span className="font-body-caps text-midnight/50 text-meta tracking-micro">
         THE
       </span>
       <PairingLabel
@@ -684,7 +684,7 @@ export function PairingsSection() {
                     className="flex flex-col items-end gap-1"
                     variants={flankRightReveal}
                   >
-                    <span className="font-body-caps text-midnight/50 text-[10px] tracking-[0.30em]">
+                    <span className="font-body-caps text-midnight/50 text-label tracking-micro-wide">
                       Pair Total
                     </span>
                     <AnimatePresence mode="wait" initial={false}>
@@ -700,7 +700,7 @@ export function PairingsSection() {
                         {formatPrice(pairPrice)}
                       </motion.span>
                     </AnimatePresence>
-                    <span className="font-body-caps text-midnight/40 text-[9px] tracking-[0.22em] whitespace-nowrap">
+                    <span className="font-body-caps text-midnight/40 text-meta tracking-label whitespace-nowrap">
                       {PAIR_CAPTION}
                     </span>
                   </motion.div>
@@ -787,7 +787,7 @@ export function PairingsSection() {
           transition={{ duration: 1.1, ease: REVEAL_EASE, delay: prefersReducedMotion ? 0 : 0.1 }}
         >
           <div className="flex flex-col items-center gap-1">
-            <span className="font-body-caps text-midnight/50 text-[10px] tracking-[0.30em]">
+            <span className="font-body-caps text-midnight/50 text-label tracking-micro-wide">
               Pair Total
             </span>
             <AnimatePresence mode="wait" initial={false}>
@@ -802,7 +802,7 @@ export function PairingsSection() {
                 {formatPrice(pairPrice)}
               </motion.span>
             </AnimatePresence>
-            <span className="font-body-caps text-midnight/40 text-[9px] tracking-[0.22em]">
+            <span className="font-body-caps text-midnight/40 text-meta tracking-label">
               {PAIR_CAPTION}
             </span>
           </div>

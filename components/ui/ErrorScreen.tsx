@@ -11,8 +11,8 @@ interface ErrorScreenProps {
 }
 
 const PRIMARY =
-  "font-body-caps text-[10px] tracking-widest text-cream bg-midnight px-8 py-3 hover:opacity-85 transition-opacity duration-300";
-const SECONDARY = "font-body-caps text-[10px] tracking-widest text-midnight px-8 py-3 transition-opacity hover:opacity-70";
+  "font-body-caps text-label tracking-headline text-cream bg-midnight px-8 py-3 hover:opacity-85 transition-opacity duration-300";
+const SECONDARY = "font-body-caps text-label tracking-headline text-midnight px-8 py-3 transition-opacity hover:opacity-70";
 const SECONDARY_STYLE = { border: "0.5px solid var(--rule-strong-midnight)" };
 
 export function ErrorScreen({ title, body, primary, secondary, digest }: ErrorScreenProps) {
@@ -42,7 +42,7 @@ export function ErrorScreen({ title, body, primary, secondary, digest }: ErrorSc
         )}
       </div>
       {digest && (
-        <p className="font-body-mixed text-[10px] text-midnight/40 mt-8">Reference: {digest}</p>
+        <p className="font-body-mixed text-label text-midnight/40 mt-8">Reference: {digest}</p>
       )}
     </main>
   );

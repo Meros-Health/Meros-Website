@@ -35,11 +35,11 @@ export function MacroDashboard({ compact = false, expanded = false, onToggleExpa
         aria-label="Expand nutrition summary"
       >
         <div className="flex items-center justify-between gap-3">
-          <div className="flex gap-4 font-body-caps text-[10px] tracking-widest text-midnight">
+          <div className="flex gap-4 font-body-caps text-label tracking-headline text-midnight">
             <span>{Math.round(nutrition.protein)}g protein</span>
             <span>{Math.round(nutrition.calories)} cal</span>
           </div>
-          <span className="font-body-caps text-[10px] text-midnight">${price.toFixed(2)}</span>
+          <span className="font-body-caps text-label text-midnight">${price.toFixed(2)}</span>
         </div>
       </button>
     );
@@ -57,18 +57,18 @@ export function MacroDashboard({ compact = false, expanded = false, onToggleExpa
         <button
           type="button"
           onClick={onToggleExpand}
-          className="mb-3 self-end font-body-caps text-[9px] tracking-widest text-juniper"
+          className="mb-3 self-end font-body-caps text-meta tracking-headline text-juniper"
           aria-label="Collapse nutrition summary"
         >
           Collapse
         </button>
       )}
 
-      <p className="font-body-caps text-[9px] tracking-[0.25em] text-juniper mb-3">Your macros</p>
+      <p className="font-body-caps text-meta tracking-micro text-juniper mb-3">Your macros</p>
 
       <MacroRingChart nutrition={nutrition} />
 
-      <p className="font-body-mixed text-[9px] text-juniper/70 mt-4">Estimated nutrition</p>
+      <p className="font-body-mixed text-meta text-juniper/70 mt-4">Estimated nutrition</p>
 
       {hasSelection && (
         <div className="mt-4 pt-4" style={{ borderTop: "0.5px solid var(--rule-midnight)" }}>
@@ -80,7 +80,7 @@ export function MacroDashboard({ compact = false, expanded = false, onToggleExpa
         className="mt-4 flex items-baseline justify-between pt-3"
         style={{ borderTop: "0.5px solid var(--rule-midnight)" }}
       >
-        <span className="font-body-caps text-[9px] tracking-widest text-juniper">
+        <span className="font-body-caps text-meta tracking-headline text-juniper">
           Total{sizeLabel ? ` · ${sizeLabel}` : ""}
         </span>
         <span className="font-headline text-midnight text-lg">${price.toFixed(2)}</span>

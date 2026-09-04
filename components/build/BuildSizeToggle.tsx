@@ -13,7 +13,7 @@ export function BuildSizeToggle() {
 
   return (
     <div className="flex items-center gap-4">
-      <span className="font-body-caps text-[9px] tracking-[0.25em] text-juniper shrink-0">Size</span>
+      <span className="font-body-caps text-meta tracking-micro text-juniper shrink-0">Size</span>
       <div className="flex w-full max-w-xs" role="group" aria-label="Bowl size">
         {BUILD_CONFIG.sizes.map((size, i) => {
           const selected = size.id === sizeId;
@@ -23,7 +23,7 @@ export function BuildSizeToggle() {
               type="button"
               aria-pressed={selected}
               onClick={() => setSize(size.id)}
-              className="flex-1 font-body-caps text-[10px] tracking-widest py-2 min-h-11 transition-colors duration-200"
+              className="flex-1 font-body-caps text-label tracking-headline py-2 min-h-11 transition-colors duration-200"
               style={{
                 border: selected
                   ? "0.5px solid var(--color-grapefruit)"

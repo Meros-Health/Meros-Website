@@ -36,7 +36,7 @@ export function AddToCartButton({
       aria-label={(added ? addedAriaLabel : ariaLabel) ?? undefined}
       aria-disabled={added || undefined}
       className={[
-        "w-full font-body-caps tracking-widest transition-colors duration-200",
+        "w-full font-body-caps tracking-headline transition-colors duration-200",
         added ? "cursor-default" : "",
         className,
       ]

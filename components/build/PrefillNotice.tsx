@@ -70,10 +70,10 @@ export function PrefillNotice() {
       }}
     >
       <div className="flex flex-wrap items-baseline gap-3">
-        <span className="font-body-caps text-[10px] tracking-[0.20em] text-grapefruit-text">
+        <span className="font-body-caps text-label tracking-label text-grapefruit-text">
           {ingredient.name} added
         </span>
-        <span className="font-body-mixed text-[13px] text-juniper">
+        <span className="font-body-mixed text-caption text-juniper">
           {ingredient.servingLabel}
           {price > 0 ? ` · +$${price}` : ""}
         </span>
@@ -82,7 +82,7 @@ export function PrefillNotice() {
       <button
         type="button"
         onClick={() => toggleIngredient(ENHANCERS_STEP_ID, ingredient.id)}
-        className="font-body-caps text-[10px] tracking-[0.15em] text-juniper transition-opacity hover:opacity-70"
+        className="font-body-caps text-label tracking-body-caps text-juniper transition-opacity hover:opacity-70"
       >
         Remove
       </button>

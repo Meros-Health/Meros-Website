@@ -31,13 +31,13 @@ export function HowItWorks() {
           {CATERING_STEPS.map((step, i) => (
             <Reveal key={step.id} show={show} index={1 + i}>
               <div className="flex h-full flex-col gap-3 pt-6" style={{ borderTop: RULE }}>
-                <span className="font-body-caps text-grapefruit-text text-[10px] tracking-[0.25em]">
+                <span className="font-body-caps text-grapefruit-text text-label tracking-micro">
                   Step {i + 1}
                 </span>
-                <h3 className="font-body-caps text-midnight text-[11px] tracking-[0.18em]">
+                <h3 className="font-body-caps text-midnight text-note tracking-label">
                   {step.name}
                 </h3>
-                <p className="font-body-mixed text-midnight/70 leading-relaxed text-[0.875rem]">
+                <p className="font-body-mixed text-midnight/70 leading-relaxed text-sm">
                   {step.body}
                 </p>
               </div>
@@ -49,7 +49,7 @@ export function HowItWorks() {
             that goes nowhere on a page people reach by scanning a card. */}
         <Reveal show={show} index={1 + CATERING_STEPS.length}>
           <p
-            className="font-body-mixed mt-14 max-w-2xl pt-8 leading-relaxed text-[0.875rem] text-midnight/60"
+            className="font-body-mixed mt-14 max-w-2xl pt-8 leading-relaxed text-sm text-midnight/60"
             style={{ borderTop: RULE }}
           >
             {CATERING_ACCOUNT_NOTE}

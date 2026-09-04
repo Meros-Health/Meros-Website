@@ -193,7 +193,7 @@ export default function CheckoutPage() {
 
       {state.status === "success" ? (
         <div className="mx-auto flex max-w-lg flex-col items-center gap-3 py-16 text-center">
-          <span className="font-body-caps text-grapefruit-text text-[10px] tracking-[0.25em]">
+          <span className="font-body-caps text-grapefruit-text text-label tracking-micro">
             Order Received
           </span>
           {state.orderRef && (
@@ -202,7 +202,7 @@ export default function CheckoutPage() {
           <p className="font-body-mixed text-sm text-juniper">{state.message}</p>
           <Link
             href="/menu"
-            className="mt-4 font-body-caps text-[10px] tracking-widest text-cream bg-midnight px-8 py-3 hover:opacity-85 transition-opacity duration-300"
+            className="mt-4 font-body-caps text-label tracking-headline text-cream bg-midnight px-8 py-3 hover:opacity-85 transition-opacity duration-300"
           >
             Back to Menu
           </Link>
@@ -214,7 +214,7 @@ export default function CheckoutPage() {
         >
           {/* Order summary */}
           <div className="md:w-2/5 shrink-0">
-            <h2 className="font-body-caps text-[11px] tracking-widest text-midnight mb-4">
+            <h2 className="font-body-caps text-note tracking-headline text-midnight mb-4">
               Order Summary
             </h2>
             <ul className="space-y-3">
@@ -234,8 +234,8 @@ export default function CheckoutPage() {
               ))}
             </ul>
             <div className="flex justify-between pt-4">
-              <span className="font-body-caps text-[11px] text-midnight">Subtotal</span>
-              <span className="font-body-caps text-[11px] text-midnight">
+              <span className="font-body-caps text-note text-midnight">Subtotal</span>
+              <span className="font-body-caps text-note text-midnight">
                 ${subtotal.toFixed(2)}
               </span>
             </div>
@@ -248,7 +248,7 @@ export default function CheckoutPage() {
             className="flex flex-col gap-4 max-w-md flex-1"
           >
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="checkout-name" className="font-body-caps text-juniper text-[9px] tracking-[0.25em]">
+              <label htmlFor="checkout-name" className="font-body-caps text-juniper text-meta tracking-micro">
                 Name
               </label>
               <input
@@ -264,7 +264,7 @@ export default function CheckoutPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="checkout-email" className="font-body-caps text-juniper text-[9px] tracking-[0.25em]">
+              <label htmlFor="checkout-email" className="font-body-caps text-juniper text-meta tracking-micro">
                 Email
               </label>
               <input
@@ -280,7 +280,7 @@ export default function CheckoutPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="checkout-phone" className="font-body-caps text-juniper text-[9px] tracking-[0.25em]">
+              <label htmlFor="checkout-phone" className="font-body-caps text-juniper text-meta tracking-micro">
                 Phone
               </label>
               <input
@@ -297,11 +297,11 @@ export default function CheckoutPage() {
 
             {missingBase.size > 0 && state.status !== "error" && (
               <div className="flex flex-col items-start gap-2">
-                <p data-checkout-hint className="font-body-mixed text-grapefruit-text text-[11px]">{MISSING_BASE_HINT}</p>
+                <p data-checkout-hint className="font-body-mixed text-grapefruit-text text-note">{MISSING_BASE_HINT}</p>
                 <button
                   type="button"
                   onClick={openCart}
-                  className="font-body-caps text-[10px] tracking-widest text-midnight px-4 py-2 min-h-11 transition-opacity hover:opacity-70"
+                  className="font-body-caps text-label tracking-headline text-midnight px-4 py-2 min-h-11 transition-opacity hover:opacity-70"
                   style={{ border: "0.5px solid var(--rule-strong-midnight)" }}
                 >
                   Edit cart
@@ -311,7 +311,7 @@ export default function CheckoutPage() {
 
             {state.status === "error" && (
               <div className="flex flex-col items-start gap-2">
-                <p ref={messageRef} tabIndex={-1} role="alert" className="font-body-mixed text-grapefruit-text text-[11px] outline-none">
+                <p ref={messageRef} tabIndex={-1} role="alert" className="font-body-mixed text-grapefruit-text text-note outline-none">
                   {needsReload
                     ? "The menu has changed since you opened this page. Reload to see the current menu, then place your order again."
                     : lineError
@@ -322,7 +322,7 @@ export default function CheckoutPage() {
                   <button
                     type="button"
                     onClick={needsReload ? () => window.location.reload() : openCart}
-                    className="font-body-caps text-[10px] tracking-widest text-midnight px-4 py-2 min-h-11 transition-opacity hover:opacity-70"
+                    className="font-body-caps text-label tracking-headline text-midnight px-4 py-2 min-h-11 transition-opacity hover:opacity-70"
                     style={{ border: "0.5px solid var(--rule-strong-midnight)" }}
                   >
                     {needsReload ? "Reload" : "Edit cart"}
@@ -334,7 +334,7 @@ export default function CheckoutPage() {
             <button
               type="submit"
               disabled={pending || missingBase.size > 0}
-              className="mt-2 self-start font-body-caps text-[10px] tracking-widest text-cream bg-midnight px-8 py-3 min-h-11 hover:opacity-85 transition-opacity duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="mt-2 self-start font-body-caps text-label tracking-headline text-cream bg-midnight px-8 py-3 min-h-11 hover:opacity-85 transition-opacity duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {pending ? "Placing Order..." : "Place Order"}
             </button>

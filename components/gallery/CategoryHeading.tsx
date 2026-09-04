@@ -20,7 +20,7 @@ export function CategoryHeading({ title, category }: { title: string; category: 
         {title}
       </h2>
       {price && (
-        <p className="font-body-caps text-juniper tracking-widest mt-5 text-[0.8125rem]">{price}</p>
+        <p className="font-body-caps text-juniper tracking-headline mt-5 text-caption">{price}</p>
       )}
     </div>
   );

@@ -35,7 +35,7 @@ export function StepPanel() {
         {getStepInstruction(step)}
       </p>
       {step.note && (
-        <p className="font-body-caps text-[10px] tracking-widest text-juniper/70 mt-1 max-w-md">
+        <p className="font-body-caps text-label tracking-headline text-juniper/70 mt-1 max-w-md">
           {step.note}
         </p>
       )}
@@ -47,7 +47,7 @@ export function StepPanel() {
             type="button"
             onClick={() => skipStep(step.id)}
             aria-pressed={isSkipped}
-            className="font-body-caps text-[10px] tracking-widest transition-colors"
+            className="font-body-caps text-label tracking-headline transition-colors"
             style={{
               color: isSkipped ? "var(--color-grapefruit-text)" : "var(--color-juniper)",
               borderBottom: isSkipped ? "0.5px solid var(--color-grapefruit)" : "none",
