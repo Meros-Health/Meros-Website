@@ -1,6 +1,16 @@
 # Served by Workers Static Assets. Without this every asset ships
 # max-age=0, must-revalidate, and each page load revalidates every image.
 
+# Static assets are served straight from the assets binding, which may not pass
+# through the Worker's own header pass, so the two headers that are safe to send
+# twice are repeated here. X-Frame-Options and the frame-ancestors CSP are
+# deliberately not: a duplicated frame directive is treated as invalid by some
+# browsers, and HTML always goes through the Worker, where next.config.ts sets
+# the full set.
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
 # Next's build output is content-hashed by Next itself.
 /_next/static/*
   Cache-Control: public, max-age=31536000, immutable
