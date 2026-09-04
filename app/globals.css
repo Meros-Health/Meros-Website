@@ -394,11 +394,6 @@
     font-weight: 300;
     letter-spacing: 0.02em;
   }
-
-  /* Legacy aliases: kept so existing components don't break while
-     we migrate naming. Remove once all sections are built. */
-  .font-subhead-caps  { @apply font-body-caps; }
-  .font-subhead-mixed { @apply font-body-mixed; }
 }
 
 /* ── Gallery wall ─────────────────────────────────────────────────────────────

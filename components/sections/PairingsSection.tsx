@@ -1,5 +1,13 @@
 "use client";
 
+// HELD, not dead. Disabled 2026-07 and still not rendered: app/page.tsx keeps
+// the import commented out so this file and its assets stay out of the bundle.
+// It is the largest file in components/ and it is carried at zero runtime cost
+// but real maintenance cost (typechecked, linted, scanned by the house style
+// tests). Decide by 2026-12-01: ship it or delete it. Kept this long because
+// the carousel is the only place the transparent product cut-outs are used and
+// nothing has replaced that treatment.
+
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, type Variants } from "framer-motion";

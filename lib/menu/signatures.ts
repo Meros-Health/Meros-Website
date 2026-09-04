@@ -36,13 +36,14 @@ export type SignatureItem = {
   sizes: Record<string, SignatureSizeInfo>;
   /**
    * Absent on an item that ships without photography (The Seasonal, whose
-   * fruit changes with the season). Every surface then renders a typographic
-   * tile (components/ui/SignatureTile.tsx) in the picture's place.
+   * fruit changes with the season, and any item added before its shoot).
+   * Surfaces then set the item as type in the photograph's place; on the menu
+   * wall that choice is editorial and lives in lib/menu/menuGallery.ts.
    */
   images?: { photo: string; transparent: string };
   /**
-   * What is in the case right now. SignatureTile prints it as
-   * "Featuring {seasonNote}", so write it as a lowercase phrase. Only
+   * What is in the case right now, printed as "Featuring {seasonNote}", so
+   * write it as a lowercase phrase. Only
    * meaningful on an item without `images`; edit it in menu.json when the
    * fruit rotates.
    */
