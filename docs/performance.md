@@ -89,7 +89,7 @@ and has an 8 s ceiling so a stalled request cannot hold the site.
 ### Sections reveal when their images have decoded
 
 `lib/useRevealReady.ts` combines an IntersectionObserver with a decode wait on
-every `<img>` inside the section, with a 6 s ceiling counted from entering
+every `<img>` inside the section, with a 3 s ceiling counted from entering
 view. The Signature Menu header, groups and stage, the Our Story composition,
 the Build section's bowl row and static layout, the gallery panels and the
 footer's Instagram tiles all use it in place of `whileInView`. A section can no
@@ -195,9 +195,27 @@ bugs, and are listed below.
 
 ## Open items
 
-- **First-load JavaScript is 234 KB** (framer-motion, GSAP, Lenis, Zustand).
-  It is now the largest single cost on a phone. Nothing in this pass touched
-  it.
+- **First-load JavaScript, measured properly.** `next build`'s "First Load JS"
+  column excludes the root layout's client chunks, and this layout is heavy, so
+  the printed numbers understate what a browser downloads by around 130 KB.
+  The real figure is the gzipped union of `pages["/layout"]` and the route's
+  own entry in `.next/app-build-manifest.json`. As of 2026-09-04, after
+  deferring GSAP out of the root layout:
+
+  | Route | before | after |
+  |---|---|---|
+  | layout alone | 230.9 KB | **187.7 KB** |
+  | `/privacy`, `/terms` | 231.1 KB | 187.9 KB |
+  | `/menu` | 233.8 KB | 190.6 KB |
+  | `/checkout` | 235.1 KB | 191.9 KB |
+  | `/catering` | 237.6 KB | 194.4 KB |
+  | `/build` | 238.5 KB | 195.3 KB |
+  | `/` | 248.9 KB | 250.1 KB |
+
+  Home is unchanged because its hero and section components still import GSAP
+  statically. The remaining cost on every route is framer-motion, Lenis and
+  Zustand; framer-motion is the large one and has no cheap answer short of
+  replacing it.
 - **Lighthouse-mobile LCP is 5.5 s** for the reasons above. The mobile lockup
   could lead the choreography instead of following the portrait, which Chrome
   ignores as a full-viewport background anyway; that alone would take about a
@@ -207,14 +225,18 @@ bugs, and are listed below.
 - **`BuildSection` still swaps layout after hydration** (`pending` to `static`
   or `scroll` in an effect). It is below the fold, so it does not register as
   CLS, but it is the same class of problem the hero had.
-- **30 MB of `public/` is unreferenced**: `Hero/Gallery-8-hero.jpg` (13.6 MB),
-  `Hero/Underlay.png` (10 MB), `Hero/Overlay.png` (4.3 MB), the two uncropped
-  hero masters and both videos. They ship as Worker assets and are rendered
-  into variants nobody requests. Moving them out of `public/` is a separate,
+- **Unreferenced weight in `public/`.** The two hero videos (11.5 MB, zero
+  references, and there are no `<video>` elements anywhere) were deleted on
+  2026-09-04. Still there: `Hero/Gallery-8-hero.jpg` (13.6 MB),
+  `Hero/Underlay.png` (10 MB), `Hero/Overlay.png` (4.3 MB) and the two
+  uncropped hero masters. They ship as Worker assets and are rendered into
+  variants nobody requests. Moving them out of `public/` is a separate,
   deliberate cleanup.
 - **AVIF** would take another 30 to 40 percent off image bytes but needs a
   `<picture>` wrapper around `next/image`. Not worth it until the bundle is
   addressed.
-- **`sharp` is a transitive dependency** of Next today. It should be declared
-  in `devDependencies` so the build script does not depend on Next's
-  optional-dependency choices.
+- **Font loading**, addressed 2026-09-04 and recorded here because the numbers
+  above predate it: DM Sans is now preloaded, Aetheria ships as woff2 (41.5 KB
+  to 19 KB) and is off the preloader gate, which used `document.fonts.ready`
+  and so held the page for a face used four times below the fold. The
+  Lighthouse-mobile LCP above has not been re-measured since.

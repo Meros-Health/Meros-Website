@@ -23,6 +23,11 @@ export function waitForCriticalImages(
 ): Promise<void> {
   const images = Array.from(root.querySelectorAll<HTMLImageElement>(`img[${CRITICAL_IMAGE_ATTR}]`));
   const decoded = Promise.all(images.map(decodeQuietly)).then(() => undefined);
-  const timeout = new Promise<void>((resolve) => window.setTimeout(resolve, timeoutMs));
-  return Promise.race([decoded, timeout]);
+  // Cleared either way: when the images win the race the timer is still armed,
+  // and this is called on every route change.
+  let timer = 0;
+  const timeout = new Promise<void>((resolve) => {
+    timer = window.setTimeout(resolve, timeoutMs);
+  });
+  return Promise.race([decoded, timeout]).finally(() => window.clearTimeout(timer));
 }

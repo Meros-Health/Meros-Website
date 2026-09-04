@@ -105,15 +105,33 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
   // Bumped whenever a transition starts or is abandoned, so stale timers and
   // promise chains from a superseded transition can never advance the machine.
   const transitionIdRef = useRef(0);
+  // Every timer this provider has in flight. transitionIdRef already stops a
+  // superseded transition advancing the machine, but it does not stop the
+  // callback running, and on unmount there is no id left to compare against.
+  // React 18 makes a setPhase on an unmounted component a silent no-op, so
+  // this is not a bug today; it is one cleanup function away from not being a
+  // latent one.
+  const timersRef = useRef<number[]>([]);
+
+  const schedule = useCallback((fn: () => void, ms: number) => {
+    timersRef.current.push(window.setTimeout(fn, ms));
+  }, []);
+
+  const clearScheduled = useCallback(() => {
+    timersRef.current.forEach(window.clearTimeout);
+    timersRef.current = [];
+  }, []);
+
+  useEffect(() => clearScheduled, [clearScheduled]);
 
   const releaseCover = useCallback((id: number) => {
     pendingRef.current = null;
     setPhase("entering");
-    window.setTimeout(() => {
+    schedule(() => {
       if (transitionIdRef.current !== id) return;
       setPhase("idle");
     }, reducedRef.current ? REDUCED_MOTION_MS : ENTRANCE_MS);
-  }, []);
+  }, [schedule]);
 
   const navigate = useCallback(
     (href: string, options: TransitionNavigateOptions | undefined, method: "push" | "replace"): boolean => {
@@ -129,6 +147,8 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
       }
 
       const id = ++transitionIdRef.current;
+      // Anything still pending belongs to a transition this one supersedes.
+      clearScheduled();
       const composed = options?.coverMode === "menu-composed";
       const exitDelay = reducedRef.current
         ? REDUCED_MOTION_MS
@@ -140,7 +160,7 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
       setCoverMode(composed ? "menu-composed" : "default");
       setPhase("exiting");
 
-      window.setTimeout(() => {
+      schedule(() => {
         if (transitionIdRef.current !== id) return;
         setPhase("navigating");
         doNavigate();
@@ -148,7 +168,7 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
 
       // Watchdog: if the navigation never lands (aborted, intercepted), fade
       // the cover back out rather than leaving the user behind it.
-      window.setTimeout(() => {
+      schedule(() => {
         if (transitionIdRef.current !== id) return;
         if (phaseRef.current === "exiting" || phaseRef.current === "navigating") {
           releaseCover(id);
@@ -157,7 +177,7 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
 
       return true;
     },
-    [router, releaseCover]
+    [router, releaseCover, schedule, clearScheduled]
   );
 
   const routerValue = useMemo<TransitionRouterValue>(
@@ -184,9 +204,7 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
       // images are in the document and already fetching.
       const reduced = reducedRef.current;
       const images = reduced ? Promise.resolve() : waitForCriticalImages();
-      const holdTimer = new Promise<void>((resolve) =>
-        window.setTimeout(resolve, reduced ? 0 : HOLD_MS)
-      );
+      const holdTimer = new Promise<void>((resolve) => schedule(resolve, reduced ? 0 : HOLD_MS));
       Promise.all([images, holdTimer]).then(() => {
         if (transitionIdRef.current !== id) return;
         releaseCover(id);
@@ -195,7 +213,7 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
     }
 
     releaseCover(++transitionIdRef.current);
-  }, [pathname, releaseCover]);
+  }, [pathname, releaseCover, schedule]);
 
   const transitionReady = phase !== "navigating" && phase !== "holding";
 
