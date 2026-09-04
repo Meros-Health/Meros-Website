@@ -225,13 +225,23 @@ bugs, and are listed below.
 - **`BuildSection` still swaps layout after hydration** (`pending` to `static`
   or `scroll` in an effect). It is below the fold, so it does not register as
   CLS, but it is the same class of problem the hero had.
-- **Unreferenced weight in `public/`.** The two hero videos (11.5 MB, zero
-  references, and there are no `<video>` elements anywhere) were deleted on
-  2026-09-04. Still there: `Hero/Gallery-8-hero.jpg` (13.6 MB),
-  `Hero/Underlay.png` (10 MB), `Hero/Overlay.png` (4.3 MB) and the two
-  uncropped hero masters. They ship as Worker assets and are rendered into
-  variants nobody requests. Moving them out of `public/` is a separate,
-  deliberate cleanup.
+- **Unreferenced weight in `public/`, mostly cleared 2026-09-04.** Gone: the two
+  hero videos (11.5 MB, and there are no `<video>` elements anywhere) and the
+  three unreferenced hero masters, `Gallery-8-hero.jpg` (13.6 MB),
+  `Underlay.png` (10 MB) and `Overlay.png` (4.3 MB), which took 27 generated
+  variants with them. The "two uncropped hero masters" this entry used to name
+  are **live**: `Gallery-4-hero.jpg` and `Gallery-5-hero.jpg` are both in
+  `lib/heroAssets.ts`.
+
+  Still there and now unreferenced by anything that renders:
+  `images-web/Transparent/` (10 MB, 8 PNGs), orphaned by deleting the Featured
+  Pairing section. The paths are still in `menu.json` and still required by
+  `scripts/validate-menu.mjs`, so removing them is a schema decision.
+  `Gallery-5-hero-cropped.jpg` (1.5 MB) is a leftover of the old portrait hero.
+
+  `images-web/` itself has to stay reachable: `lib/imageLoader.ts` returns
+  `src` untouched for anything not in the manifest, so those originals are the
+  fallback path.
 - **AVIF** would take another 30 to 40 percent off image bytes but needs a
   `<picture>` wrapper around `next/image`. Not worth it until the bundle is
   addressed.
