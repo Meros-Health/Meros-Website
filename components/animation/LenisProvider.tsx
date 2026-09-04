@@ -2,11 +2,7 @@
 
 import { useEffect, useState, createContext, useContext } from "react";
 import Lenis from "lenis";
-import gsap from "gsap";
-import ScrollTrigger from "gsap/ScrollTrigger";
 import { setScrollController } from "@/lib/scrollLock";
-
-gsap.registerPlugin(ScrollTrigger);
 
 const LenisContext = createContext<Lenis | null>(null);
 
@@ -57,21 +53,57 @@ export function LenisProvider({ children }: LenisProviderProps) {
     // starts this instance alongside the native overflow lock.
     setScrollController(instance);
 
-    // Bridge Lenis scroll position to GSAP ScrollTrigger.
-    // ScrollTrigger reads window.scrollY by default; Lenis virtualises scroll so
-    // we must forward its scroll events into ScrollTrigger's update cycle.
-    instance.on("scroll", ScrollTrigger.update);
+    // ── The rAF driver, in two phases ──────────────────────────────────────
+    // This provider is in the root layout, so anything it imports at module
+    // scope ships on every route. GSAP is 44 kB gzipped and /privacy, /terms,
+    // /menu, /build, /checkout and /catering never animate with it, so it is
+    // loaded here asynchronously instead.
+    //
+    // That creates a gap: Lenis needs a rAF driver on the very first frame,
+    // and the import resolves a frame or two later. So phase one is a native
+    // loop that starts now, and phase two hands the drive over to gsap.ticker
+    // once GSAP arrives. The handoff matters: ScrollTrigger runs on gsap's
+    // ticker, and leaving Lenis on a second independent rAF loop lets the two
+    // drift by a frame under load, which is visible on scrubbed animations.
+    let cancelled = false;
+    let rafId = requestAnimationFrame(function nativeRaf(time) {
+      instance.raf(time);
+      rafId = requestAnimationFrame(nativeRaf);
+    });
+    let detachTicker: (() => void) | null = null;
 
-    // Run Lenis inside GSAP's ticker so both are in sync on the same rAF.
-    // Using gsap.ticker instead of requestAnimationFrame avoids drift.
-    const tickerCallback = (time: number) => {
-      instance.raf(time * 1000);
-    };
-    gsap.ticker.add(tickerCallback);
-    gsap.ticker.lagSmoothing(0);
+    void (async () => {
+      const [gsapModule, scrollTriggerModule] = await Promise.all([
+        import("gsap"),
+        import("gsap/ScrollTrigger"),
+      ]);
+      // The effect can be torn down while those two are in flight.
+      if (cancelled) return;
+
+      const { gsap } = gsapModule;
+      const { ScrollTrigger } = scrollTriggerModule;
+      gsap.registerPlugin(ScrollTrigger);
+
+      // Bridge Lenis scroll position to GSAP ScrollTrigger.
+      // ScrollTrigger reads window.scrollY by default; Lenis virtualises scroll
+      // so we must forward its scroll events into ScrollTrigger's update cycle.
+      instance.on("scroll", ScrollTrigger.update);
+
+      // Phase two: one ticker drives both.
+      cancelAnimationFrame(rafId);
+      const tickerCallback = (time: number) => {
+        instance.raf(time * 1000);
+      };
+      gsap.ticker.add(tickerCallback);
+      gsap.ticker.lagSmoothing(0);
+      detachTicker = () => gsap.ticker.remove(tickerCallback);
+    })();
 
     return () => {
-      gsap.ticker.remove(tickerCallback);
+      cancelled = true;
+      // A no-op if phase two already cancelled it, or if the id has elapsed.
+      cancelAnimationFrame(rafId);
+      detachTicker?.();
       setScrollController(null);
       instance.destroy();
       setLenis(null);
