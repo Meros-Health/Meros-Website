@@ -1,10 +1,11 @@
 "use client";
 
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { BUILD_CONFIG } from "@/lib/menu/buildConfig";
 import { useBowlBuilderStore } from "@/store/bowlBuilderStore";
 
-// Squared segmented control, same treatment as the signature size toggle on
-// /menu. Renders nothing when the menu defines a single build size.
+// Bowl size on /build, with the price on the label. Renders nothing when the
+// menu defines a single build size.
 export function BuildSizeToggle() {
   const sizeId = useBowlBuilderStore((s) => s.selection.sizeId);
   const setSize = useBowlBuilderStore((s) => s.setSize);
@@ -14,31 +15,17 @@ export function BuildSizeToggle() {
   return (
     <div className="flex items-center gap-4">
       <span className="font-body-caps text-meta tracking-micro text-juniper shrink-0">Size</span>
-      <div className="flex w-full max-w-xs" role="group" aria-label="Bowl size">
-        {BUILD_CONFIG.sizes.map((size, i) => {
-          const selected = size.id === sizeId;
-          return (
-            <button
-              key={size.id}
-              type="button"
-              aria-pressed={selected}
-              onClick={() => setSize(size.id)}
-              className="flex-1 font-body-caps text-label tracking-headline py-2 min-h-11 transition-colors duration-200"
-              style={{
-                border: selected
-                  ? "0.5px solid var(--color-grapefruit)"
-                  : "0.5px solid var(--rule-strong-midnight)",
-                // Hairline borders would double up where the buttons meet
-                marginLeft: i === 0 ? 0 : "-0.5px",
-                background: selected ? "var(--color-grapefruit)" : "transparent",
-                color: selected ? "var(--color-cream)" : "var(--color-midnight)",
-              }}
-            >
-              {size.label} · ${size.price}
-            </button>
-          );
-        })}
-      </div>
+      <SegmentedControl
+        ariaLabel="Bowl size"
+        className="w-full max-w-xs"
+        density="page"
+        options={BUILD_CONFIG.sizes.map((size) => ({
+          value: size.id,
+          label: `${size.label} · $${size.price}`,
+        }))}
+        value={sizeId}
+        onChange={setSize}
+      />
     </div>
   );
 }
