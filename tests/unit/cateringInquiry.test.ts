@@ -14,9 +14,21 @@ vi.mock("@opennextjs/cloudflare", () => ({
   },
 }));
 
+// The request headers the per-IP limit reads. `unavailable` reproduces calling
+// the action outside a request scope, where next/headers throws.
+const req = vi.hoisted(() => ({ ip: "203.0.113.7" as string | null, unavailable: false }));
+
+vi.mock("next/headers", () => ({
+  headers: async () => {
+    if (req.unavailable) throw new Error("headers() called outside a request scope");
+    return { get: (name: string) => (name.toLowerCase() === "cf-connecting-ip" ? req.ip : null) };
+  },
+}));
+
 import { submitCateringInquiry, type CateringInquiryState } from "@/app/actions/catering";
 import { makeFormData } from "./helpers/formData";
 import { FakeInquiryD1 } from "./helpers/fakeInquiryD1";
+import { WRITE_MAX_PER_HOUR } from "@/lib/catering/rateLimit";
 
 const IDLE: CateringInquiryState = { status: "idle", message: "" };
 
@@ -38,6 +50,8 @@ let db: FakeInquiryD1;
 beforeEach(() => {
   db = new FakeInquiryD1();
   ctx.env = { ORDERS_DB: db };
+  req.ip = "203.0.113.7";
+  req.unavailable = false;
   vi.spyOn(console, "log").mockImplementation(() => {});
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
@@ -215,5 +229,101 @@ describe("notification", () => {
 
     await submit();
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("write limits", () => {
+  const seed = (count: number, createdAt: string) => {
+    for (let i = 0; i < count; i += 1) {
+      db.rows.push({
+        id: `seed-${i}`,
+        created_at: createdAt,
+        business: "bot",
+        contact_name: "bot",
+        email: "bot@spam.example",
+        phone: null,
+        headcount: null,
+        needed_on: null,
+        message: null,
+      });
+    }
+  };
+
+  it("stores nothing when the per-IP limiter refuses", async () => {
+    ctx.env = { ORDERS_DB: db, CATERING_RATE_LIMITER: { limit: async () => ({ success: false }) } };
+
+    const result = await submit();
+    expect(result.status).toBe("error");
+    expect(db.rows).toHaveLength(0);
+  });
+
+  it("says nothing about a limit, and offers a way through that works now", async () => {
+    ctx.env = { ORDERS_DB: db, CATERING_RATE_LIMITER: { limit: async () => ({ success: false }) } };
+
+    const result = await submit();
+    // A script gets no signal it can tune against; a person gets the phone.
+    expect(result.message).not.toMatch(/limit|rate|too many|slow down/i);
+    expect(result.message).toContain("(778) 345-3023");
+  });
+
+  it("stores normally when the limiter allows", async () => {
+    ctx.env = { ORDERS_DB: db, CATERING_RATE_LIMITER: { limit: async () => ({ success: true }) } };
+
+    const result = await submit();
+    expect(result.status).toBe("success");
+    expect(db.rows).toHaveLength(1);
+  });
+
+  it("fails open when the limiter throws, rather than losing the lead", async () => {
+    ctx.env = {
+      ORDERS_DB: db,
+      CATERING_RATE_LIMITER: {
+        limit: async () => {
+          throw new Error("rate limiter unavailable");
+        },
+      },
+    };
+
+    const result = await submit();
+    expect(result.status).toBe("success");
+    expect(db.rows).toHaveLength(1);
+  });
+
+  it("skips the per-IP limit when there is no address to count against", async () => {
+    req.ip = null;
+    ctx.env = { ORDERS_DB: db, CATERING_RATE_LIMITER: { limit: async () => ({ success: false }) } };
+
+    const result = await submit();
+    expect(result.status).toBe("success");
+    expect(db.rows).toHaveLength(1);
+  });
+
+  it("skips the per-IP limit when there is no request scope to read", async () => {
+    // The action is exercised directly here and in any future caller that is
+    // not a request. A defence that cannot read its input must not be the
+    // reason a lead is lost.
+    req.unavailable = true;
+    ctx.env = { ORDERS_DB: db, CATERING_RATE_LIMITER: { limit: async () => ({ success: false }) } };
+
+    const result = await submit();
+    expect(result.status).toBe("success");
+    expect(db.rows).toHaveLength(1);
+  });
+
+  it("refuses the write once the hour is past the global cap", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    seed(WRITE_MAX_PER_HOUR, new Date().toISOString());
+
+    const result = await submit();
+    expect(result.status).toBe("error");
+    expect(db.rows).toHaveLength(WRITE_MAX_PER_HOUR);
+  });
+
+  it("ignores rows that fell outside the hour", async () => {
+    seed(WRITE_MAX_PER_HOUR, new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString());
+
+    const result = await submit();
+    expect(result.status).toBe("success");
+    expect(db.rows).toHaveLength(WRITE_MAX_PER_HOUR + 1);
   });
 });

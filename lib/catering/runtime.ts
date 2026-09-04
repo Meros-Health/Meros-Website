@@ -22,6 +22,7 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 import type { D1Like } from "@/lib/checkout/orderStore";
 import { D1CateringInquiryStore } from "@/lib/catering/inquiryStore";
 import { ResendCateringNotifier, type CateringNotifier } from "@/lib/catering/notify";
+import type { RateLimiter } from "@/lib/catering/rateLimit";
 
 // Verified sending subdomain (Resend, verified 2026-08-31). Deliberately not
 // the apex: merosyogurt.com is an accepted domain in the Microsoft 365 tenant,
@@ -35,11 +36,17 @@ const NOTIFY_TO = "info@merosyogurt.com";
 type CateringEnv = {
   ORDERS_DB?: D1Like;
   RESEND_API_KEY?: string;
+  // Declared in wrangler.jsonc under "ratelimits". Absent in unit tests, in
+  // `next dev` without bindings, and on any deploy that predates the binding,
+  // which is why every caller treats null as "no per-IP limit" rather than as
+  // an error. See lib/catering/rateLimit.ts.
+  CATERING_RATE_LIMITER?: RateLimiter;
 };
 
 export type CateringRuntime = {
   inquiryStore: D1CateringInquiryStore | null;
   notifier: CateringNotifier | null;
+  rateLimiter: RateLimiter | null;
   defer: (work: Promise<unknown>) => Promise<void>;
 };
 
@@ -63,6 +70,7 @@ export function getCateringRuntime(): CateringRuntime {
     notifier: env.RESEND_API_KEY
       ? new ResendCateringNotifier({ apiKey: env.RESEND_API_KEY, from: NOTIFY_FROM, to: NOTIFY_TO })
       : null,
+    rateLimiter: env.CATERING_RATE_LIMITER ?? null,
     // Without waitUntil the work is awaited instead of dropped, which keeps
     // the tests deterministic and local dev honest about what it sent.
     defer: makeDefer(waitUntil),

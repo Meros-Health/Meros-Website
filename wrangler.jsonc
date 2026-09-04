@@ -35,6 +35,29 @@
   // and read in lib/catering/runtime.ts. Local dev reads the same name from
   // .dev.vars (gitignored). Without it the notifier is null: inquiries are
   // still stored in D1, they just do not send an email.
+  // Per-IP write limit for the catering form. The honeypot is a filter, not a
+  // limit: a script that omits the field walks past it and every submission
+  // becomes a durable row on the database below.
+  //
+  // In code rather than a Cloudflare dashboard rule because a Next server
+  // action POSTs to the page's own URL, so there is no path a dashboard rule
+  // could target that would not also catch ordinary navigation.
+  //
+  // namespace_id is a label local to this Worker, not an account resource, so
+  // there is nothing to provision before a deploy. The binding is optional
+  // everywhere it is read (lib/catering/rateLimit.ts): if it is missing the
+  // form still works and the global hourly cap is the only guard.
+  //
+  // `period` accepts 10 or 60 only. Three a minute leaves room for a mistyped
+  // email and a retry and stops a loop dead.
+  "ratelimits": [
+    {
+      "name": "CATERING_RATE_LIMITER",
+      "namespace_id": "1001",
+      "simple": { "limit": 3, "period": 60 }
+    }
+  ],
+
   "d1_databases": [
     {
       "binding": "ORDERS_DB",

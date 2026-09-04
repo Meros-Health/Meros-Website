@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { logActionError, logCateringInquiry } from "@/lib/log";
 import {
   EMAIL_PATTERN,
@@ -12,6 +13,11 @@ import {
 } from "@/lib/forms";
 import { getCateringRuntime, type CateringRuntime } from "@/lib/catering/runtime";
 import type { CateringInquiryRecord } from "@/lib/catering/inquiryStore";
+import {
+  clientKeyFrom,
+  withinGlobalHourlyCap,
+  withinPerIpLimit,
+} from "@/lib/catering/rateLimit";
 
 export type CateringInquiryState = {
   status: "idle" | "success" | "error";
@@ -24,9 +30,11 @@ const MAX_BUSINESS_LENGTH = 120;
 const MAX_SHORT_LENGTH = 120; // headcount, needed-on: both are free text, not parsed
 
 // Notification throttle. Above this many inquiries in an hour the row is still
-// stored, but it stops earning an email. The honeypot is the only other bot
-// defence here, and a bot that gets past it would otherwise flood info@ and
+// stored, but it stops earning an email: a flood would otherwise fill info@ and
 // burn the day's send quota. Set well above any real hour on this form.
+//
+// This is not the write limit. It runs after the row is stored and only decides
+// whether an email goes out. What protects the table is lib/catering/rateLimit.
 const NOTIFY_MAX_PER_HOUR = 20;
 const HOUR_MS = 60 * 60 * 1000;
 
@@ -35,6 +43,10 @@ const SUCCESS_MESSAGE =
 
 /** Same fallback the confirmation offers, so a failure is never a dead end. */
 const FALLBACK = "email info@merosyogurt.com or call (778) 345-3023";
+
+// Deliberately says nothing about a limit. A person who hit it gets a way
+// through that works immediately; a script gets no signal it can tune against.
+const RATE_LIMITED_MESSAGE = `We could not take that just now. Please ${FALLBACK} and we will pick it up from there.`;
 
 function error(message: string, field?: string): CateringInquiryState {
   return { status: "error", message, field };
@@ -103,6 +115,21 @@ async function processInquiry(formData: FormData): Promise<CateringInquiryState>
     message,
   };
 
+  // Limits go here: after validation, so a mistyped email and a retry do not
+  // spend the budget, and before the write, which is the thing being protected.
+  if (!(await withinPerIpLimit(runtime.rateLimiter, await currentClientKey()))) {
+    return error(RATE_LIMITED_MESSAGE);
+  }
+
+  const recentHour = await runtime.inquiryStore.countSince(
+    new Date(Date.now() - HOUR_MS).toISOString()
+  );
+  if (!withinGlobalHourlyCap(recentHour)) {
+    // A count, never a field: this line goes to Workers Logs.
+    console.warn(`[catering] write refused: ${recentHour} inquiries in the last hour`);
+    return error(RATE_LIMITED_MESSAGE);
+  }
+
   // The row is the source of truth and the only thing the confirmation speaks
   // for. A throw here reaches the outer catch and the visitor gets the phone
   // number instead of a confirmation.
@@ -110,10 +137,26 @@ async function processInquiry(formData: FormData): Promise<CateringInquiryState>
 
   // The email is a courtesy that tells a human to go look. It runs after the
   // write, cannot change what the visitor is told, and cannot fail the submit.
-  await notify(runtime, inquiry);
+  // It reuses the count taken above rather than asking D1 again.
+  await notify(runtime, inquiry, recentHour);
 
   logCateringInquiry({ stored: true }, { business, contactName, email, phone, message });
   return { status: "success", message: SUCCESS_MESSAGE };
+}
+
+/**
+ * The address the per-IP limit counts against, or null if there is no request
+ * scope to read it from (unit tests, and anything that calls the action
+ * directly). Null means the per-IP limit is skipped, which is the same
+ * fail-open the limiter itself takes: it is one of two limits, and refusing a
+ * real catering lead costs more than letting one through.
+ */
+async function currentClientKey(): Promise<string | null> {
+  try {
+    return clientKeyFrom(await headers());
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -122,20 +165,23 @@ async function processInquiry(formData: FormData): Promise<CateringInquiryState>
  * point is absorbed: the lead is already stored, so a send that does not land
  * costs a reminder, not the lead.
  */
-async function notify(runtime: CateringRuntime, inquiry: CateringInquiryRecord): Promise<void> {
-  const { inquiryStore, notifier } = runtime;
-  if (!notifier || !inquiryStore) return;
+async function notify(
+  runtime: CateringRuntime,
+  inquiry: CateringInquiryRecord,
+  /** Count in the trailing hour *before* this inquiry, so this one is the (recentHour + 1)th. */
+  recentHour: number
+): Promise<void> {
+  const { notifier } = runtime;
+  if (!notifier) return;
+
+  if (recentHour + 1 > NOTIFY_MAX_PER_HOUR) {
+    // Stored, not sent. Logged as a count so the skip is visible without
+    // putting any of the submitted fields in the Worker logs.
+    console.warn(`[catering notification] throttled: ${recentHour + 1} inquiries in the last hour`);
+    return;
+  }
 
   await runtime.defer(
-    (async () => {
-      const recent = await inquiryStore.countSince(new Date(Date.now() - HOUR_MS).toISOString());
-      if (recent > NOTIFY_MAX_PER_HOUR) {
-        // Stored, not sent. Logged as a count so the skip is visible without
-        // putting any of the submitted fields in the Worker logs.
-        console.warn(`[catering notification] throttled: ${recent} inquiries in the last hour`);
-        return;
-      }
-      await notifier.notify(inquiry);
-    })().catch((err) => logActionError("catering notification", err))
+    notifier.notify(inquiry).catch((err) => logActionError("catering notification", err))
   );
 }
