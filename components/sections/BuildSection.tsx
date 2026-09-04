@@ -7,6 +7,7 @@ import gsap from "gsap";
 import ScrollTrigger from "gsap/ScrollTrigger";
 import { CTAButton } from "@/components/ui/CTAButton";
 import { useRevealReady } from "@/lib/useRevealReady";
+import { CLIP_REVEAL_TIMING } from "@/lib/motion";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -378,7 +379,7 @@ export function BuildSection() {
             width: "100%",
             marginTop: "clamp(2.5rem, 5vw, 4.5rem)",
             opacity: rowShow ? 1 : 0,
-            transition: "opacity 1.2s cubic-bezier(0.22, 1, 0.36, 1)",
+            transition: `opacity ${CLIP_REVEAL_TIMING}`,
           }}
         >
           <div

@@ -10,10 +10,11 @@ import { CartLineItem } from "@/components/cart/CartLineItem";
 import { CHECKOUT_ENABLED } from "@/lib/config";
 import { linesMissingBase } from "@/lib/checkout/lines";
 import { MISSING_BASE_HINT, PICKUP_ONLY_NOTE } from "@/lib/checkout/messages";
+import { PANEL_EASE } from "@/lib/motion";
 
 const DRAWER_Z = 130;
 const PANEL_DURATION = 0.5;
-const PANEL_EASE = [0.16, 1, 0.3, 1] as const;
+
 
 export function CartDrawer() {
   const transitionRouter = useTransitionRouter();

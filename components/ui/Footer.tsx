@@ -9,6 +9,7 @@ import { INSTAGRAM_POSTS, footerInstagramPosts, INSTAGRAM_URL, INSTAGRAM_HANDLE 
 import { BUSINESS, SOCIAL_LINKS, hoursDisplay, mapsQuery, mapsUrl, appleMapsUrl } from "@/lib/business";
 import { FOOTER_DESTINATIONS, HELP_LINKS } from "@/lib/nav";
 import { useRevealReady } from "@/lib/useRevealReady";
+import { ENTRANCE_EASE, PANEL_EASE_CSS } from "@/lib/motion";
 
 // Address, hours and phone come from lib/business.ts, the same data the
 // home page's Restaurant schema is built from.
@@ -308,7 +309,9 @@ function FooterInstagramTile({ post, index }: FooterInstagramTileProps) {
       transition={{
         delay: Math.min((index % 3) * 0.05, 0.15),
         duration: 0.5,
-        ease: [0.16, 1, 0.3, 1],
+        // A scroll reveal, so the house entrance curve rather than the
+        // interactive one it used to share with the hover scale below.
+        ease: ENTRANCE_EASE,
       }}
       className="relative block overflow-hidden"
       style={{ aspectRatio: "4/5" }}
@@ -323,7 +326,7 @@ function FooterInstagramTile({ post, index }: FooterInstagramTileProps) {
         className="object-cover"
         style={{
           transform: hovered ? "scale(1.04)" : "scale(1)",
-          transition: "transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)",
+          transition: `transform 0.5s ${PANEL_EASE_CSS}`,
         }}
       />
       <div

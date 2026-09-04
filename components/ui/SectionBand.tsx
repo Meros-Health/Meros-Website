@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { CLIP_REVEAL_TIMING } from "@/lib/motion";
 
 interface SectionBandProps {
   children: React.ReactNode;
@@ -46,7 +47,7 @@ export function SectionBand({ children, className = "" }: SectionBandProps) {
           className="font-body-caps text-midnight text-center text-sm sm:text-base tracking-micro sm:tracking-micro-wide"
           style={{
             clipPath: revealed ? "inset(0 0 0 0)" : "inset(0 100% 0 0)",
-            transition: "clip-path 1.2s cubic-bezier(0.22, 1, 0.36, 1)",
+            transition: `clip-path ${CLIP_REVEAL_TIMING}`,
           }}
         >
           {children}

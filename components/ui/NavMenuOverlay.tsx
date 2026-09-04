@@ -3,12 +3,13 @@
 import { useRef, useEffect, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { MENU_PANEL_MS, REDUCED_MOTION_MS } from "@/lib/motion";
+import { NAV_FRAME_EASE, PANEL_EASE } from "@/lib/motion";
 
 // Desktop-only. The mobile menu is MobileNavPanel.tsx (content-height drop
 // panel); Navbar.tsx picks between the two on the 768px breakpoint.
 
 const FRAME_DURATION = MENU_PANEL_MS / 1000;
-const FRAME_EASE = [0.76, 0, 0.24, 1] as const;
+const FRAME_EASE = NAV_FRAME_EASE;
 const LINK_STAGGER = 0.06;
 const LINK_BASE_DELAY = 0.35;
 const CHROME_FADE = 0.2; // links and note fading out ahead of a navigate close
@@ -216,7 +217,7 @@ export function NavMenuOverlay({
                     : {
                         delay: reduced ? 0 : LINK_BASE_DELAY + i * LINK_STAGGER,
                         duration: reduced ? REDUCED_MOTION_MS / 1000 : 0.55,
-                        ease: [0.16, 1, 0.3, 1],
+                        ease: PANEL_EASE,
                       }
                 }
                 style={{

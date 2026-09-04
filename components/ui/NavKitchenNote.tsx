@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { PANEL_EASE } from "@/lib/motion";
 
 // The desktop menu's right panel. It is the same width as the link column and
 // would otherwise be empty, so it carries the short version of who we are:
@@ -17,7 +18,10 @@ const STORY_IMAGE_HEIGHT = 682;
 
 const STORY_HREF = "/#about";
 
-const REVEAL_EASE = [0.16, 1, 0.3, 1] as const;
+// Expo-out, like the overlay panels this note animates in beside. It reads
+// as a response to the menu opening, not as an entrance of its own, so it
+// keeps the interactive curve rather than the house entrance one.
+const REVEAL_EASE = PANEL_EASE;
 const BASE_DELAY = 0.35;
 const STEP = 0.12;
 const REVEAL_DURATION = 0.55;

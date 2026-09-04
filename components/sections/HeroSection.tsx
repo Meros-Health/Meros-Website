@@ -10,6 +10,7 @@ import { CRITICAL_IMAGE } from "@/lib/criticalImages";
 import { HERO_IMAGE_SRC, HERO_LOCKUP_SRC, HERO_TAGLINE_IMAGE_SRC } from "@/lib/heroAssets";
 import { HERO_EASE, HERO_ENTRANCE, type EntranceBeat } from "@/lib/heroEntrance";
 import { useParallax } from "@/lib/useParallax";
+import { CLIP_REVEAL_TIMING } from "@/lib/motion";
 
 // Three equal panels, each half the viewport's height, so the hero is 150svh
 // and the first screen holds exactly the first two:
@@ -264,7 +265,7 @@ export function HeroSection() {
             className="hero-tagline"
             style={{
               clipPath: tagline.seen || reduced ? "inset(0 0 0 0)" : "inset(0 100% 0 0)",
-              transition: reduced ? "none" : "clip-path 1.2s cubic-bezier(0.22, 1, 0.36, 1)",
+              transition: reduced ? "none" : `clip-path ${CLIP_REVEAL_TIMING}`,
             }}
           >
             {TAGLINE_LINES.map((line) => (

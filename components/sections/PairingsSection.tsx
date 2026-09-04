@@ -17,6 +17,7 @@ import { useCartStore } from "@/store/cartStore";
 import { EMPTY_NUTRITION } from "@/lib/menu/nutrition";
 import { formatPrice } from "@/lib/menu/calcBowlPrice";
 import { getSignaturePrice, getSizeLabel, listBowls, listSmoothies } from "@/lib/menu/signatures";
+import { ENTRANCE_EASE, PANEL_EASE } from "@/lib/motion";
 
 // ─── Carousel data: from lib/menu/menu.json via signatures.ts ────────────────
 
@@ -125,11 +126,11 @@ function dropLeadingThe(name: string) {
 
 type Direction = 1 | -1;
 
-const SWAP_EASE = [0.16, 1, 0.3, 1] as const;
+const SWAP_EASE = PANEL_EASE;
 // Smooth, gently-settling ease-out for the scroll-entrance reveals, softer
 // than the snappier SWAP_EASE (which the carousel swaps still use) so the
 // title/images/labels glide in slowly and luxuriously instead of snapping.
-const REVEAL_EASE = [0.22, 1, 0.36, 1] as const;
+const REVEAL_EASE = ENTRANCE_EASE;
 // Desktop stage entrance: left/right columns converge inward first, then
 // the center images fade in over the top of that motion (see PairingsSection).
 const FLANK_TRAVEL = 20; // px: left/right column slide distance

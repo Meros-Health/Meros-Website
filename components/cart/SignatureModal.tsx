@@ -21,6 +21,7 @@ import { lockScroll } from "@/lib/scrollLock";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { useCartStore } from "@/store/cartStore";
 import { MAX_QUANTITY } from "@/lib/menu/limits";
+import { PANEL_EASE } from "@/lib/motion";
 
 // One dialog, two jobs, the same rules for both:
 //
@@ -38,7 +39,7 @@ const MODAL_Z = 135; // above the cart drawer (130), below the page transition c
 // spot (a double-tap); for this long after opening, the backdrop ignores it.
 const BACKDROP_GRACE_MS = 350;
 const PANEL_DURATION = 0.45;
-const PANEL_EASE = [0.16, 1, 0.3, 1] as const;
+
 
 const HAIRLINE = "0.5px solid var(--rule-midnight)";
 const HAIRLINE_STRONG = "0.5px solid var(--rule-strong-midnight)";

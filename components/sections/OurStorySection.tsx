@@ -10,6 +10,7 @@ import { useLenis } from "@/components/animation/LenisProvider";
 import { splitDeck } from "@/lib/ourStory/splitDeck";
 
 import { useRevealReady } from "@/lib/useRevealReady";
+import { CLIP_REVEAL_TIMING } from "@/lib/motion";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -983,7 +984,7 @@ export function OurStorySection() {
           }
           style={{
             opacity: compositionShow ? 1 : 0,
-            transition: "opacity 1.2s cubic-bezier(0.22, 1, 0.36, 1)",
+            transition: `opacity ${CLIP_REVEAL_TIMING}`,
           }}
         >
           {/* Headline stack */}
