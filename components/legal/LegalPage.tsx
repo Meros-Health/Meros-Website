@@ -15,7 +15,7 @@ export function LegalShell({
   children: ReactNode;
 }) {
   return (
-    <main className="px-[7vw] pt-36 pb-24">
+    <main className="px-section-x-fluid pt-36 pb-24">
       <div className="mx-auto max-w-3xl">
         <h1
           className="font-headline text-midnight leading-[0.9] uppercase"

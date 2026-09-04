@@ -77,9 +77,16 @@ const config: Config = {
 
       // ── Spacing additions (full-bleed helpers) ───────────────────────
       // Sections use w-full + these for edge-to-edge breathing room.
+      // Two section gutters, both named. `section-x` caps at 8rem so an
+      // ultrawide monitor does not push a section's content into a column;
+      // `section-x-fluid` is the uncapped version and keeps growing. 14 places
+      // use the capped one and 7 use the fluid one, which is a live choice
+      // rather than a mistake, so both are tokens instead of one being a
+      // hand-written px-[7vw].
       padding: {
-        section: "clamp(4rem, 9vw, 9rem)",    // standard section y-padding
+        section: "clamp(4rem, 9vw, 9rem)",       // standard section y-padding
         "section-x": "clamp(1.5rem, 7vw, 8rem)", // standard section x-padding
+        "section-x-fluid": "7vw",                // uncapped, for full-bleed pages
       },
     },
   },

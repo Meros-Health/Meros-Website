@@ -22,10 +22,11 @@ import { lockScroll } from "@/lib/scrollLock";
 // this list is the only way into a route from the header. See lib/nav.ts.
 import { NAV_LINKS } from "@/lib/nav";
 import { BRAND, toRgb } from "@/lib/design/colors";
+import { Z } from "@/lib/design/layers";
+import { NAV_BAR_HEIGHT_PX } from "@/lib/design/layout";
 
-const HEADER_BG_Z = 110;
-const HEADER_CONTENT_Z = 120;
-const NAV_BAR_HEIGHT_PX = 72; // matches --nav-bar-height in globals.css, which the hero reserves
+const HEADER_BG_Z = Z.headerBackground;
+const HEADER_CONTENT_Z = Z.headerContent;
 const MENU_ICON_SIZE = 18;
 const TOGGLE_FADE = { duration: 0.2, ease: "easeInOut" } as const;
 

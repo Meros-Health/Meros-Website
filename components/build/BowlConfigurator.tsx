@@ -27,7 +27,7 @@ export function BowlConfigurator({ mode, editLineId, editLineExists = true, head
   const [mobileExpanded, setMobileExpanded] = useState(false);
 
   return (
-    <div className="px-[7vw] pt-28 pb-24">
+    <div className="px-section-x-fluid pt-28 pb-24">
       <header className="mb-10 md:mb-14">
         <EntranceReveal index={0}>
           <h1

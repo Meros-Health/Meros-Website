@@ -22,6 +22,7 @@ import { useFocusTrap } from "@/lib/useFocusTrap";
 import { useCartStore } from "@/store/cartStore";
 import { MAX_QUANTITY } from "@/lib/menu/limits";
 import { PANEL_EASE } from "@/lib/motion";
+import { Z } from "@/lib/design/layers";
 
 // One dialog, two jobs, the same rules for both:
 //
@@ -34,7 +35,7 @@ import { PANEL_EASE } from "@/lib/motion";
 //   loaded with what the line holds. Save writes the draft back; the store
 //   sanitizes and re-prices.
 
-const MODAL_Z = 135; // above the cart drawer (130), below the page transition cover (140)
+const MODAL_Z = Z.signatureModal;
 // A tap that opened the dialog is often followed by a second one on the same
 // spot (a double-tap); for this long after opening, the backdrop ignores it.
 const BACKDROP_GRACE_MS = 350;

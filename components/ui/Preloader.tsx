@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useLenis } from "@/components/animation/LenisProvider";
 import { waitForCriticalImages } from "@/lib/criticalImages";
 import { GATING_FONTS } from "@/lib/fonts";
+import { Z } from "@/lib/design/layers";
 
 // ── Tunables ──────────────────────────────────────────────────────────────
 const MIN_DISPLAY_MS = 300; // floor so the mark never flashes for a single frame
@@ -95,7 +96,7 @@ export function Preloader({ children }: { children: React.ReactNode }) {
           style={{
             position: "fixed",
             inset: 0,
-            zIndex: 300,
+            zIndex: Z.preloader,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",

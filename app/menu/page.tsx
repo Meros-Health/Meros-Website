@@ -32,7 +32,7 @@ export default function MenuPage() {
       <JsonLd data={breadcrumbSchema(SITE_URL, "Our Menu", "/menu")} />
 
       {/* Page title: the top of the page every fresh load lands on. */}
-      <section className="px-[7vw] pt-36 pb-4">
+      <section className="px-section-x-fluid pt-36 pb-4">
         <EntranceReveal index={0}>
           <h1
             className="font-headline text-midnight leading-[0.9] uppercase"

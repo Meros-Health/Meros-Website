@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef } from "react";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 import { ENTRANCE_EASE } from "@/lib/motion";
+import { Z } from "@/lib/design/layers";
+import { NAV_BAR_HEIGHT_PX } from "@/lib/design/layout";
 
 // Mobile menu: a content-height sheet that hangs off the bottom edge of the
 // nav bar, painted the same cream as the bar so it reads as the bar extending
@@ -17,8 +19,7 @@ import { ENTRANCE_EASE } from "@/lib/motion";
 // control the reader operates repeatedly, and lag in a control reads as the
 // site being broken. Ported from the Leo Llamzon site's navMenu numbers.
 
-const NAV_BAR_HEIGHT_PX = 72; // matches Navbar.tsx
-const PANEL_Z = 115; // between the header band (110) and the header content (120)
+const PANEL_Z = Z.navPanel;
 
 const PANEL_S = 0.42; // clip-path travel of the sheet; the longest tween, sets the feel
 const PANEL_Y = -14; // small downward push on the contents so the cream reads as material descending

@@ -3,10 +3,11 @@
 import { motion, useReducedMotion } from "framer-motion";
 import type { CoverMode, TransitionPhase } from "./TransitionProvider";
 import { ENTRANCE_EASE, ENTRANCE_MS, EXIT_MS, REDUCED_MOTION_MS } from "@/lib/motion";
+import { Z } from "@/lib/design/layers";
 
 // Above CartDrawer (130), below Preloader (300). The two never coexist in
 // time, but the ordering is free correctness insurance.
-const COVER_Z = 140;
+const COVER_Z = Z.pageCover;
 
 interface PageCoverProps {
   phase: TransitionPhase;

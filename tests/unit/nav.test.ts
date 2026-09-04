@@ -3,18 +3,16 @@ import { describe, expect, it } from "vitest";
 import { NAV_LINKS, FOOTER_DESTINATIONS } from "@/lib/nav";
 
 // The nav menu and the footer are the only two indexes of where a visitor can
-// go. They are hand-maintained lists in one file; this is what stops them
-// drifting apart when a page is added to one and not the other.
+// go. The footer's Go column used to be a second hand-maintained copy of the
+// nav and this file existed to catch them drifting apart; it is now an alias,
+// so the first test guards that relationship instead of the symptom.
 
 describe("navigation", () => {
-  it("gives every nav route a footer destination", () => {
-    // "/" excepted: the footer's logo mark and the nav wordmark both go home,
-    // so a "Home" line in the footer's large type would be a third way to say
-    // the same thing.
-    const routes = NAV_LINKS.map((l) => l.href).filter((href) => href !== "/");
-    const footerHrefs = FOOTER_DESTINATIONS.map((l) => l.href);
-    const missing = routes.filter((href) => !footerHrefs.includes(href));
-    expect(missing, "nav routes with no footer destination").toEqual([]);
+  it("gives the footer the same destinations as the nav, by identity", () => {
+    // Not a deep equality check: the point is that there is one array. If a
+    // future footer genuinely needs to diverge, this is the test to change,
+    // and changing it is the moment to write down why.
+    expect(FOOTER_DESTINATIONS).toBe(NAV_LINKS);
   });
 
   it("points every footer destination at a route or a home-page anchor", () => {

@@ -7,6 +7,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import config from "../../tailwind.config";
 import { ALPHA, BRAND, withAlpha } from "../../lib/design/colors";
+import { NAV_BAR_HEIGHT_PX } from "../../lib/design/layout";
 
 const colors = (config.theme?.extend?.colors ?? {}) as Record<string, string>;
 const css = readFileSync("app/globals.css", "utf8");
@@ -79,6 +80,12 @@ describe("the CSS mirror", () => {
       const alpha = ALPHA[alphaName as keyof typeof ALPHA];
       expect(value.trim()).toBe(withAlpha(hex, alpha));
     }
+  });
+
+  it("declares the nav bar height that lib/design/layout.ts owns", () => {
+    // Navbar draws the band at this height and the hero reserves it as
+    // padding, so a mismatch puts the hero's first row under the bar.
+    expect(css).toContain(`--nav-bar-height:     ${NAV_BAR_HEIGHT_PX}px;`);
   });
 
   it("composes the two quiet-ink levels from the palette", () => {

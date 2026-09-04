@@ -1,15 +1,17 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
 import { usePageReady } from "./TransitionProvider";
-import {
-  ENTRANCE_EASE,
-  REVEAL_REDUCED_S,
-  REVEAL_S,
-  REVEAL_STAGGER_S,
-  REVEAL_TRAVEL_PX,
-} from "@/lib/motion";
+import { Reveal } from "@/components/ui/ScrollReveal";
 
+// Above-the-fold reveal, gated on the page being ready: it waits out the
+// first-load preloader and any in-flight page transition, then glides in.
+// Below-the-fold sections use Reveal directly with a whileInView-style gate.
+//
+// This used to be a copy of Reveal with a different trigger, down to the
+// duration, stagger, travel and reduced-motion branch. The only thing it owns
+// is the gate and the beat before the first item.
+
+/** Held before the first item so the reveal reads as starting, not as already underway. */
 const BASE_DELAY_S = 0.1;
 
 interface EntranceRevealProps {
@@ -20,26 +22,12 @@ interface EntranceRevealProps {
   children: React.ReactNode;
 }
 
-// Above-the-fold reveal gated on the page being ready: waits out the
-// first-load preloader and any in-flight page transition, then glides in.
-// Below-the-fold sections should keep using whileInView instead.
 export function EntranceReveal({ index = 0, className, style, children }: EntranceRevealProps) {
   const ready = usePageReady();
-  const reduced = useReducedMotion();
 
   return (
-    <motion.div
-      className={className}
-      style={style}
-      initial={false}
-      animate={ready ? { opacity: 1, y: 0 } : { opacity: 0, y: reduced ? 0 : REVEAL_TRAVEL_PX }}
-      transition={
-        reduced
-          ? { duration: REVEAL_REDUCED_S, ease: "linear" }
-          : { duration: REVEAL_S, delay: BASE_DELAY_S + index * REVEAL_STAGGER_S, ease: ENTRANCE_EASE }
-      }
-    >
+    <Reveal show={ready} index={index} delay={BASE_DELAY_S} className={className} style={style}>
       {children}
-    </motion.div>
+    </Reveal>
   );
 }

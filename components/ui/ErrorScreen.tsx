@@ -17,7 +17,7 @@ const SECONDARY_STYLE = { border: "0.5px solid var(--rule-strong-midnight)" };
 
 export function ErrorScreen({ title, body, primary, secondary, digest }: ErrorScreenProps) {
   return (
-    <main className="px-[7vw] pt-36 pb-24">
+    <main className="px-section-x-fluid pt-36 pb-24">
       <h1
         className="font-headline text-midnight leading-[0.9] uppercase mt-2"
         style={{ fontSize: "clamp(2.5rem, 5vw, 4rem)" }}

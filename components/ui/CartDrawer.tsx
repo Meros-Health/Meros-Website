@@ -11,8 +11,9 @@ import { CHECKOUT_ENABLED } from "@/lib/config";
 import { linesMissingBase } from "@/lib/checkout/lines";
 import { MISSING_BASE_HINT, PICKUP_ONLY_NOTE } from "@/lib/checkout/messages";
 import { PANEL_EASE } from "@/lib/motion";
+import { Z } from "@/lib/design/layers";
 
-const DRAWER_Z = 130;
+const DRAWER_Z = Z.cartDrawer;
 const PANEL_DURATION = 0.5;
 
 

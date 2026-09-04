@@ -44,9 +44,8 @@
        HOLE_H_FRAC); Framer Motion needs the pixel values, so there is no
        token for it here. */
     --nav-padding-x:      3vw;
-    /* Height of the fixed nav bar. Mirrors NAV_BAR_HEIGHT_PX in
-       components/ui/Navbar.tsx, which draws the band itself; the hero
-       reserves this as padding so its first row starts under the bar. */
+    /* Mirrors NAV_BAR_HEIGHT_PX in lib/design/layout.ts, which owns it.
+       tests/unit/tokens.test.ts binds the two so they cannot drift. */
     --nav-bar-height:     72px;
     --nav-frame-duration: 0.7s;
     --nav-frame-ease:     var(--ease-nav-frame);

@@ -19,13 +19,13 @@ export const NAV_LINKS: SiteLink[] = [
   { label: "Catering", href: "/catering" },
 ];
 
-/** The footer's "Go" column. Mirrors the nav, Home included. */
-export const FOOTER_DESTINATIONS: SiteLink[] = [
-  { label: "Home", href: "/" },
-  { label: "Menu", href: "/menu" },
-  { label: "Build", href: "/build" },
-  { label: "Catering", href: "/catering" },
-];
+/**
+ * The footer's "Go" column. It is the nav, not a copy of it: a route the
+ * header can reach is a route the footer lists, and there is no case where one
+ * should carry a page the other does not. Written as an alias so that stays
+ * true by construction rather than by tests/unit/nav.test.ts catching it later.
+ */
+export const FOOTER_DESTINATIONS: SiteLink[] = NAV_LINKS;
 
 // Cookies and payment have no pages of their own; they are sections of the two
 // legal pages that already cover them. The ids are set explicitly on those
