@@ -18,7 +18,7 @@ import { BUSINESS } from "@/lib/business";
 // is described in a sentence more often than it fits a picker, and a form that
 // argues with the caller is a lead lost.
 
-const RULE = "rgba(255, 247, 240, 0.20)";
+const RULE = "var(--rule-strong-cream)";
 const FIELD_CLASS =
   "bg-transparent border-b text-cream font-body-mixed text-sm py-2 placeholder:text-cream/25 outline-none focus:border-grapefruit transition-colors duration-200";
 

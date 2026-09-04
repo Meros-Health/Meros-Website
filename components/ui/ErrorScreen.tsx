@@ -13,7 +13,7 @@ interface ErrorScreenProps {
 const PRIMARY =
   "font-body-caps text-[10px] tracking-widest text-cream bg-midnight px-8 py-3 hover:opacity-85 transition-opacity duration-300";
 const SECONDARY = "font-body-caps text-[10px] tracking-widest text-midnight px-8 py-3 transition-opacity hover:opacity-70";
-const SECONDARY_STYLE = { border: "0.5px solid rgba(41,45,42,0.28)" };
+const SECONDARY_STYLE = { border: "0.5px solid var(--rule-strong-midnight)" };
 
 export function ErrorScreen({ title, body, primary, secondary, digest }: ErrorScreenProps) {
   return (

@@ -27,7 +27,7 @@ export function BuildSizeToggle() {
               style={{
                 border: selected
                   ? "0.5px solid var(--color-grapefruit)"
-                  : "0.5px solid rgba(41,45,42,0.25)",
+                  : "0.5px solid var(--rule-strong-midnight)",
                 // Hairline borders would double up where the buttons meet
                 marginLeft: i === 0 ? 0 : "-0.5px",
                 background: selected ? "var(--color-grapefruit)" : "transparent",

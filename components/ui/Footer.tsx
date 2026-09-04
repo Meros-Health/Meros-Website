@@ -66,7 +66,7 @@ export function Footer() {
   }
 
   return (
-    <footer id="footer" className="w-full bg-midnight text-cream" style={{ borderTop: "0.5px solid rgba(255,247,240,0.10)" }}>
+    <footer id="footer" className="w-full bg-midnight text-cream" style={{ borderTop: "0.5px solid var(--veil-cream)" }}>
 
       {/* ── Brand mark ───────────────────────────────────────────────────── */}
       <div className="flex justify-center px-section-x py-10">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { BRAND } from "@/lib/design/colors";
 
 // Last-resort boundary for errors thrown by the root layout itself. It
 // replaces the whole document, so it carries its own html and body and uses
@@ -12,7 +13,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
 
   return (
     <html lang="en">
-      <body style={{ margin: 0, background: "#fff7f0", color: "#292d2a", fontFamily: "system-ui, sans-serif" }}>
+      <body style={{ margin: 0, background: BRAND.cream, color: BRAND.midnight, fontFamily: "system-ui, sans-serif" }}>
         <main style={{ padding: "9rem 7vw 6rem" }}>
           <h1 style={{ fontSize: "2.5rem", lineHeight: 1, textTransform: "uppercase", margin: 0 }}>
             Something Went Wrong
@@ -28,8 +29,8 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
               type="button"
               onClick={reset}
               style={{
-                background: "#292d2a",
-                color: "#fff7f0",
+                background: BRAND.midnight,
+                color: BRAND.cream,
                 border: "none",
                 padding: "0.75rem 2rem",
                 fontSize: "0.65rem",
@@ -43,8 +44,8 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
             <a
               href="/menu"
               style={{
-                color: "#292d2a",
-                border: "0.5px solid rgba(41,45,42,0.28)",
+                color: BRAND.midnight,
+                border: "0.5px solid var(--rule-strong-midnight)",
                 padding: "0.75rem 2rem",
                 fontSize: "0.65rem",
                 letterSpacing: "0.1em",

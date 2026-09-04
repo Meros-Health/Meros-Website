@@ -189,7 +189,7 @@ function OrHinge() {
   const rule = {
     flex: 1,
     height: "1px",
-    background: "rgba(41, 45, 42, 0.18)", // --color-midnight, at hairline weight
+    background: "var(--rule-midnight)", // --color-midnight, at hairline weight
   } as const;
 
   return (

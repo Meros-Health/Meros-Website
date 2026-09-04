@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { BRAND, withAlpha } from "@/lib/design/colors";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import ScrollTrigger from "gsap/ScrollTrigger";
@@ -83,7 +84,7 @@ const STACKED_REST_ANGLES = [-3, 2.5, -3, 2.5];   // deg, resting tilt per card
 const STACKED_START_ANGLES = [-9, 8, -9, 8];      // deg, before it settles
 const STACKED_SLIDE_X = 28;                        // px, from the side it leans toward
 const STACKED_SLIDE_Y = 24;                        // px, drifts up as it settles
-const CARD_SHADOW = "0 30px 60px rgba(41,45,42,0.18)";
+const CARD_SHADOW = "0 30px 60px var(--rule-midnight)";
 const CARD_PERSPECTIVE = 1400;               // px, on the wrapper, during the 3D flip only
 // Desktop subtitle: font-size as a share of the fan column width (cqw), so the
 // longest body (560px at 17px) stays on one line. 17 / 560 = 3.04; 2.94 keeps margin.
@@ -99,11 +100,15 @@ const SCRUB_START = "top 80%";
 const SCRUB_END = "center 46%";   // ends with the subtitle still clear of the sticky header
 const SCRUB_LAG = 1;              // seconds of catch-up; smooths trackpad spikes
 // Rail states. Progressive: once the line reaches a value it stays lit.
+// The dim values are ink levels rather than one of the four semantic alphas:
+// a numeral waiting to be lit and a point waiting to be lit are not the same
+// weight, and neither is an overlay. They keep their own alphas and derive the
+// colour from the palette.
 const HEADLINE_DIM = 0.2;
-const NUMERAL_DIM = "rgba(41,45,42,0.5)";
-const NUMERAL_ON = "#292D2A";
-const POINT_DIM = "rgba(41,45,42,0.3)";
-const POINT_ON = "#292D2A";
+const NUMERAL_DIM = withAlpha(BRAND.midnight, 0.5);
+const NUMERAL_ON = BRAND.midnight;
+const POINT_DIM = withAlpha(BRAND.midnight, 0.3);
+const POINT_ON = BRAND.midnight;
 
 // ─── Card interaction ────────────────────────────────────────────────────────
 // Click picks a card out of the hand. Step 1: the card and everything drawn
@@ -990,7 +995,7 @@ export function OurStorySection() {
               style={{ left: stackedMode ? "3px" : "calc(36px + 11.5px)" }}
               aria-hidden
             >
-              <div className="absolute inset-0 bg-midnight/[0.18]" />
+              <div className="absolute inset-0 bg-midnight/rule" />
               <div ref={railFillRef} className="absolute inset-0 bg-midnight" />
             </div>
 

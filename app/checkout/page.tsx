@@ -258,7 +258,7 @@ export default function CheckoutPage() {
                 type="text"
                 required
                 autoComplete="name"
-                className="bg-transparent border-b border-midnight/20 text-midnight font-body-mixed text-sm py-1.5 placeholder:text-midnight/25 outline-none focus:border-grapefruit transition-colors duration-200"
+                className="bg-transparent border-b border-midnight/rule-strong text-midnight font-body-mixed text-sm py-1.5 placeholder:text-midnight/25 outline-none focus:border-grapefruit transition-colors duration-200"
                 placeholder="Your name"
               />
             </div>
@@ -274,7 +274,7 @@ export default function CheckoutPage() {
                 type="email"
                 required
                 autoComplete="email"
-                className="bg-transparent border-b border-midnight/20 text-midnight font-body-mixed text-sm py-1.5 placeholder:text-midnight/25 outline-none focus:border-grapefruit transition-colors duration-200"
+                className="bg-transparent border-b border-midnight/rule-strong text-midnight font-body-mixed text-sm py-1.5 placeholder:text-midnight/25 outline-none focus:border-grapefruit transition-colors duration-200"
                 placeholder="you@email.com"
               />
             </div>
@@ -290,7 +290,7 @@ export default function CheckoutPage() {
                 type="tel"
                 required
                 autoComplete="tel"
-                className="bg-transparent border-b border-midnight/20 text-midnight font-body-mixed text-sm py-1.5 placeholder:text-midnight/25 outline-none focus:border-grapefruit transition-colors duration-200"
+                className="bg-transparent border-b border-midnight/rule-strong text-midnight font-body-mixed text-sm py-1.5 placeholder:text-midnight/25 outline-none focus:border-grapefruit transition-colors duration-200"
                 placeholder="(604) 123-4567"
               />
             </div>
@@ -302,7 +302,7 @@ export default function CheckoutPage() {
                   type="button"
                   onClick={openCart}
                   className="font-body-caps text-[10px] tracking-widest text-midnight px-4 py-2 min-h-11 transition-opacity hover:opacity-70"
-                  style={{ border: "0.5px solid rgba(41,45,42,0.28)" }}
+                  style={{ border: "0.5px solid var(--rule-strong-midnight)" }}
                 >
                   Edit cart
                 </button>
@@ -323,7 +323,7 @@ export default function CheckoutPage() {
                     type="button"
                     onClick={needsReload ? () => window.location.reload() : openCart}
                     className="font-body-caps text-[10px] tracking-widest text-midnight px-4 py-2 min-h-11 transition-opacity hover:opacity-70"
-                    style={{ border: "0.5px solid rgba(41,45,42,0.28)" }}
+                    style={{ border: "0.5px solid var(--rule-strong-midnight)" }}
                   >
                     {needsReload ? "Reload" : "Edit cart"}
                   </button>

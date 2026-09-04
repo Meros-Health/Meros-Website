@@ -21,6 +21,7 @@ import { lockScroll } from "@/lib/scrollLock";
 // The bar itself carries only the menu toggle, the wordmark and the cart, so
 // this list is the only way into a route from the header. See lib/nav.ts.
 import { NAV_LINKS } from "@/lib/nav";
+import { BRAND, toRgb } from "@/lib/design/colors";
 
 const HEADER_BG_Z = 110;
 const HEADER_CONTENT_Z = 120;
@@ -49,14 +50,12 @@ const HEADER_ENTRANCE: Variants = {
 // the line only drew a seam through a continuous field. Icon/logo colour still
 // crossfades, but only for the menu; see chromeTRef / applyChromeState.
 const MENU_FADE_MS = 150;
-const BAND_RGB = "255, 247, 240"; // --color-cream
 
-const CREAM_RGB = [255, 247, 240] as const;
-const MIDNIGHT_RGB = [41, 45, 42] as const;
-
+// The icon/logo crossfade has to interpolate, so it needs channels rather than
+// a colour string. Both endpoints come from the palette.
 function colorForT(t: number) {
-  const [r0, g0, b0] = CREAM_RGB;
-  const [r1, g1, b1] = MIDNIGHT_RGB;
+  const [r0, g0, b0] = toRgb(BRAND.cream);
+  const [r1, g1, b1] = toRgb(BRAND.midnight);
   const r = Math.round(r0 + (r1 - r0) * t);
   const g = Math.round(g0 + (g1 - g0) * t);
   const b = Math.round(b0 + (b1 - b0) * t);
@@ -302,7 +301,7 @@ export function Navbar() {
           style={{
             position: "absolute",
             inset: 0,
-            background: `rgb(${BAND_RGB})`,
+            background: BRAND.cream,
           }}
         />
       </motion.div>

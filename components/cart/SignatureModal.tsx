@@ -40,8 +40,8 @@ const BACKDROP_GRACE_MS = 350;
 const PANEL_DURATION = 0.45;
 const PANEL_EASE = [0.16, 1, 0.3, 1] as const;
 
-const HAIRLINE = "0.5px solid rgba(41,45,42,0.12)";
-const HAIRLINE_STRONG = "0.5px solid rgba(41,45,42,0.28)";
+const HAIRLINE = "0.5px solid var(--rule-midnight)";
+const HAIRLINE_STRONG = "0.5px solid var(--rule-strong-midnight)";
 
 type Mode = "add" | "edit";
 
@@ -283,7 +283,7 @@ function Dialog({
         style={{
           position: "absolute",
           inset: 0,
-          background: "rgba(41,45,42,0.35)",
+          background: "var(--scrim-midnight)",
           backdropFilter: "blur(4px)",
           WebkitBackdropFilter: "blur(4px)",
         }}
@@ -304,7 +304,7 @@ function Dialog({
         style={{
           maxHeight: "min(90vh, 100%)",
           background: "var(--color-cream)",
-          boxShadow: "0 -8px 32px rgba(41,45,42,0.18)",
+          boxShadow: "0 -8px 32px var(--rule-midnight)",
           borderTop: HAIRLINE_STRONG,
           containerType: "inline-size",
         }}

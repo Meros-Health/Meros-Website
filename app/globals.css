@@ -11,9 +11,26 @@
     --color-grapefruit-text: #ad5b44; /* copy on cream, 4.55:1; fills keep --color-grapefruit */
     --color-blue: #a4bfe1;
 
+    /* ── Alpha scale ──
+       A brand colour at one of the four semantic alphas: a faint wash, a
+       hairline rule, a stronger rule, an overlay. lib/design/colors.ts owns
+       the alphas and tests/unit/tokens.test.ts recomputes every line below
+       from it, so these cannot drift from the hexes above them.
+
+       These exist for inline styles and for CSS that cannot take a class. In
+       a className use the Tailwind modifier instead: border-midnight/rule. */
+    --veil-midnight:        rgb(41 45 42 / 0.08);
+    --veil-cream:           rgb(255 247 240 / 0.08);
+    --veil-grapefruit:      rgb(215 142 119 / 0.08);
+    --rule-midnight:        rgb(41 45 42 / 0.15);
+    --rule-cream:           rgb(255 247 240 / 0.15);
+    --rule-strong-midnight: rgb(41 45 42 / 0.28);
+    --rule-strong-cream:    rgb(255 247 240 / 0.28);
+    --scrim-midnight:       rgb(41 45 42 / 0.4);
+
     /* ── Nav frame (mapped to brand tokens, never hardcode here) ── */
-    --nav-overlay-bg:     #292D2A;
-    --nav-overlay-text:   #FFF7F0;
+    --nav-overlay-bg:     var(--color-midnight);
+    --nav-overlay-text:   var(--color-cream);
     --nav-accent:         var(--color-grapefruit);
     /* The menu's centre window is sized in NavMenuOverlay.tsx (HOLE_W_FRAC /
        HOLE_H_FRAC); Framer Motion needs the pixel values, so there is no
@@ -273,7 +290,7 @@
 .hero-scrim {
   position: absolute;
   inset: 0;
-  background: rgba(41, 45, 42, 0.42); /* --color-midnight */
+  background: var(--scrim-midnight); /* --color-midnight */
 }
 
 /* Under the lockup, side by side, in normal flow: the column above owns the
@@ -480,14 +497,14 @@
 .gallery-tone-cream {
   background: var(--color-cream);
   --gallery-ink: var(--color-midnight);
-  --gallery-ink-quiet: rgba(41, 45, 42, 0.62);
+  --gallery-ink-quiet: rgb(41 45 42 / 0.62);
   --gallery-ink-accent: var(--color-grapefruit-text);
 }
 
 .gallery-tone-midnight {
   background: var(--color-midnight);
   --gallery-ink: var(--color-cream);
-  --gallery-ink-quiet: rgba(255, 247, 240, 0.66);
+  --gallery-ink-quiet: rgb(255 247 240 / 0.66);
   --gallery-ink-accent: var(--color-grapefruit);
 }
 

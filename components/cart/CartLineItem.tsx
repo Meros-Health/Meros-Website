@@ -36,7 +36,7 @@ export function CartLineItem({ item, showActions = true, error }: CartLineItemPr
       data-line-id={item.lineId}
       data-line-error={error ? "true" : undefined}
       style={{
-        borderBottom: "0.5px solid rgba(41,45,42,0.12)",
+        borderBottom: "0.5px solid var(--rule-midnight)",
         paddingBottom: "0.75rem",
         ...(error
           ? { borderLeft: "2px solid var(--color-grapefruit)", paddingLeft: "0.75rem" }

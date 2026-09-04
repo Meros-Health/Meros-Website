@@ -39,7 +39,7 @@ export function BaseToggle({
               fontSize: "clamp(0.5rem, 3.4cqw, 0.625rem)",
               minHeight: 44, // touch target floor (Apple HIG, WCAG 2.2 AAA)
               padding: "clamp(0.35rem, 2.6cqw, 0.5rem) 0.25rem",
-              border: selected ? "0.5px solid var(--color-grapefruit)" : "0.5px solid rgba(41,45,42,0.25)",
+              border: selected ? "0.5px solid var(--color-grapefruit)" : "0.5px solid var(--rule-strong-midnight)",
               // Hairline borders would double up where neighbours meet
               marginLeft: i % 2 === 0 ? 0 : "-0.5px",
               marginTop: i < 2 ? 0 : "-0.5px",

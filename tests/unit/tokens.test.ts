@@ -1,11 +1,15 @@
-// Colour tokens hold their contrast. The brand grapefruit is a fill and border
-// colour; copy set in grapefruit uses the darker text token so small text on
-// cream clears WCAG AA (4.5:1). Read from tailwind.config.ts so the test fails
-// the moment a token is retuned past the line.
+// The palette has one owner (lib/design/colors.ts) and one mirror
+// (app/globals.css, which cannot import TypeScript). These tests are what bind
+// the two together, and what stops a sixth spelling of a brand colour from
+// appearing in a component the way 56 of them did before.
 import { describe, expect, it } from "vitest";
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
 import config from "../../tailwind.config";
+import { ALPHA, BRAND, withAlpha } from "../../lib/design/colors";
 
 const colors = (config.theme?.extend?.colors ?? {}) as Record<string, string>;
+const css = readFileSync("app/globals.css", "utf8");
 
 function luminance(hex: string): number {
   const c = hex.replace("#", "");
@@ -21,28 +25,125 @@ export function contrast(a: string, b: string): number {
 }
 
 describe("colour tokens", () => {
-  it("defines the four brand colours and the copy grapefruit", () => {
-    for (const name of ["cream", "midnight", "juniper", "grapefruit", "grapefruit-text"]) {
-      expect(colors[name], name).toMatch(/^#[0-9a-f]{6}$/i);
+  it("tailwind reads its palette from the module that owns it", () => {
+    expect(colors).toBe(BRAND);
+  });
+
+  it("every brand colour is a six-digit hex", () => {
+    for (const [name, value] of Object.entries(BRAND)) {
+      expect(value, name).toMatch(/^#[0-9a-f]{6}$/i);
     }
   });
 
   it("grapefruit-text on cream clears AA for small text (4.5:1)", () => {
-    expect(contrast(colors["grapefruit-text"], colors.cream)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(BRAND["grapefruit-text"], BRAND.cream)).toBeGreaterThanOrEqual(4.5);
   });
 
   it("midnight on cream clears AAA (7:1)", () => {
-    expect(contrast(colors.midnight, colors.cream)).toBeGreaterThanOrEqual(7);
+    expect(contrast(BRAND.midnight, BRAND.cream)).toBeGreaterThanOrEqual(7);
   });
 
   it("brand grapefruit on midnight, as the Stacks section uses it, clears AA", () => {
-    expect(contrast(colors.grapefruit, colors.midnight)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(BRAND.grapefruit, BRAND.midnight)).toBeGreaterThanOrEqual(4.5);
   });
 
-  it("the CSS custom property matches the Tailwind token", async () => {
-    const fs = await import("node:fs");
-    const css = fs.readFileSync("app/globals.css", "utf8");
-    const m = css.match(/--color-grapefruit-text:\s*(#[0-9a-f]{6})/i);
-    expect(m?.[1].toLowerCase()).toBe(colors["grapefruit-text"].toLowerCase());
+  it("blue clears the 3:1 non-text minimum on midnight, its only ground", () => {
+    // A macro ring and a Stacks ring, never type, so WCAG 1.4.11 applies
+    // rather than 1.4.3. It had no assertion at all before it became a token.
+    expect(contrast(BRAND.blue, BRAND.midnight)).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe("the CSS mirror", () => {
+  it("declares every brand colour with the same hex", () => {
+    for (const [name, value] of Object.entries(BRAND)) {
+      const m = css.match(new RegExp(`--color-${name}:\\s*(#[0-9a-f]{6})`, "i"));
+      expect(m, `--color-${name} is missing from globals.css`).not.toBeNull();
+      expect(m?.[1].toLowerCase(), name).toBe(value.toLowerCase());
+    }
+  });
+
+  it("declares no brand colour the module does not own", () => {
+    const declared = [...css.matchAll(/--color-([a-z-]+):/g)].map((m) => m[1]);
+    for (const name of declared) {
+      expect(Object.keys(BRAND), `--color-${name} has no entry in BRAND`).toContain(name);
+    }
+  });
+
+  it("composes every alpha token from the palette and the alpha scale", () => {
+    const composed = [...css.matchAll(/--(rule-strong|veil|rule|scrim)-([a-z-]+):\s*([^;]+);/g)];
+    expect(composed.length).toBeGreaterThan(0);
+    for (const [, alphaName, colorName, value] of composed) {
+      const hex = BRAND[colorName as keyof typeof BRAND];
+      expect(hex, `--${alphaName}-${colorName} names a colour that is not in BRAND`).toBeDefined();
+      const alpha = ALPHA[alphaName as keyof typeof ALPHA];
+      expect(value.trim()).toBe(withAlpha(hex, alpha));
+    }
+  });
+
+  it("composes the two quiet-ink levels from the palette", () => {
+    // Deliberately not on the four-step alpha scale: the same perceived
+    // quietness needs a different alpha dark-on-light than light-on-dark.
+    expect(css).toContain(`--gallery-ink-quiet: ${withAlpha(BRAND.midnight, 0.62)};`);
+    expect(css).toContain(`--gallery-ink-quiet: ${withAlpha(BRAND.cream, 0.66)};`);
+  });
+});
+
+describe("no hand-written brand colours", () => {
+  // The palette module owns the hexes. globals.css is the CSS mirror and is
+  // bound to it by the tests above; nothing else may spell a brand colour.
+  const OWNERS = ["lib/design/colors.ts", "app/globals.css"];
+  const EXTENSIONS = [".ts", ".tsx", ".css"];
+
+  function walk(dir: string, found: string[] = []): string[] {
+    for (const entry of readdirSync(dir)) {
+      const full = join(dir, entry);
+      if (statSync(full).isDirectory()) {
+        walk(full, found);
+      } else if (EXTENSIONS.some((e) => entry.endsWith(e))) {
+        found.push(full);
+      }
+    }
+    return found;
+  }
+
+  const sources = ["app", "components", "lib", "store"]
+    .flatMap((d) => walk(d))
+    .filter((f) => !OWNERS.includes(f));
+
+  const triples = Object.values(BRAND)
+    .map((hex) => {
+      const c = hex.replace("#", "");
+      return [0, 2, 4].map((i) => parseInt(c.slice(i, i + 2), 16)).join(",\\s*");
+    })
+    .join("|");
+  const rgbLiteral = new RegExp(`rgba?\\(\\s*(?:${triples})`, "i");
+  const hexLiteral = new RegExp(Object.values(BRAND).join("|"), "i");
+
+  it("finds source files to scan", () => {
+    expect(sources.length).toBeGreaterThan(50);
+  });
+
+  it.each(["rgb", "hex"] as const)("uses no raw brand %s anywhere else", (kind) => {
+    const pattern = kind === "rgb" ? rgbLiteral : hexLiteral;
+    const offenders = sources.filter((f) => pattern.test(readFileSync(f, "utf8")));
+    expect(offenders, "use a token: a Tailwind class, a CSS var, or BRAND/withAlpha").toEqual([]);
+  });
+
+  it("references no alpha token globals.css does not declare", () => {
+    const declared = new Set(
+      [...css.matchAll(/--((?:rule-strong|veil|rule|scrim)-[a-z-]+):/g)].map((m) => m[1]),
+    );
+    const used = new Map<string, string>();
+    for (const f of sources) {
+      for (const m of readFileSync(f, "utf8").matchAll(
+        /var\(--((?:rule-strong|veil|rule|scrim)-[a-z-]+)\)/g,
+      )) {
+        used.set(m[1], f);
+      }
+    }
+    for (const [token, file] of used) {
+      expect(declared, `${file} uses --${token}, which globals.css does not declare`).toContain(token);
+    }
   });
 });

@@ -1,6 +1,7 @@
 "use client";
 
 import type { Ingredient } from "@/lib/menu/ingredients";
+import { BRAND, withAlpha } from "@/lib/design/colors";
 
 interface IngredientCardProps {
   item: Ingredient;
@@ -13,7 +14,7 @@ export function IngredientCard({ item, selected, priceLabel, onSelect }: Ingredi
   const proteinHighlight = item.nutrition.protein >= 3;
 
   const textColor = selected ? "var(--color-cream)" : "var(--color-midnight)";
-  const subtextColor = selected ? "rgba(255,247,240,0.85)" : "var(--color-juniper)";
+  const subtextColor = selected ? withAlpha(BRAND.cream, 0.85) : "var(--color-juniper)";
   const accentColor = selected ? "var(--color-cream)" : "var(--color-grapefruit)";
 
   return (
@@ -25,7 +26,7 @@ export function IngredientCard({ item, selected, priceLabel, onSelect }: Ingredi
       style={{
         border: selected
           ? "0.5px solid var(--color-grapefruit)"
-          : "0.5px solid rgba(41,45,42,0.15)",
+          : "0.5px solid var(--rule-midnight)",
         padding: "var(--ingredient-card-padding)",
         background: selected ? "var(--color-grapefruit)" : "transparent",
       }}
@@ -79,9 +80,13 @@ export function IngredientCard({ item, selected, priceLabel, onSelect }: Ingredi
             style={{
               color: accentColor,
               fontSize: "var(--ingredient-badge-size)",
+              // A matched pair, not one of the four semantic alphas: the
+              // border has to read the same weight against a grapefruit fill
+              // as against cream, and the two grounds need different alphas
+              // to get there.
               border: selected
-                ? "0.5px solid rgba(255,247,240,0.5)"
-                : "0.5px solid rgba(215,142,119,0.4)",
+                ? `0.5px solid ${withAlpha(BRAND.cream, 0.5)}`
+                : `0.5px solid ${withAlpha(BRAND.grapefruit, 0.4)}`,
             }}
           >
             +{Math.round(item.nutrition.protein)}g protein

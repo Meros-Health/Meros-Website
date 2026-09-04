@@ -86,7 +86,7 @@ export function CartDrawer() {
             style={{
               position: "absolute",
               inset: 0,
-              background: "rgba(41,45,42,0.35)",
+              background: "var(--scrim-midnight)",
               backdropFilter: "blur(4px)",
               WebkitBackdropFilter: "blur(4px)",
             }}
@@ -111,13 +111,13 @@ export function CartDrawer() {
               background: "var(--color-cream)",
               display: "flex",
               flexDirection: "column",
-              boxShadow: "-8px 0 32px rgba(41,45,42,0.18)",
+              boxShadow: "-8px 0 32px var(--rule-midnight)",
             }}
           >
             {/* Header */}
             <div
               className="flex items-center justify-between px-6 py-5"
-              style={{ borderBottom: "0.5px solid rgba(41,45,42,0.12)" }}
+              style={{ borderBottom: "0.5px solid var(--rule-midnight)" }}
             >
               <h2
                 className="font-headline text-midnight leading-none uppercase"
@@ -143,7 +143,7 @@ export function CartDrawer() {
                   role="status"
                   data-cart-notice
                   className="mb-5 px-4 py-3"
-                  style={{ border: "0.5px solid rgba(41,45,42,0.28)" }}
+                  style={{ border: "0.5px solid var(--rule-strong-midnight)" }}
                 >
                   <p className="font-body-caps text-[10px] tracking-widest text-midnight">
                     Your cart was updated to match the current menu.
@@ -176,7 +176,7 @@ export function CartDrawer() {
             </div>
 
             {/* Footer: subtotal + checkout */}
-            <div className={`px-6 py-5 pb-[calc(1.25rem_+_env(safe-area-inset-bottom,0px))]`} style={{ borderTop: "0.5px solid rgba(41,45,42,0.12)" }}>
+            <div className={`px-6 py-5 pb-[calc(1.25rem_+_env(safe-area-inset-bottom,0px))]`} style={{ borderTop: "0.5px solid var(--rule-midnight)" }}>
               {/* Said here and again on /checkout, from one constant. Someone
                   who gets to the payment screen still expecting delivery is a
                   refund and a bad review. */}
@@ -219,8 +219,8 @@ export function CartDrawer() {
                     aria-disabled="true"
                     className="w-full font-body-caps text-[10px] tracking-widest px-10 py-3 min-h-11 cursor-not-allowed"
                     style={{
-                      border: "0.5px solid rgba(41,45,42,0.25)",
-                      color: "rgba(41,45,42,0.35)",
+                      border: "0.5px solid var(--rule-strong-midnight)",
+                      color: "var(--scrim-midnight)",
                     }}
                   >
                     Checkout

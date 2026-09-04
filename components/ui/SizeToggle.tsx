@@ -40,7 +40,7 @@ export function SizeToggle({
               padding: "clamp(0.35rem, 2.6cqw, 0.5rem) 0",
               border: selected
                 ? "0.5px solid var(--color-grapefruit)"
-                : "0.5px solid rgba(41,45,42,0.25)",
+                : "0.5px solid var(--rule-strong-midnight)",
               // Hairline borders would double up where the two buttons meet
               marginLeft: i === 0 ? 0 : "-0.5px",
               background: selected ? "var(--color-grapefruit)" : "transparent",

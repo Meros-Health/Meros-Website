@@ -56,8 +56,8 @@ export function StepNav({ layout = "horizontal" }: StepNavProps) {
               style={{
                 border: isActive
                   ? "0.5px solid var(--color-grapefruit)"
-                  : "0.5px solid rgba(41,45,42,0.15)",
-                background: isActive ? "rgba(215,142,119,0.06)" : "transparent",
+                  : "0.5px solid var(--rule-midnight)",
+                background: isActive ? "var(--veil-grapefruit)" : "transparent",
               }}
             >
               <StepCompletionIcon complete={complete} />
@@ -98,7 +98,7 @@ export function StepNav({ layout = "horizontal" }: StepNavProps) {
             disabled={isLocked}
             aria-current={isActive ? "step" : undefined}
             className="group flex items-center gap-3 text-left py-3 transition-opacity disabled:opacity-30 disabled:cursor-not-allowed"
-            style={{ borderBottom: "0.5px solid rgba(41,45,42,0.08)" }}
+            style={{ borderBottom: "0.5px solid var(--veil-midnight)" }}
           >
             <StepCompletionIcon complete={complete} />
             <span

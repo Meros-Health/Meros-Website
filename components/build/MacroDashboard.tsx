@@ -28,7 +28,7 @@ export function MacroDashboard({ compact = false, expanded = false, onToggleExpa
         onClick={onToggleExpand}
         className="w-full text-left"
         style={{
-          border: "0.5px solid rgba(41,45,42,0.15)",
+          border: "0.5px solid var(--rule-midnight)",
           padding: "0.75rem 1rem",
         }}
         aria-expanded={false}
@@ -49,7 +49,7 @@ export function MacroDashboard({ compact = false, expanded = false, onToggleExpa
     <div
       className="flex flex-col"
       style={{
-        border: compact ? "0.5px solid rgba(41,45,42,0.15)" : undefined,
+        border: compact ? "0.5px solid var(--rule-midnight)" : undefined,
         padding: compact ? "1rem" : undefined,
       }}
     >
@@ -71,14 +71,14 @@ export function MacroDashboard({ compact = false, expanded = false, onToggleExpa
       <p className="font-body-mixed text-[9px] text-juniper/70 mt-4">Estimated nutrition</p>
 
       {hasSelection && (
-        <div className="mt-4 pt-4" style={{ borderTop: "0.5px solid rgba(41,45,42,0.12)" }}>
+        <div className="mt-4 pt-4" style={{ borderTop: "0.5px solid var(--rule-midnight)" }}>
           <IngredientSummary />
         </div>
       )}
 
       <div
         className="mt-4 flex items-baseline justify-between pt-3"
-        style={{ borderTop: "0.5px solid rgba(41,45,42,0.12)" }}
+        style={{ borderTop: "0.5px solid var(--rule-midnight)" }}
       >
         <span className="font-body-caps text-[9px] tracking-widest text-juniper">
           Total{sizeLabel ? ` · ${sizeLabel}` : ""}
@@ -92,7 +92,7 @@ export function MacroDashboard({ compact = false, expanded = false, onToggleExpa
             key={step.id}
             className="h-[2px] flex-1"
             style={{
-              background: i <= stepIndex ? "var(--color-grapefruit)" : "rgba(41,45,42,0.12)",
+              background: i <= stepIndex ? "var(--color-grapefruit)" : "var(--rule-midnight)",
             }}
           />
         ))}

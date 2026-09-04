@@ -42,7 +42,7 @@ export function CartLineActions({ lineId, kind, name, quantity }: CartLineAction
       {/* Quantity stepper */}
       <div
         className="flex items-center"
-        style={{ border: "0.5px solid rgba(41,45,42,0.28)" }}
+        style={{ border: "0.5px solid var(--rule-strong-midnight)" }}
       >
         <button
           type="button"
@@ -81,7 +81,7 @@ export function CartLineActions({ lineId, kind, name, quantity }: CartLineAction
         style={{
           background: "transparent",
           color: "var(--color-midnight)",
-          border: "0.5px solid rgba(41,45,42,0.28)",
+          border: "0.5px solid var(--rule-strong-midnight)",
         }}
       >
         Edit
@@ -94,7 +94,7 @@ export function CartLineActions({ lineId, kind, name, quantity }: CartLineAction
         style={{
           background: "transparent",
           color: "var(--color-midnight)",
-          border: "0.5px solid rgba(41,45,42,0.28)",
+          border: "0.5px solid var(--rule-strong-midnight)",
         }}
       >
         Remove

@@ -23,14 +23,14 @@ const TONE = {
     heading: "text-midnight",
     body: "text-midnight/70",
     accent: "text-grapefruit-text",
-    rule: "rgba(41, 45, 42, 0.15)",
+    rule: "var(--rule-midnight)",
   },
   midnight: {
     section: "bg-midnight",
     heading: "text-cream",
     body: "text-cream/65",
     accent: "text-grapefruit",
-    rule: "rgba(255, 247, 240, 0.15)",
+    rule: "var(--rule-cream)",
   },
 } as const;
 

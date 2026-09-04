@@ -30,7 +30,7 @@ const RING_BOX = 480;
 const RING_RADII = [220, 172, 124];
 const RING_STROKE = 34;
 const RING_COLORS = ["var(--color-grapefruit)", "var(--color-cream)", "var(--color-blue)"];
-const RING_TRACK = "rgba(255, 247, 240, 0.07)";
+const RING_TRACK = "var(--veil-cream)";
 
 // ─── Type scale ───────────────────────────────────────────────────────────────
 // Width only. Nothing in this section responds to viewport height: at a given
@@ -311,7 +311,7 @@ export function StacksSection() {
 
               <ul className="mt-4 list-none p-0 lg:mt-5">
                 {group.items.map((item) => (
-                  <li key={item.ingredientId} className="border-t border-cream/[0.14]">
+                  <li key={item.ingredientId} className="border-t border-cream/rule">
                     <TransitionLink
                       href={`/build?add=${item.ingredientId}`}
                       // 44px minimum on touch; from lg up the pointer is

@@ -141,7 +141,7 @@ export function MobileNavPanel({ open, onClose, onNavigate, links }: MobileNavPa
           background: "var(--color-cream)",
           color: "var(--color-midnight)",
           // Same hairline the nav band draws at full opacity (Navbar.tsx BORDER_RGB / BORDER_MAX_ALPHA).
-          borderBottom: "1px solid rgba(41, 45, 42, 0.18)",
+          borderBottom: "1px solid var(--rule-midnight)",
           clipPath: CLIP_CLOSED,
           visibility: "hidden",
         }}

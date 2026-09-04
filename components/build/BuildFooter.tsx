@@ -70,14 +70,14 @@ export function BuildFooter() {
   return (
     <div
       className="flex flex-wrap items-center gap-3 pt-8 mt-8"
-      style={{ borderTop: "0.5px solid rgba(41,45,42,0.12)" }}
+      style={{ borderTop: "0.5px solid var(--rule-midnight)" }}
     >
       {!isFirst && (
         <button
           type="button"
           onClick={prevStep}
           className="font-body-caps text-[10px] tracking-widest text-juniper px-6 py-3 transition-opacity hover:opacity-70"
-          style={{ border: "0.5px solid rgba(41,45,42,0.2)" }}
+          style={{ border: "0.5px solid var(--rule-strong-midnight)" }}
         >
           Back
         </button>
@@ -89,7 +89,7 @@ export function BuildFooter() {
           onClick={nextStep}
           disabled={!canAdd}
           className="font-body-caps text-[10px] tracking-widest text-midnight px-6 py-3 transition-opacity hover:opacity-70 disabled:opacity-30 disabled:cursor-not-allowed"
-          style={{ border: "0.5px solid rgba(41,45,42,0.28)" }}
+          style={{ border: "0.5px solid var(--rule-strong-midnight)" }}
         >
           Next
         </button>
@@ -107,7 +107,7 @@ export function BuildFooter() {
         <button
           type="button"
           disabled
-          className="font-body-caps text-[10px] tracking-widest px-8 py-3.5 cursor-not-allowed text-midnight/35 bg-midnight/10"
+          className="font-body-caps text-[10px] tracking-widest px-8 py-3.5 cursor-not-allowed text-midnight/35 bg-midnight/veil"
         >
           Select a {firstRequired?.label ?? "Base"}
         </button>

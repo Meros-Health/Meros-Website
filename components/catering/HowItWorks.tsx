@@ -9,7 +9,7 @@ import { CATERING_ACCOUNT_NOTE, CATERING_STEPS } from "@/lib/catering/content";
 // column on mobile; the left rule is what makes it read as a sequence rather
 // than four unrelated cards.
 
-const RULE = "0.5px solid rgba(41, 45, 42, 0.15)";
+const RULE = "0.5px solid var(--rule-midnight)";
 
 export function HowItWorks() {
   const ref = useRef<HTMLElement>(null);

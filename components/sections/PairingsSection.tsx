@@ -615,7 +615,7 @@ export function PairingsSection() {
                   // Mobile: inert; rides the wrapper's own slide/fade.
                   variants={isDesktop ? imageReveal : undefined}
                   aria-hidden
-                  className="absolute bg-midnight/15 pointer-events-none"
+                  className="absolute bg-midnight/rule pointer-events-none"
                   style={{
                     top: pctH(centerY, designH),
                     left: "50%",

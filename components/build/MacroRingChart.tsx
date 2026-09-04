@@ -85,7 +85,7 @@ export function MacroRingChart({ nutrition }: MacroRingChartProps) {
             cy={CENTER}
             r={RADIUS}
             fill="none"
-            stroke="rgba(41,45,42,0.1)"
+            stroke="var(--veil-midnight)"
             strokeWidth={STROKE}
           />
           {slices.map((slice) => (

@@ -66,7 +66,7 @@ export function PrefillNotice() {
       className="mb-8 flex flex-wrap items-center justify-between gap-4 px-4 py-3.5"
       style={{
         border: "0.5px solid var(--color-grapefruit)",
-        background: "rgba(215,142,119,0.06)",
+        background: "var(--veil-grapefruit)",
       }}
     >
       <div className="flex flex-wrap items-baseline gap-3">

@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import { ALPHA, BRAND } from "./lib/design/colors";
 
 const config: Config = {
   content: [
@@ -14,15 +15,16 @@ const config: Config = {
     },
     extend: {
       // ── Brand colors ──────────────────────────────────────────────────
-      colors: {
-        juniper: "#818A83",
-        cream: "#FFF7F0",
-        midnight: "#292D2A",
-        grapefruit: "#D78E77",
-        // Copy-only grapefruit: 4.55:1 on cream (AA for small text). Fills,
-        // borders and the nav accent keep the brand grapefruit.
-        "grapefruit-text": "#AD5B44",
-      },
+      // Owned by lib/design/colors.ts, which globals.css mirrors as
+      // --color-* and tests/unit/tokens.test.ts binds the two together.
+      colors: BRAND,
+
+      // ── Alpha scale ───────────────────────────────────────────────────
+      // Usable as an opacity modifier on any colour utility, so a hairline
+      // divider is `border-midnight/rule` rather than a hand-written rgba().
+      opacity: Object.fromEntries(
+        Object.entries(ALPHA).map(([name, value]) => [name, String(value)]),
+      ),
 
       // ── Typography ────────────────────────────────────────────────────
       // Three-font palette:
