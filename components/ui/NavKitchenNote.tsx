@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { PANEL_EASE } from "@/lib/motion";
 
 // The desktop menu's right panel. It is the same width as the link column and
@@ -26,23 +26,20 @@ const BASE_DELAY = 0.35;
 const STEP = 0.12;
 const REVEAL_DURATION = 0.55;
 
-const revealTransition = (index: number) => ({
-  delay: BASE_DELAY + index * STEP,
-  duration: REVEAL_DURATION,
-  ease: REVEAL_EASE,
-});
+const TRAVEL_PX = 16;
 
-const revealExit = {
-  opacity: 0,
-  y: 16,
-  transition: { duration: 0.2, ease: "easeIn" as const },
-};
-
-const reveal = (index: number) => ({
-  initial: { opacity: 0, y: 16 },
+// Reduced motion gets the same content with none of the choreography: no
+// travel, no stagger, no fade. The menu still opens; the note is simply
+// already there when it does.
+const reveal = (index: number, reduced: boolean) => ({
+  initial: { opacity: 0, y: reduced ? 0 : TRAVEL_PX },
   animate: { opacity: 1, y: 0 },
-  exit: revealExit,
-  transition: revealTransition(index),
+  exit: reduced
+    ? { opacity: 0, transition: { duration: 0 } }
+    : { opacity: 0, y: TRAVEL_PX, transition: { duration: 0.2, ease: "easeIn" as const } },
+  transition: reduced
+    ? { duration: 0 }
+    : { delay: BASE_DELAY + index * STEP, duration: REVEAL_DURATION, ease: REVEAL_EASE },
 });
 
 interface NavKitchenNoteProps {
@@ -51,6 +48,8 @@ interface NavKitchenNoteProps {
 }
 
 export function NavKitchenNote({ onNavigate }: NavKitchenNoteProps) {
+  const reduced = useReducedMotion() ?? false;
+
   return (
     <div
       style={{
@@ -65,7 +64,7 @@ export function NavKitchenNote({ onNavigate }: NavKitchenNoteProps) {
         width: "clamp(240px, 26vw, 420px)",
       }}
     >
-      <motion.div {...reveal(0)} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+      <motion.div {...reveal(0, reduced)} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
         <span
           className="font-body-caps"
           style={{ fontSize: "10px", letterSpacing: "0.25em", opacity: 0.55 }}
@@ -88,7 +87,7 @@ export function NavKitchenNote({ onNavigate }: NavKitchenNoteProps) {
         </p>
       </motion.div>
 
-      <motion.div {...reveal(1)} style={{ width: "100%" }}>
+      <motion.div {...reveal(1, reduced)} style={{ width: "100%" }}>
         <Image
           src={STORY_IMAGE}
           alt="Yogurt bowls with seasonal fruit and toppings"
@@ -100,7 +99,7 @@ export function NavKitchenNote({ onNavigate }: NavKitchenNoteProps) {
       </motion.div>
 
       <motion.a
-        {...reveal(2)}
+        {...reveal(2, reduced)}
         href={STORY_HREF}
         className="nav-overlay-link font-body-caps"
         onClick={(e) => {

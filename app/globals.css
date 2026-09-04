@@ -130,6 +130,28 @@
     border-radius: 0 !important;
   }
 
+  /* ── Focus ────────────────────────────────────────────────────────
+     Focus was the one interaction state on this site that had not been
+     designed: CTAButton and AnchorButton had a proper ring, and every one of
+     the 22 other files containing a <button> fell back to the browser
+     default, which on a cream, squared, zero-radius brand looks like nothing
+     else here.
+
+     One rule rather than 22 edits. grapefruit-text because the ring has to
+     hold 3:1 against the ground it sits on (WCAG 1.4.11) and cream is the
+     ground almost everywhere; the two places that are not (the nav overlay
+     and CTAButton's dark variants) override it below and in their own
+     component. The offset is what keeps it legible against a filled button. */
+  :focus-visible {
+    outline: 2px solid var(--color-grapefruit-text);
+    outline-offset: 2px;
+  }
+
+  /* Pointer users get no ring; keyboard users always do. */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
   .allow-round,
   .allow-round > * {
     border-radius: 50% !important;
@@ -370,7 +392,13 @@
 .nav-overlay-link:hover,
 .nav-overlay-link:focus-visible {
   color: var(--nav-accent) !important;
-  outline: none;
+}
+/* Colour alone is the weakest focus indicator under WCAG 2.4.11, and this used
+   to be colour alone. The ground here is midnight, so the ring is the brand
+   grapefruit rather than the copy grapefruit the rest of the site uses. */
+.nav-overlay-link:focus-visible {
+  outline: 2px solid var(--nav-accent);
+  outline-offset: 4px;
 }
 
 @layer utilities {

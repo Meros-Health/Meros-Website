@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useState, useRef, type ReactElement } from "react";
 import { TransitionLink } from "@/components/transition/TransitionLink";
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { INSTAGRAM_POSTS, footerInstagramPosts, INSTAGRAM_URL, INSTAGRAM_HANDLE } from "@/lib/instagramFeed";
 import { BUSINESS, SOCIAL_LINKS, hoursDisplay, mapsQuery, mapsUrl, appleMapsUrl } from "@/lib/business";
 import { FOOTER_DESTINATIONS, HELP_LINKS } from "@/lib/nav";
@@ -292,6 +292,7 @@ interface FooterInstagramTileProps {
 }
 
 function FooterInstagramTile({ post, index }: FooterInstagramTileProps) {
+  const reduced = useReducedMotion();
   const [hovered, setHovered] = useState(false);
   const ref = useRef<HTMLAnchorElement>(null);
   // Fades in only once its own image has decoded, so the grid never shows a
@@ -306,13 +307,17 @@ function FooterInstagramTile({ post, index }: FooterInstagramTileProps) {
       rel="noopener noreferrer"
       initial={{ opacity: 0 }}
       animate={{ opacity: show ? 1 : 0 }}
-      transition={{
-        delay: Math.min((index % 3) * 0.05, 0.15),
-        duration: 0.5,
-        // A scroll reveal, so the house entrance curve rather than the
-        // interactive one it used to share with the hover scale below.
-        ease: ENTRANCE_EASE,
-      }}
+      transition={
+        reduced
+          ? { duration: 0 }
+          : {
+              delay: Math.min((index % 3) * 0.05, 0.15),
+              duration: 0.5,
+              // A scroll reveal, so the house entrance curve rather than the
+              // interactive one it shares with the hover scale below.
+              ease: ENTRANCE_EASE,
+            }
+      }
       className="relative block overflow-hidden"
       style={{ aspectRatio: "4/5" }}
       onMouseEnter={() => setHovered(true)}
@@ -325,8 +330,8 @@ function FooterInstagramTile({ post, index }: FooterInstagramTileProps) {
         sizes="(max-width: 768px) 33vw, 200px"
         className="object-cover"
         style={{
-          transform: hovered ? "scale(1.04)" : "scale(1)",
-          transition: `transform 0.5s ${PANEL_EASE_CSS}`,
+          transform: hovered && !reduced ? "scale(1.04)" : "scale(1)",
+          transition: reduced ? "none" : `transform 0.5s ${PANEL_EASE_CSS}`,
         }}
       />
       <div

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useTransitionRouter } from "@/components/transition/TransitionProvider";
 import { useCartStore } from "@/store/cartStore";
 import { lockScroll } from "@/lib/scrollLock";
@@ -20,6 +20,8 @@ const PANEL_DURATION = 0.5;
 export function CartDrawer() {
   const transitionRouter = useTransitionRouter();
   const isOpen = useCartStore((s) => s.isOpen);
+  // Same treatment as SignatureModal: no travel, no fade, just there.
+  const reduced = useReducedMotion();
   const closeCart = useCartStore((s) => s.closeCart);
   const items = useCartStore((s) => s.items);
   const notice = useCartStore((s) => s.notice);
@@ -83,7 +85,7 @@ export function CartDrawer() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: PANEL_DURATION * 0.6, ease: "easeOut" }}
+            transition={{ duration: reduced ? 0 : PANEL_DURATION * 0.6, ease: "easeOut" }}
             onClick={closeCart}
             style={{
               position: "absolute",
@@ -97,10 +99,10 @@ export function CartDrawer() {
           {/* Panel: slides in from the right */}
           <motion.div
             ref={panelRef}
-            initial={{ x: "100%" }}
+            initial={{ x: reduced ? 0 : "100%" }}
             animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ duration: PANEL_DURATION, ease: PANEL_EASE }}
+            exit={{ x: reduced ? 0 : "100%" }}
+            transition={{ duration: reduced ? 0 : PANEL_DURATION, ease: PANEL_EASE }}
             role="dialog"
             aria-modal="true"
             aria-label="Cart"
