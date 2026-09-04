@@ -18,11 +18,13 @@ export const montageSerif = localFont({
 
 // ── Secondary: Aetheria ───────────────────────────────────────────────────────
 // Accent / editorial text. Use sparingly: pull quotes, product callouts.
-// .woff is the highest-quality web format available for this family.
+// Built from Aetheria.otf, which stays on disk as the source (see the README
+// in public/fonts). woff2 took this from 41.5 kB to 19 kB, and it is no longer
+// on the preloader's critical path either way.
 export const aetheria = localFont({
   src: [
     {
-      path: "../public/fonts/Aetheria.woff",
+      path: "../public/fonts/Aetheria.woff2",
       weight: "400",
       style: "normal",
     },
@@ -42,5 +44,26 @@ export const dmSans = DM_Sans({
   weight: ["300", "400"],
   variable: "--font-dm-sans",
   display: "swap",
-  preload: false,
+  // The dominant face on the site (115 font-body-caps + 70 font-body-mixed
+  // uses). It is on the critical path whether or not it is declared to be, and
+  // the preloader gates on it, so let the browser discover it from the document
+  // head rather than after the CSS has parsed.
+  preload: true,
 });
+
+// ── The preloader gate ────────────────────────────────────────────────────────
+// components/ui/Preloader.tsx holds the whole document until these have loaded.
+// Aetheria is deliberately absent: it is the largest file of the three, it is
+// used four times, none of them above the fold, and document.fonts.ready waits
+// on every font the document renders, so gating on it held the page for an
+// accent face nobody sees until they scroll. It still loads, just not in front
+// of the hero.
+//
+// Full CSS font shorthands, because that is what document.fonts.load() parses.
+// next/font hashes the family names at build time, so they have to be read off
+// the font objects rather than typed.
+export const GATING_FONTS = [
+  `400 1em ${montageSerif.style.fontFamily}`,
+  `300 1em ${dmSans.style.fontFamily}`,
+  `400 1em ${dmSans.style.fontFamily}`,
+];
