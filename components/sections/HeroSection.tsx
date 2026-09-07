@@ -12,22 +12,25 @@ import { HERO_EASE, HERO_ENTRANCE, type EntranceBeat } from "@/lib/heroEntrance"
 import { useParallax } from "@/lib/useParallax";
 import { CLIP_REVEAL_TIMING } from "@/lib/motion";
 
-// Three equal panels, each half the viewport's height, so the hero is 150svh
-// and the first screen holds exactly the first two:
+// Two panels, 150svh in total:
 //
-//   1. cream, the lockup with the two calls to action tucked under it
-//   2. the image band, and nothing else
+//   1. the full screen: the photograph edge to edge, with the lockup and the
+//      two calls to action centred over it
 //   ── the fold ──
-//   3. the tagline, centred over a second photograph
+//   2. half a screen: the tagline, centred over a second photograph
 //
-// The third panel is the reason the hero is taller than the screen. A hero
-// that ends exactly at the fold gives a visitor no reason to believe there is
-// anything under it; a panel cut in half by the bottom edge is the oldest
-// way to say "keep going", and it costs nothing because the panel was going
-// to be scrolled to anyway. The line in it was a cream SectionBand between
-// the hero and the menu until now (see app/page.tsx): it reads as the close of
-// the opening statement rather than as a divider, and over a photograph it
-// carries the weight the empty bar never did.
+// The second panel is the reason the hero is taller than the screen, and it
+// is doing less work here than it used to. When panel 1 was half a screen the
+// fold cut panel 2 in two, which is the oldest way to say "keep going". A
+// full-screen first panel spends that: the fold now lands on the seam, and
+// nothing peeks. That is the price of the treatment, not an oversight. If it
+// needs buying back, take a few svh off panel 1 rather than adding a chevron.
+//
+// One thing this layout does not own: the nav bar is a fixed cream band at
+// every scroll position (components/ui/Navbar.tsx), so it sits as a solid bar
+// across the top of the photograph. Panel 1 reserves its height as padding so
+// the centred group clears it, but the band itself is global chrome and is
+// left alone.
 
 const LOCKUP_ALT = "MERŌS House of Yogurt";
 const LOCKUP_W = 2038;
@@ -35,14 +38,16 @@ const LOCKUP_H = 820;
 const LOCKUP_SIZES = "(max-width: 1023px) 66vw, 32vw";
 
 const IMAGE_ALT = "Greek yogurt bowls, granola, honey and fresh fruit laid out on a counter";
-// Both bands are edge to edge at every breakpoint, so both want a full-width variant.
+// Both panels are edge to edge at every breakpoint, so both want a full-width variant.
 const IMAGE_SIZES = "100vw";
-// Which slice of each frame survives the crop, as the share of the overflow
-// taken off the top. Still not pinned to either edge: 70% carries the band
-// down into the lower half of the flat-lay, where the bowls and the poured
-// honey sit, and stops short of the bottom edge, where the cropped-off boards
-// read as clutter. See the note on PARALLAX for how the two interact.
-const IMAGE_FOCUS = "center 70%";
+// Which slice of the frame survives the crop, as the share of the overflow
+// taken off the top. 55% rather than dead centre: it carries the crop a little
+// way into the lower half of the flat-lay, where the bowls and the poured
+// honey sit, without reaching the bottom edge where the cropped-off boards
+// read as clutter. On a phone the frame is cropped on its width instead, so
+// this value stops mattering there. See the note on PARALLAX for how the two
+// interact.
+const IMAGE_FOCUS = "center 55%";
 const TAGLINE_IMAGE_FOCUS = "center 50%";
 
 // How far each image climbs, as a fraction of its panel's height, in each
@@ -59,7 +64,7 @@ const TAGLINE_IMAGE_FOCUS = "center 50%";
 // travel, so whichever edge of the frame a crop is pinned to is held off
 // screen by a fraction of the rate. Pinning to the top costs about 0.67x the
 // rate; pinning to the bottom costs about 1.33x, because the resting offset
-// works against it rather than with it. Panel 2 sits nearer the bottom, the
+// works against it rather than with it. IMAGE_FOCUS sits below centre, the
 // dearer end, so leave it some headroom above the frame's bottom edge.
 const PARALLAX = { image: 0.12, tagline: 0.19 } as const;
 
@@ -82,7 +87,7 @@ const FADE_RISE: Variants = {
   visible: { opacity: 1, y: 0 },
 };
 
-// The image band is uncovered from its top edge downward: the clip's bottom
+// The photograph is uncovered from its top edge downward: the clip's bottom
 // inset retracts from 100% to 0. Clipping rather than fading is also the
 // cheaper option against Largest Contentful Paint, which refuses to count an
 // element at opacity 0 but does not track a clip path.
@@ -146,7 +151,7 @@ export function HeroSection() {
   const reduced = useReducedMotion();
   const animate = ready ? "visible" : "hidden";
 
-  // Panel 3 is below the fold, so it is not part of the load sequence at all:
+  // Panel 2 is below the fold, so it is not part of the load sequence at all:
   // it plays when it is scrolled to, like every other section on the page.
   // The measured element is the wrapper around the line, never the clipped
   // line itself; see useSeen.
@@ -164,56 +169,22 @@ export function HeroSection() {
 
   return (
     <section aria-label="MERŌS House of Yogurt" className="hero">
-      {/* Panel 1: cream, holding the lockup and the actions as one centred
-          column. The nav bar is fixed and the same cream, so the two read as
-          one field; the panel reserves its height as padding so the group
-          centres in what is left rather than under the controls. */}
-      <div className="hero-panel hero-panel-lockup">
-        <motion.div
-          className="hero-lockup"
-          initial="hidden"
-          animate={animate}
-          variants={rise}
-          transition={beat(HERO_ENTRANCE.logo)}
-        >
-          <Image
-            src={HERO_LOCKUP_SRC}
-            alt={LOCKUP_ALT}
-            width={LOCKUP_W}
-            height={LOCKUP_H}
-            priority
-            sizes={LOCKUP_SIZES}
-            className="hero-lockup-mark"
-            {...CRITICAL_IMAGE}
-          />
-        </motion.div>
-
-        {/* Last beat, and the smallest thing on the screen: the motion order
-            follows the visual hierarchy, not the reading order. Outlined dark
-            here, the site's button on a cream ground. */}
-        <motion.div
-          className="hero-actions"
-          initial="hidden"
-          animate={animate}
-          variants={rise}
-          transition={beat(HERO_ENTRANCE.ctas)}
-        >
-          <CTAButton variant="dark" href="#footer">Visit MERŌS</CTAButton>
-          <CTAButton variant="dark" href="/menu">Order Now</CTAButton>
-        </motion.div>
-      </div>
-
-      {/* Panel 2: the photograph, undarkened and with nothing over it. Panel 3
-          is scrimmed because it has to hold type; this one carries none, so
-          there is nothing to buy with the contrast and it keeps the frame. */}
-      <div className="hero-panel hero-panel-image" ref={imageParallax.panelRef}>
+      {/* Panel 1: the whole first screen. The photograph is the ground, the
+          scrim sits on it, and the lockup and the actions sit on that. All
+          three are inside the clip, so the wipe uncovers a finished panel
+          rather than a photograph that later has type dropped onto it. */}
+      <div
+        className="hero-panel hero-panel-full"
+        ref={imageParallax.panelRef}
+        style={{ "--hero-parallax": `${PARALLAX.image * 100}%` } as React.CSSProperties}
+      >
         <motion.div
           className="hero-image-clip"
           initial="hidden"
           animate={animate}
           variants={clip}
           transition={beat(HERO_ENTRANCE.image)}
-          style={{ willChange: "clip-path", "--hero-parallax": `${PARALLAX.image * 100}%` } as React.CSSProperties}
+          style={{ willChange: "clip-path" }}
         >
           <div className="hero-image-layer" ref={imageParallax.layerRef}>
             <Image
@@ -227,10 +198,57 @@ export function HeroSection() {
               {...CRITICAL_IMAGE}
             />
           </div>
+          {/* Inside the clip so it is revealed with the frame, outside the
+              moving layer so it darkens the panel and not the picture: inside,
+              it would slide with the image and leave an undarkened band at
+              whichever edge it had travelled away from. The panel now carries
+              type, which is the whole reason it has a scrim at all: the old
+              image band carried none and kept its frame undarkened. */}
+          <div className="hero-scrim" aria-hidden />
+
+          {/* The lockup with the actions under it, as one centred column, in
+              normal flow. The gap is the knob that spreads them; nothing here
+              is positioned individually or measured in the JS. */}
+          <div className="hero-content">
+            <motion.div
+              className="hero-lockup"
+              initial="hidden"
+              animate={animate}
+              variants={rise}
+              transition={beat(HERO_ENTRANCE.logo)}
+            >
+              <Image
+                src={HERO_LOCKUP_SRC}
+                alt={LOCKUP_ALT}
+                width={LOCKUP_W}
+                height={LOCKUP_H}
+                priority
+                sizes={LOCKUP_SIZES}
+                className="hero-lockup-mark"
+                {...CRITICAL_IMAGE}
+              />
+            </motion.div>
+
+            {/* Last beat, and the smallest thing on the screen: the motion
+                order follows the visual hierarchy, not the reading order.
+                Filled cream here rather than the site's outlined dark button:
+                a midnight outline over a photograph has nothing to sit on, and
+                there is no cream-outline variant to reach for. */}
+            <motion.div
+              className="hero-actions"
+              initial="hidden"
+              animate={animate}
+              variants={rise}
+              transition={beat(HERO_ENTRANCE.ctas)}
+            >
+              <CTAButton variant="light" href="#footer">Visit MERŌS</CTAButton>
+              <CTAButton variant="light" href="/menu">Order Now</CTAButton>
+            </motion.div>
+          </div>
         </motion.div>
       </div>
 
-      {/* Panel 3: below the fold. Lazy, and deliberately not a critical image:
+      {/* Panel 2: below the fold. Lazy, and deliberately not a critical image:
           marking it would hold the preloader on a 2880px frame nobody has
           scrolled to. */}
       <div
@@ -252,9 +270,8 @@ export function HeroSection() {
         {/* The frame is a bright sandstone counter, so neither cream nor
             midnight type clears AA against every part of it. The scrim settles
             it for every crop at every width, at the cost of a little of the
-            photograph. Outside the moving layer, so it darkens the panel and
-            not the picture: inside, it would slide with the image and leave an
-            undarkened band at whichever edge it had travelled away from. */}
+            photograph. Outside the moving layer, for the reason given on the
+            scrim in panel 1. */}
         <div className="hero-scrim" aria-hidden />
         {/* The wrapper is what gets measured and what bounds the wipe; the
             line inside it is what moves. Keeping the two on separate elements

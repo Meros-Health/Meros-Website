@@ -241,11 +241,10 @@
   }
 }
 
-/* Hero: three equal panels of half the viewport each (HeroSection.tsx), so
-   the section is 150svh and the first screen holds exactly the first two.
-   Panel 1 is cream with the lockup centred, panel 2 is the image band with the
-   actions in its bottom-left corner, panel 3 sits under the fold and carries
-   the tagline over a second photograph. */
+/* Hero: two panels (HeroSection.tsx), 150svh in total. Panel 1 is the whole
+   first screen, a photograph with the lockup and the two actions centred over
+   it; panel 2 is half a screen under the fold, carrying the tagline over a
+   second photograph. */
 .hero {
   position: relative;
   width: 100%;
@@ -256,9 +255,11 @@
 }
 
 /* svh, not dvh: the panels must not resize when the mobile URL bar collapses,
-   or the fold would move under the reader mid-scroll. The consequence is that
-   with the bar showing, a sliver of panel 3 is already visible, which is the
-   direction to err in for a panel whose job is to advertise itself. */
+   or the fold would move under the reader mid-scroll. svh is the short
+   viewport, measured with the URL bar showing, so panel 1 fills the screen at
+   its smallest and gains a strip of panel 2 under it once the bar collapses.
+   That is the direction to err in: the alternative, dvh, would have the
+   photograph grow and the crop shift while the reader is scrolling it. */
 .hero-panel {
   position: relative;
   flex: 0 0 auto;
@@ -267,16 +268,32 @@
   overflow: hidden;
 }
 
-/* The lockup with the actions under it, as one centred column. The gap is the
-   knob that spreads them: a taller group centred in the same box puts the
-   lockup nearer the top and the buttons nearer the seam with the photograph,
-   without either being positioned absolutely or measured in the JS. */
-.hero-panel-lockup {
+/* Panel 1. The full screen, not half of it, which is what makes this the
+   alternate hero: the photograph is the first thing and the only thing. */
+.hero-panel-full {
+  height: 100svh;
+}
+
+/* The lockup with the actions under it, as one centred column over the
+   photograph. The gap is the knob that spreads them: a taller group centred in
+   the same box puts the lockup nearer the top and the buttons nearer the foot,
+   without either being positioned absolutely or measured in the JS.
+
+   Absolute rather than a flex child of the panel, because the panel's only
+   child is the clip layer and the photograph fills it; stacking after the
+   scrim in source order is what puts this above both, so no z-index is
+   needed. The gap is smaller than the old cream panel's: the column has a
+   whole screen to sit in now rather than half of one, and the same generous
+   gap over a full-height panel pushes the buttons far enough from the lockup
+   that the two stop reading as one group. */
+.hero-content {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: clamp(2rem, 8vh, 5.5rem);
+  gap: clamp(1.75rem, 5vh, 3.25rem);
   /* The nav bar is fixed, so it takes no space here; reserve its height (plus
      the status-bar inset it grows by under viewport-fit=cover) so the group
      centres in what is left rather than behind the controls. The bottom
@@ -315,14 +332,14 @@
   will-change: transform;
 }
 
-/* Panel 3 only. Panel 2 carries no type, so it keeps its frame undarkened. */
+/* Both panels now: each one carries type over a bright frame. */
 .hero-scrim {
   position: absolute;
   inset: 0;
   background: var(--scrim-midnight); /* --color-midnight */
 }
 
-/* Under the lockup, side by side, in normal flow: the column above owns the
+/* Under the lockup, side by side, in normal flow: .hero-content owns the
    spacing, so nothing here is positioned. */
 .hero-actions {
   display: flex;
