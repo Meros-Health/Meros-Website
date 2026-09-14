@@ -223,6 +223,95 @@ ingredients.forEach((ing, i) => {
   }
 });
 
+// stacks --------------------------------------------------------------------
+// A Stack is a named set of exactly bundle.count enhancers, every one offered
+// in the enhancers step, so ordering a Stack is ordering its enhancers and the
+// step's bundle prices it. Names and ids are unique. pairsWith is checked
+// against the signature ids below, once they are known.
+const enhancersStep = steps.find((step) => step?.id === "enhancers");
+const offeredEnhancers = new Set(
+  Array.isArray(enhancersStep?.options) ? enhancersStep.options.map((opt) => opt?.ingredientId) : []
+);
+const stackSize =
+  enhancersStep?.pricing?.mode === "included-then-extra" && isObj(enhancersStep.pricing.bundle)
+    ? enhancersStep.pricing.bundle.count
+    : undefined;
+const stacks = isObj(menu.stacks) && Array.isArray(menu.stacks.items) ? menu.stacks.items : [];
+if (!isObj(menu.stacks) || !Array.isArray(menu.stacks.items) || menu.stacks.items.length === 0) {
+  fail("stacks.items: must be a non-empty array");
+}
+if (!enhancersStep) fail('stacks: the build has no "enhancers" step to draw from');
+if (stackSize === undefined) fail("stacks: the enhancers step needs a pricing.bundle; that is what prices a Stack");
+const stackIds = new Set();
+const stackNames = new Set();
+stacks.forEach((stack, i) => {
+  const where = `stacks.items[${i}]${stack?.id ? ` (${stack.id})` : ""}`;
+  checkId(stack?.id, where);
+  if (!isNonEmptyString(stack?.name)) fail(`${where}: missing name`);
+  else if (stackNames.has(stack.name.toLowerCase())) fail(`${where}: name "${stack.name}" duplicates another stack`);
+  else stackNames.add(stack.name.toLowerCase());
+  if (!Array.isArray(stack?.enhancers)) fail(`${where}: enhancers must be an array of ingredient ids`);
+  else {
+    if (stackSize !== undefined && stack.enhancers.length !== stackSize) {
+      fail(`${where}: holds ${stack.enhancers.length} enhancers; a Stack is bundle.count (${stackSize})`);
+    }
+    const seen = new Set();
+    stack.enhancers.forEach((id, j) => {
+      if (!isNonEmptyString(id)) return fail(`${where}.enhancers[${j}]: must be a string`);
+      if (!ingredientIds.has(id)) fail(`${where}.enhancers[${j}]: ingredient "${id}" does not exist`);
+      else if (!offeredEnhancers.has(id)) fail(`${where}.enhancers[${j}]: "${id}" is not offered in the enhancers step, so the Stack cannot be ordered`);
+      if (seen.has(id)) fail(`${where}.enhancers[${j}]: "${id}" listed twice`);
+      seen.add(id);
+    });
+  }
+  if (stack?.pairsWith !== undefined && (!Array.isArray(stack.pairsWith) || !stack.pairsWith.every(isNonEmptyString))) {
+    fail(`${where}: pairsWith must be an array of signature ids`);
+  }
+  for (const key of Object.keys(isObj(stack) ? stack : {})) {
+    if (!["id", "name", "enhancers", "pairsWith"].includes(key)) fail(`${where}: unknown field "${key}"`);
+  }
+  if (isNonEmptyString(stack?.id)) stackIds.add(stack.id);
+});
+checkUnique(stacks.map((s) => s?.id), "stacks.items");
+
+// delivery ------------------------------------------------------------------
+// The third-party platform's menu, as submitted. Only ids are checked here;
+// the prices are the platform's own and no store surface prints them.
+const delivery = isObj(menu.delivery) ? menu.delivery : null;
+if (!delivery) fail("delivery: missing");
+else {
+  const where = "delivery";
+  if (!isNonEmptyString(delivery.platform)) fail(`${where}: missing platform`);
+  if (!isObj(delivery.prices) || !isMoney(delivery.prices.bowl) || !isMoney(delivery.prices.smoothie)) {
+    fail(`${where}: prices.bowl and prices.smoothie must be numbers >= 0`);
+  }
+  if (!Array.isArray(delivery.bowlSizes) || delivery.bowlSizes.length === 0) fail(`${where}: bowlSizes must be a non-empty array of bowl tier ids`);
+  else {
+    const bowlTierIds = new Set((sizeTiers.bowl ?? []).map((t) => t?.id));
+    for (const id of delivery.bowlSizes) if (!bowlTierIds.has(id)) fail(`${where}: bowlSizes names unknown bowl tier "${id}"`);
+  }
+  if (!isMoney(delivery.extraToppingPrice)) fail(`${where}: extraToppingPrice must be a number >= 0`);
+  if (!Array.isArray(delivery.extras)) fail(`${where}: extras must be an array of ingredient ids`);
+  else {
+    checkUnique(delivery.extras, `${where}.extras`);
+    for (const id of delivery.extras) {
+      if (!ingredientIds.has(id)) fail(`${where}.extras: ingredient "${id}" does not exist`);
+      else if (baseIds.has(id)) fail(`${where}.extras: "${id}" is a base, not a topping`);
+    }
+  }
+  if (!isMoney(delivery.stackPrice)) fail(`${where}: stackPrice must be a number >= 0`);
+  if (!isObj(delivery.singleEnhancer)) fail(`${where}: singleEnhancer must be { ingredientId, price }`);
+  else {
+    if (!offeredEnhancers.has(delivery.singleEnhancer.ingredientId)) {
+      fail(`${where}.singleEnhancer: "${delivery.singleEnhancer.ingredientId}" is not offered in the enhancers step`);
+    }
+    if (!isMoney(delivery.singleEnhancer.price)) fail(`${where}.singleEnhancer: price must be a number >= 0`);
+  }
+  if (delivery.excludes !== undefined && (!Array.isArray(delivery.excludes) || !delivery.excludes.every(isNonEmptyString))) {
+    fail(`${where}: excludes must be an array of signature ids`);
+  }
+}
+
 // signatures ----------------------------------------------------------------
 const signatures = isObj(menu.signatures) ? menu.signatures : {};
 if (!isObj(menu.signatures)) fail("signatures: missing");
@@ -260,6 +349,9 @@ for (const [listKey, tierKey] of Object.entries(CATEGORY_TIERS)) {
     if (item?.ingredients !== undefined) fail(`${where}: "ingredients" is no longer supported, use "recipe" (ingredient ids)`);
 
     if (item?.note !== undefined && !isNonEmptyString(item.note)) fail(`${where}: note must be a string`);
+    if (item?.suggestedStack !== undefined && !stackIds.has(item.suggestedStack)) {
+      fail(`${where}: suggestedStack "${item.suggestedStack}" is not a stack id (${[...stackIds].join(", ")})`);
+    }
     if (item?.base !== undefined) {
       if (!isNonEmptyString(item.base) || !isBase(item.base)) {
         fail(`${where}: base "${item.base}" is not an ingredient offered in a select "one" step`);
@@ -289,23 +381,16 @@ for (const [listKey, tierKey] of Object.entries(CATEGORY_TIERS)) {
       for (const tierId of tierIds) {
         if (!sizeKeys.includes(tierId)) fail(`${where}: sizes is missing tier "${tierId}"`);
       }
-      // Macros are required on every signature item except The Seasonal (id
-      // "seasonal"): its calories/protein were removed pending a recompute
-      // from the macro sheets, see signatures.$comment in menu.json. When a
-      // field is present anyway it is still validated like any other item's;
-      // only its absence is allowed.
-      const macrosOptional = item?.id === "seasonal";
+      // Macros are required on every signature item. The Seasonal was allowed
+      // to omit them from 2026-09-01 until it was retired on 2026-09-10; an
+      // item that cannot be computed is a recipe that is not finished.
       for (const key of sizeKeys) {
         if (!tierIds.includes(key)) fail(`${where}: sizes has unknown tier "${key}" (sizeTiers.${tierKey} defines ${tierIds.join(", ")})`);
         const s = item.sizes[key];
         if (!isObj(s)) { fail(`${where}: sizes.${key} must be an object`); continue; }
         if (!isMoney(s.price)) fail(`${where}: sizes.${key}.price must be a number >= 0`);
-        if (!(macrosOptional && s.calories === undefined) && !isCount(s.calories)) {
-          fail(`${where}: sizes.${key}.calories must be an integer >= 0`);
-        }
-        if (!(macrosOptional && s.protein === undefined) && !isCount(s.protein)) {
-          fail(`${where}: sizes.${key}.protein must be an integer >= 0`);
-        }
+        if (!isCount(s.calories)) fail(`${where}: sizes.${key}.calories must be an integer >= 0`);
+        if (!isCount(s.protein)) fail(`${where}: sizes.${key}.protein must be an integer >= 0`);
         if (isMoney(s.price)) {
           if (!pricesBySize.has(key)) pricesBySize.set(key, new Set());
           pricesBySize.get(key).add(s.price);
@@ -313,16 +398,21 @@ for (const [listKey, tierKey] of Object.entries(CATEGORY_TIERS)) {
       }
     }
 
-    // Optional: an item may ship without photography (The Seasonal, by design)
-    // and every surface then draws the typographic tile in the picture's
-    // place. When images are given, both paths must resolve.
+    // Optional: an item may ship without photography and every surface then
+    // sets it as type in the picture's place. When images are given, photo is
+    // required and transparent (the top-down cut-out, used as a small thumbnail)
+    // is optional; every path given must resolve under public/.
     if (item?.images !== undefined && !isObj(item.images)) {
-      fail(`${where}: images must be an object with photo and transparent paths, or absent`);
+      fail(`${where}: images must be an object with a photo path (and optionally transparent), or absent`);
     } else if (isObj(item?.images)) {
       for (const kind of ["photo", "transparent"]) {
         const p = item.images[kind];
+        if (kind === "transparent" && p === undefined) continue;
         if (!isNonEmptyString(p) || !p.startsWith("/")) fail(`${where}: images.${kind} must be an absolute public path`);
         else if (!existsSync(join(publicDir, p))) fail(`${where}: images.${kind} "${p}" not found under public/`);
+      }
+      for (const k of Object.keys(item.images)) {
+        if (k !== "photo" && k !== "transparent") fail(`${where}: images.${k} is not a known field`);
       }
     }
 
@@ -348,6 +438,17 @@ for (const [listKey, tierKey] of Object.entries(CATEGORY_TIERS)) {
 }
 checkUnique(signatureIds, "signatures");
 
+// Cross-references from stacks and delivery into the signature list.
+const signatureIdSet = new Set(signatureIds);
+stacks.forEach((stack, i) => {
+  for (const id of Array.isArray(stack?.pairsWith) ? stack.pairsWith : []) {
+    if (!signatureIdSet.has(id)) fail(`stacks.items[${i}] (${stack.id}): pairsWith names unknown signature "${id}"`);
+  }
+});
+for (const id of Array.isArray(delivery?.excludes) ? delivery.excludes : []) {
+  if (!signatureIdSet.has(id)) fail(`delivery.excludes: unknown signature "${id}"`);
+}
+
 // Orphans are legal (an ingredient can be staged before it is offered), but
 // they are usually a leftover from a removal, so surface them.
 for (const id of ingredientIds) {
@@ -357,41 +458,11 @@ for (const id of ingredientIds) {
 }
 
 // ---------------------------------------------------------------------------
-// The home page Stacks section names four enhancers by id. Those ids live in
-// lib/menu/featuredEnhancers.ts (presentation, deliberately not in this file),
-// so pulling an enhancer here has to fail the build rather than leave a dead
-// card on the home page. Read as text: this script stays dependency-free and
-// cannot import a TypeScript module.
-//
-// Only checked when validating the repo's own menu, since the featured list
-// describes this website and the Menu TV may be pointed at another copy.
-if (menuPath === resolve(join(repoRoot, "lib/menu/menu.json"))) {
-  const featuredPath = join(repoRoot, "lib/menu/featuredEnhancers.ts");
-  if (!existsSync(featuredPath)) {
-    warn("lib/menu/featuredEnhancers.ts is missing; the Stacks section's ids were not checked");
-  } else {
-    const src = readFileSync(featuredPath, "utf8");
-    const featuredIds = [...src.matchAll(/ingredientId:\s*"([^"]+)"/g)].map((m) => m[1]);
-
-    if (featuredIds.length === 0) {
-      warn("no featured enhancer ids found in lib/menu/featuredEnhancers.ts; check the file's shape");
-    }
-
-    const enhancerStep = steps.find((step) => step?.id === "enhancers");
-    const offeredEnhancers = new Set(
-      Array.isArray(enhancerStep?.options) ? enhancerStep.options.map((opt) => opt?.ingredientId) : []
-    );
-
-    for (const id of featuredIds) {
-      if (!offeredEnhancers.has(id)) {
-        fail(`featuredEnhancers.ts features "${id}", which the "enhancers" build step does not offer`);
-      }
-    }
-    if (new Set(featuredIds).size !== featuredIds.length) {
-      fail("featuredEnhancers.ts features the same enhancer more than once");
-    }
-  }
-}
+// The home page Stacks section used to name its enhancers in
+// lib/menu/featuredEnhancers.ts and this script read that file as text to
+// catch drift. Since 2026-09-10 the section prints the named Stacks above, so
+// the check is the stacks block itself: every enhancer in a Stack is offered,
+// or this script fails before a build starts.
 
 // ---------------------------------------------------------------------------
 

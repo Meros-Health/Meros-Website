@@ -88,6 +88,17 @@ describe("the CSS mirror", () => {
     expect(css).toContain(`--nav-bar-height:     ${NAV_BAR_HEIGHT_PX}px;`);
   });
 
+  it("ties the hero's hold to the nav bar height", () => {
+    // The sticky hero releases when the menu's top edge meets the bottom of
+    // the nav band. That moment is computed from the token, so a nav that
+    // changes height moves the release with it rather than leaving a strip of
+    // photograph showing under the bar.
+    const curtain = css.match(/\.hero-curtain\s*\{[^}]*\}/)?.[0];
+    expect(curtain, ".hero-curtain rule missing from globals.css").toBeDefined();
+    expect(curtain).toContain("--hero-hold: calc(100svh - var(--nav-bar-height)");
+    expect(curtain).toContain("margin-bottom: calc(-1 * var(--hero-hold))");
+  });
+
   it("composes the two quiet-ink levels from the palette", () => {
     // Deliberately not on the four-step alpha scale: the same perceived
     // quietness needs a different alpha dark-on-light than light-on-dark.

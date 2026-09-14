@@ -241,12 +241,33 @@
   }
 }
 
-/* Hero: two panels (HeroSection.tsx), 150svh in total. Panel 1 is the whole
-   first screen, a photograph with the lockup and the two actions centred over
-   it; panel 2 is half a screen under the fold, carrying the tagline over a
-   second photograph. */
+/* Hero: one panel (HeroSection.tsx), the whole first screen, and the page is
+   pulled over it rather than it scrolling away. The section is sticky at the
+   top of the viewport inside this wrapper, and the menu section, which is
+   opaque cream and painted above it (app/page.tsx), rises over it like a sheet.
+   The hero is never seen moving, only being covered.
+
+   The hold ends at one exact moment: when the menu's top edge meets the bottom
+   edge of the fixed nav band. Sticky releases when the wrapper's bottom edge
+   reaches the hero's bottom edge, so the wrapper is the hero plus that hold
+   distance, and the negative bottom margin gives the hold back so the menu
+   still starts at 100svh. Nothing after the hero moves in the document:
+   anchors, the nav offset in lib/scroll.ts and the reveal observers all see
+   the geometry they saw before. The hold is a document distance, so the
+   release lands on the nav's edge at any viewport height.
+
+   Once released the hero sits at the foot of the wrapper, under the menu's
+   first --hero-hold of document; the only strip of it ever in view after that
+   is behind the nav band. */
+.hero-curtain {
+  --hero-hold: calc(100svh - var(--nav-bar-height) - env(safe-area-inset-top, 0px));
+  height: calc(100svh + var(--hero-hold));
+  margin-bottom: calc(-1 * var(--hero-hold));
+}
+
 .hero {
-  position: relative;
+  position: sticky;
+  top: 0;
   width: 100%;
   overflow: hidden;
   background: var(--color-cream);
@@ -254,24 +275,20 @@
   flex-direction: column;
 }
 
-/* svh, not dvh: the panels must not resize when the mobile URL bar collapses,
-   or the fold would move under the reader mid-scroll. svh is the short
-   viewport, measured with the URL bar showing, so panel 1 fills the screen at
-   its smallest and gains a strip of panel 2 under it once the bar collapses.
-   That is the direction to err in: the alternative, dvh, would have the
-   photograph grow and the crop shift while the reader is scrolling it. */
+/* The whole first screen, and the only panel: the photograph is the first thing
+   and the only thing.
+
+   svh, not dvh. svh is the short viewport, measured with the mobile URL bar
+   showing, so the panel fills the screen at its smallest and gives back a strip
+   of the section below once the bar collapses. dvh would have the panel grow
+   and the crop shift under a reader who is already scrolling it, which is the
+   worse of the two ways to be wrong. */
 .hero-panel {
   position: relative;
   flex: 0 0 auto;
-  height: 50svh;
+  height: 100svh;
   width: 100%;
   overflow: hidden;
-}
-
-/* Panel 1. The full screen, not half of it, which is what makes this the
-   alternate hero: the photograph is the first thing and the only thing. */
-.hero-panel-full {
-  height: 100svh;
 }
 
 /* The lockup with the actions under it, as one centred column over the
@@ -317,19 +334,25 @@
   inset: 0;
 }
 
-/* The moving layer. It overhangs its panel by --hero-parallax top and bottom,
-   which is exactly how far lib/useParallax.ts translates it, so neither edge
-   is ever briefly empty. Percentages on top/bottom resolve against the
-   containing block's height, which is what makes one rule work for panels of
-   different heights. The two panels set the variable from the same constants
-   the hook is given (see PARALLAX in HeroSection.tsx). */
+/* The layer the photograph fills inside the clip, and the one thing in the
+   hero that moves with the scroll: lib/useParallax.ts (useCurtainParallax)
+   climbs it by --hero-parallax of the panel's height over the hold, so the
+   photograph sinks away under the section being pulled over it. It only ever
+   climbs, so it overhangs the panel at the bottom alone, by exactly that
+   distance; the value is set inline from the same constant the hook is given
+   (see PARALLAX in HeroSection.tsx).
+
+   Reduced motion gets the layer flush to the panel. The hook stops moving it,
+   and an overhang with nothing moving inside it is a crop for no reason. */
 .hero-image-layer {
   position: absolute;
-  left: 0;
-  right: 0;
-  top: calc(-1 * var(--hero-parallax, 0%));
-  bottom: calc(-1 * var(--hero-parallax, 0%));
-  will-change: transform;
+  inset: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-image-layer {
+    bottom: calc(-1 * var(--hero-parallax, 0%));
+  }
 }
 
 /* Both panels now: each one carries type over a bright frame. */
@@ -349,47 +372,57 @@
   max-width: 100%;
 }
 
-.hero-panel-tagline {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 var(--nav-padding-x);
-}
+/* The closing line, anchored to the foot of the panel rather than carried
+   under the buttons. It is a caption on the screen it sits in, and a caption
+   belongs at an edge; the centred column is the hero's subject and stays two
+   elements, the lockup and the actions.
 
-/* Bounds the wipe and is what useSeen measures. Separate from the line itself,
-   which is the element that carries the clip path: an element clipped to zero
-   width cannot be measured to decide whether to unclip it. It takes its width
-   from the longer of the two lines, so there is no character-count cap here to
-   wrap against. */
-.hero-tagline-wrap {
-  position: relative;
-  overflow: hidden;
-  max-width: 100%;
-}
+   left: 50% with a half-width pull, not left: 0; right: 0. An absolutely
+   positioned box with both insets stretches the full panel, and the entrance
+   is a clip path wiped from the leading edge: on a 1440px screen the wipe would
+   spend its first half crossing empty space before it reached the type, then
+   appear to sprint. Shrink-wrapped, the wipe measures the line itself, which is
+   the only box the reader can see it cross.
 
+   The bottom inset is its own, not the column's floor. It has to clear the home
+   indicator on a phone, and .hero-content's padding was never sized for
+   anything to be read that close to the edge.
+
+   Small, and deliberately smaller than it was as a band. It had half a screen
+   to fill then and 22px to fill it with; here it is a line of copy under a
+   460px lockup and two buttons, and the only thing it has to do is be readable
+   without asking for a turn. 14px at the top, and it stops shrinking at 10px so
+   the whole line still clears the site's 322px minimum viewport: at that size
+   it sets to about 240px inside 300px of available width, so the line holds
+   because it fits, not because nowrap is hiding an overflow.
+
+   It carries its own clip path, wiped in by the entrance timeline
+   (HERO_ENTRANCE.tagline), and needs no wrapper to do it: the old split existed
+   only because the wipe used to be triggered by scrolling the line into view,
+   and an element clipped to zero width cannot be measured to decide whether to
+   unclip it. A beat on a delay measures nothing. */
 .hero-tagline {
+  --tagline-tracking: 0.24em;
+  position: absolute;
+  left: 50%;
+  /* Half the box back, then half a letter-gap forward. Letter-spacing lands
+     after the last character too, so the shrink-wrapped box is one gap wider
+     than the ink in it and centring the box leaves the line sitting half a gap
+     left of the lockup above it. The old rule pulled that back with a negative
+     margin-right, which no longer reaches: translateX measures the border box
+     and ignores margins entirely. */
+  transform: translateX(calc(-50% + var(--tagline-tracking) / 2));
+  bottom: calc(clamp(1.25rem, 3.5vh, 2.25rem) + env(safe-area-inset-bottom, 0px));
+  max-width: calc(100% - 2 * var(--nav-padding-x));
   margin: 0;
   text-align: center;
   text-transform: uppercase;
+  white-space: nowrap;
   font-family: var(--font-body);
   color: var(--color-cream);
-  font-size: clamp(0.8125rem, 2vw, 1.375rem);
+  font-size: clamp(0.625rem, 1.15vw, 0.875rem);
   line-height: 1.9;
-}
-
-/* One line each, and neither may wrap: the break between them is authored in
-   the component, so the count cannot drift with the viewport. At the clamp's
-   floor the longer line is about 170px, which fits the narrowest phone. */
-.hero-tagline-line {
-  --tagline-tracking: 0.30em; /* tracking-micro-wide, but see the pull below */
-  display: block;
-  white-space: nowrap;
   letter-spacing: var(--tagline-tracking);
-  /* Letter-spacing lands after the last character too, which pushes centred
-     text right by one gap. Pull it back so each line is truly centred. The
-     two have to agree, which is why the value is named here rather than
-     applied from the scale. */
-  margin-right: calc(-1 * var(--tagline-tracking));
 }
 
 @media (max-width: 1023px) {
@@ -529,6 +562,20 @@
      clipped. A menu that hides what is in the food is worse than an uneven
      wall. */
   min-height: var(--gallery-row-height);
+  /* The curtain's containing block. */
+  position: relative;
+}
+
+/* The reveal (see RevealRow in GalleryWall.tsx): a sheet of the page's cream
+   over the whole row, wiped away by a clip-path transition set inline. Above
+   everything in the row, including a CTA's z-10 label, and never in the way
+   of a click: it is gone by the time anything under it could be read. */
+.gallery-row-curtain {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: var(--color-cream);
+  pointer-events: none;
 }
 
 .gallery-panel {
@@ -539,6 +586,16 @@
 .gallery-panel-image {
   overflow: hidden;
   background: var(--color-midnight);
+}
+
+/* The layer inside a photograph's panel: the box the photograph fills, flush
+   to the panel. It used to overhang on both sides and drift sideways under
+   lib/useParallax.ts; the wall holds still now (see GalleryWall.tsx), and a
+   flush layer is what lets object-fit: cover show the framing each panel was
+   cut for. */
+.gallery-image-layer {
+  position: absolute;
+  inset: 0;
 }
 
 .gallery-panel-text {

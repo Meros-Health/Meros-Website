@@ -7,6 +7,8 @@ a menu reads from it:
 |---|---|
 | Website signature bowls and smoothies (`/`, `/menu`, pairings) | `lib/menu/signatures.ts` |
 | Website bowl builder (`/build`), cart, checkout pricing | `lib/menu/buildConfig.ts`, `lib/menu/calcBowlPrice.ts` |
+| Home page Stacks section, the Stack named on each menu panel | `lib/menu/stacks.ts`, `lib/menu/featuredEnhancers.ts` |
+| The menu reference page (`/source-menu`, unlinked) | every accessor above plus `lib/menu/delivery.ts` |
 | In-store Menu TV, both panels | `../menu-tv/sync-menu.sh` writes `menu-data.js` |
 
 There are no other copies. If a name, price or ingredient appears somewhere
@@ -62,15 +64,36 @@ reach either surface.
     ]
   },
 
+  "stacks": {                                                      // the named Stacks: curated sets of
+    "items": [                                                     //   exactly bundle.count enhancers, every one
+      { "id": "rebuild", "name": "Rebuild Stack",                  //   offered in the enhancers step, priced by
+        "enhancers": ["whey-protein-isolate", "creatine-monohydrate", "l-glutamine"],   // the bundle
+        "pairsWith": ["recovery", "focus", "sea-greens", "crunch", "bloom"] }         // optional, signature ids
+    ]
+  },
+
+  "delivery": {                                                    // the third-party menu, as submitted. No
+    "platform": "Uber Eats",                                       //   ordering surface reads it; /source-menu
+    "prices": { "bowl": 19.99, "smoothie": 19.99 },                //   explains the two channels from it
+    "bowlSizes": ["large"],                                        // bowl tier ids the platform sells
+    "extraToppingPrice": 2,
+    "extras": ["bananas", ...],                                    // the only additions the platform allows
+    "stackPrice": 7,
+    "singleEnhancer": { "ingredientId": "whey-protein-isolate", "price": 3 },
+    "excludes": ["crave"]                                          // sold in store, not on the platform
+  },
+
   "signatures": {
     "defaultBase": { "smoothies": "vanilla-greek-yogurt" },   // optional per category; absent = customer chooses
     "bowls": [
       { "id": "moment", "name": "The Moment", "tags": ["Energy", "Antioxidants"],
         "base": "plain-greek-yogurt",                          // optional: this item departs from its category default
+        "suggestedStack": "glow",                              // optional: a stacks.items id, printed as "Pairs with the Glow Stack"
         "recipe": ["blueberries", ...],                        // toppings only, ingredient ids, printed in this order
         "sizes": { "medium": { "price": 12, "calories": 581, "protein": 17 }, "large": {...} },
-        "images": { "photo": "/images-web/...", "transparent": "/images-web/..." },    // optional: an item with no
-                                                                                        //   photography (The Seasonal) gets the grapefruit plate on every surface
+        "images": { "photo": "/images-web/Signature/moment.jpg",             // optional: an item with no photography is set as type
+                    "transparent": "/images-web/Transparent/Moment.png" },   //   photo: the product shot (Uber Eats set, 5:4). transparent: the
+                                                                             //   top-down cut-out, optional; the lists use it as a phone thumbnail
         "seasonNote": "late summer stone fruit and berries" }   // optional, and only for an item WITHOUT images. Printed as
                                                                //   "Featuring {seasonNote}", so keep it a lowercase phrase.
     ],
@@ -119,7 +142,10 @@ A custom bowl costs `sizes[sizeId].price + option surcharges + per-step extras`.
 - Signature `sizes` keys match `sizeTiers` for that category, and every item in a category shares the same price per size (the TV prints one price per panel).
 - No `recipe[]` contains a base (an ingredient offered in a `select: "one"` step). `defaultBase` values and item `base` values must be such an ingredient; an item `base` equal to its category default only warns.
 - `ingredients[].group`, when set, is the id of a `select: "multi"` step.
-- Image paths exist under `public/` when `images` is given; `images` may be absent (see The Seasonal).
+- Every signature carries `calories` and `protein` at every size. (The Seasonal was allowed to omit them from 2026-09-01 until it was retired on 2026-09-10.)
+- `stacks.items`: ids and names unique; each holds exactly `bundle.count` enhancers, each offered in the `enhancers` step; `pairsWith` names real signatures. `suggestedStack` on a signature names a real stack.
+- `delivery`: prices are numbers, `bowlSizes` are bowl tier ids, `extras` are real non-base ingredients, `singleEnhancer.ingredientId` is offered in the enhancers step, `excludes` names real signatures.
+- When `images` is given, `photo` is required and `transparent` optional; every path given exists under `public/`. `images` may be absent.
 - `seasonNote`, when given, is a non-empty string on an item that has no `images` (it is only ever rendered in a photograph's place, so on a photographed item it would silently go stale).
 - Warns (does not fail) on ingredients that are neither offered nor used in a recipe.
 
@@ -137,9 +163,9 @@ recipes keep resolving. Only change `id` if you also update every reference;
 the validator will point at each one.
 
 **Retire a signature item.** Copy its entry into `docs/menu/retired-items.md`
-first, then delete it here and delete its row from `SMOOTHIE_ROWS` or
-`BOWL_ROWS` in `menuGallery.ts` (a test fails if the wall and the menu
-disagree). Leave the photographs on disk. There is no legacy remap for
+first, then delete it here. The website lists (`components/menu/SignatureList.tsx`)
+and the Menu TV read the item list, so nothing else names it. Leave the
+photographs on disk. There is no legacy remap for
 signature ids the way `legacyIdMap.ts` remaps ingredient ids, so a cart
 holding the retired item drops that line with a notice on its next load and
 checkout refuses it server-side; that is intended, not a bug. Grep the tests
@@ -159,9 +185,19 @@ TV pick it up. The TV needs a column-count hint for the new step id in
 **Change a signature's default yogurt.** Edit `signatures.defaultBase`, or set
 `base` on the one item that differs. Never put a yogurt in `recipe[]`.
 
-**Add a recipe-only ingredient** (one the builder does not offer, like
-toasted almonds). Give it a `group` naming the step it reads as on the Menu
-TV, otherwise `sync-menu.sh` refuses to place it.
+**Add a recipe-only ingredient** (one the builder does not offer, like camu
+camu). Give it a `group` naming the step it reads as on the Menu TV, otherwise
+`sync-menu.sh` refuses to place it.
+
+**Change a Stack.** Edit `stacks.items`. The home page columns, the Stack
+named on each menu panel, the Compose panel on the Menu TV and /source-menu all
+regenerate. An enhancer a Stack names has to be offered in the enhancers step,
+so a new one goes into `options` first; the validator says so otherwise.
+
+**One name per ingredient.** Almonds are "Almonds" and coconut is "Coconut"
+(since 2026-09-10; toasted and shredded were the same shelf item). How it is
+prepared is the kitchen's business, not the registry's. Do not add a second
+entry for a preparation of something already listed.
 
 ## Known gaps
 
@@ -197,18 +233,19 @@ None open. The website's base picker for signatures (the gap opened on
 ### Signature additions and removals
 
 A signature bowl or smoothie in the cart can be edited from the cart drawer:
-up to `MAX_ADDITIONS` (2) ingredients added, up to `MAX_REMOVALS` (2) recipe
+up to `MAX_ADDITIONS` (3, the bundle count, so a whole Stack fits) ingredients
+added, up to `MAX_REMOVALS` (2) recipe
 ingredients left out, and a size change. Nothing in this file describes it;
 the rules are derived:
 
 - **Addable**: any ingredient offered in a `select: "multi"` build step that
   the recipe does not already contain. Priced as an extra on that step: the
-  step's `extraPrice` (bundle included, though it is unreachable at a cap of
-  2), or the option's `surcharge` on a surcharge-only step. The recipe never
+  step's `extraPrice` (bundle included: three enhancers on a signature price
+  as a Stack), or the option's `surcharge` on a surcharge-only step. The recipe never
   counts against a step's `included` allowance; the signature price covers it.
 - **Removable**: any recipe ingredient except the base (an ingredient offered
   in a `select: "one"` step). Free. Recipe-only ingredients the builder does
-  not offer (toasted almonds, almond butter) are removable but not addable,
+  not offer (camu camu, almond butter) are removable but not addable,
   because nothing prices them.
 
 The cart persists `mods: { additions, removals }` as ingredient ids on the

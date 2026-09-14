@@ -1,5 +1,15 @@
 {
   "images": {
+    "/images-web/Bowls/Bloom-1.jpg": {
+      "hash": "7b13f4fd",
+      "width": 1024,
+      "height": 683
+    },
+    "/images-web/Bowls/Bloom-2.jpg": {
+      "hash": "b222b9b4",
+      "width": 1024,
+      "height": 683
+    },
     "/images-web/Bowls/Crunch-1.jpg": {
       "hash": "153f5457",
       "width": 1024,
@@ -79,6 +89,11 @@
       "hash": "de099485",
       "width": 1024,
       "height": 682
+    },
+    "/images-web/Footer/Storefront.jpg": {
+      "hash": "40686d12",
+      "width": 3024,
+      "height": 4032
     },
     "/images-web/Gallery/Gallery-1.jpg": {
       "hash": "07ef3c6e",
@@ -185,6 +200,61 @@
       "width": 1080,
       "height": 1350
     },
+    "/images-web/Signature/bloom.jpg": {
+      "hash": "36ef67db",
+      "width": 1600,
+      "height": 1280
+    },
+    "/images-web/Signature/cabana.jpg": {
+      "hash": "42f54320",
+      "width": 1600,
+      "height": 1280
+    },
+    "/images-web/Signature/crave.jpg": {
+      "hash": "2c4dfc5b",
+      "width": 1600,
+      "height": 1280
+    },
+    "/images-web/Signature/crunch.jpg": {
+      "hash": "80e21df7",
+      "width": 1600,
+      "height": 1280
+    },
+    "/images-web/Signature/focus.jpg": {
+      "hash": "10560a59",
+      "width": 1600,
+      "height": 1280
+    },
+    "/images-web/Signature/glow.jpg": {
+      "hash": "b3b64802",
+      "width": 1600,
+      "height": 1280
+    },
+    "/images-web/Signature/moment.jpg": {
+      "hash": "11c0627b",
+      "width": 1600,
+      "height": 1280
+    },
+    "/images-web/Signature/recovery.jpg": {
+      "hash": "aecd8e81",
+      "width": 1600,
+      "height": 1280
+    },
+    "/images-web/Signature/sea-greens.jpg": {
+      "hash": "ad89dc13",
+      "width": 1600,
+      "height": 1280
+    },
+    "/images-web/Signature/silk.jpg": {
+      "hash": "98f51aff",
+      "width": 1600,
+      "height": 1280
+    },
+    "/images-web/Signature/tropic.jpg": {
+      "hash": "481fa6e2",
+      "width": 1600,
+      "height": 1280
+    },
     "/images-web/Smoothies/cabana-1.jpg": {
       "hash": "c6c0d0fe",
       "width": 1024,
@@ -264,6 +334,11 @@
       "hash": "57a46ecd",
       "width": 1024,
       "height": 683
+    },
+    "/images-web/Transparent/Bloom.png": {
+      "hash": "5f315812",
+      "width": 1080,
+      "height": 1080
     },
     "/images-web/Transparent/Cabana.png": {
       "hash": "741f0c67",

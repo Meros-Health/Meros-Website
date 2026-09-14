@@ -12,7 +12,9 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       // Transactional and per-line routes. Nothing to index, and /cart/edit
       // paths are keyed by a cart line id that only exists in one browser.
-      disallow: ["/checkout", "/cart/"],
+      // /source-menu is the staff reference for the whole menu: reachable by
+      // its URL, linked from nowhere, and kept out of the index on purpose.
+      disallow: ["/checkout", "/cart/", "/source-menu"],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
   };

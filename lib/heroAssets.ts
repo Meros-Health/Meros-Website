@@ -2,9 +2,9 @@
 // `priority` images marked CRITICAL_IMAGE (lib/criticalImages.ts), which is
 // what the Preloader and the page transition wait on.
 
-// Panel 1, the whole first screen: the flat-lay, cropped by `object-fit:
-// cover` against a full-height panel, with the lockup and the two actions
-// centred over it. The source is never scaled on one axis to fit; a narrow
+// The whole first screen: the flat-lay, cropped by `object-fit: cover` against
+// a full-height panel, with the lockup, the two actions and the tagline centred
+// over it. The source is never scaled on one axis to fit; a narrow
 // viewport shows less of the frame's width, not a squeezed version of it.
 //
 // The 2880px Hero/ copy, not the 1024px Gallery/ one. The panel is full-bleed,
@@ -14,10 +14,11 @@
 // existed to fill a tall right-hand column, and this fills the screen.
 export const HERO_IMAGE_SRC = "/images-web/Hero/Gallery-4-hero.jpg";
 
-// Panel 2, below the fold: the tagline sits over it. Three bowls on a sunlit
-// counter, from the same shoot as the screen above, so the two read as one
-// table seen twice rather than as two stock photographs.
-export const HERO_TAGLINE_IMAGE_SRC = "/images-web/Hero/Gallery-5-hero.jpg";
+// Gallery-5-hero.jpg used to be exported here as the ground under the tagline,
+// in a second panel below the fold. That panel is gone (see HeroSection) and
+// the line moved into the screen above, so nothing references the frame any
+// more. It is still in public/images-web/Hero/ and still in the image manifest;
+// deleting it is a separate decision from removing the band.
 
 // Combined "MERŌS" + "House of Yogurt" lockup, Montage Serif baked in. The
 // cream cut, not the dark one: the lockup now sits over a scrimmed photograph

@@ -278,7 +278,7 @@ export function BuildSection() {
           </div>
 
           <div ref={staticCtaRef} className="mt-8" style={revealHiddenStyle}>
-            <CTAButton href="/build" variant="dark">
+            <CTAButton href="/build" variant="midnight">
               Build
             </CTAButton>
           </div>
@@ -363,7 +363,7 @@ export function BuildSection() {
             ref={ctaRef}
             style={{ marginTop: "1.75rem", willChange: "transform, opacity" }}
           >
-            <CTAButton href="/build" variant="dark">
+            <CTAButton href="/build" variant="midnight">
               Build
             </CTAButton>
           </div>

@@ -17,7 +17,8 @@ import { useRevealReady } from "@/lib/useRevealReady";
 // "Home gallery: promo band".
 
 // How far the image travels against the scroll, as a fraction of the panel's
-// height, in each direction. Same value the hero image uses. The layer has to
+// height, in each direction. The one wall-style drift left on the site: two
+// photographs, so the eye can hold both. The layer has to
 // overhang the panel by exactly this much top and bottom or an edge goes empty
 // at the extremes; --promo-parallax below is set from this constant so the two
 // cannot drift apart.

@@ -2,23 +2,24 @@ import { pageMetadata } from "@/lib/seo";
 import { SITE_URL } from "@/lib/config";
 import { breadcrumbSchema } from "@/lib/business";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { BOWL_ROWS, SMOOTHIE_ROWS } from "@/lib/menu/menuGallery";
-import { SignatureGallery } from "@/components/gallery/SignatureGallery";
+import { SignatureList } from "@/components/menu/SignatureList";
 import { EntranceReveal } from "@/components/transition/EntranceReveal";
 import { CategoryHeading } from "@/components/gallery/CategoryHeading";
+import { listBowls, listSmoothies } from "@/lib/menu/signatures";
 
-// The whole menu, as two gallery walls. Which items appear as a photograph and
-// which as type is the wall's business (lib/menu/menuGallery.ts); what a panel
-// says is SignatureItemPanel's.
+// The whole menu, as two lists with a product photo on every item. What an
+// item says and how it adds is SignatureList's; this page only sets the
+// order and the headings. It replaced the gallery walls on 2026-09-10, when
+// the Uber Eats shoot gave every item one photograph and the wall's rows had
+// nothing else left to hold.
 //
 // Two old paths 308 here: /our-menu from the agency site, and /order, which
 // this page answered from the cutover until 2026-09-03. The title stays "Our
 // Menu" because that is what /our-menu ranked for; the rename was about the
 // path, not the page.
 //
-// This is a server component, so the metadata lives here. It needed a layout.tsx
-// to hold it back when the page was "use client"; the client boundary is now
-// SignatureGallery, several levels down, so that file is gone.
+// This is a server component, so the metadata lives here. The client boundary
+// is SignatureList.
 
 export const metadata = pageMetadata({
   title: "Our Menu - MERŌS",
@@ -48,14 +49,18 @@ export default function MenuPage() {
         </EntranceReveal>
       </section>
 
-      <section id="bowls">
+      <section id="bowls" className="pb-section">
         <CategoryHeading title="Signature Bowls" category="bowl" />
-        <SignatureGallery rows={BOWL_ROWS} />
+        <div className="px-section-x">
+          <SignatureList items={listBowls()} variant="cards" photos="all" mobileThumb="square" />
+        </div>
       </section>
 
-      <section id="smoothies">
+      <section id="smoothies" className="pb-section">
         <CategoryHeading title="Signature Smoothies" category="smoothie" />
-        <SignatureGallery rows={SMOOTHIE_ROWS} />
+        <div className="px-section-x">
+          <SignatureList items={listSmoothies()} variant="cards" photos="all" mobileThumb="square" />
+        </div>
       </section>
     </main>
   );

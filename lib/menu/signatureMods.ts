@@ -12,15 +12,19 @@
 // validator rejects a base in one; the yogurt is chosen separately, see
 // signatureBase.ts), and the select:"one" guard in isRemovable stays as a
 // backstop. Removals are free. Recipe-only ingredients that the builder does
-// not offer (toasted almonds, almond butter) are removable but not addable,
-// since nothing prices them.
+// not offer (camu camu, almond butter) are removable but not addable, since
+// nothing prices them.
+//
+// The addition cap is the enhancers step's bundle count, so a whole Stack
+// (three enhancers, priced by the bundle) fits on a signature the way it does
+// on the delivery menu.
 import { BUILD_CONFIG, getOption, getStepForIngredient, type BuildStep } from "./buildConfig";
 import { extrasCost } from "./calcBowlPrice";
 import { getIngredient, ingredientName, type Ingredient } from "./ingredients";
 import { getBaseSurcharge, isBaseOffered } from "./signatureBase";
 import { getSignaturePrice, type SignatureItem } from "./signatures";
 
-export const MAX_ADDITIONS = 2;
+export const MAX_ADDITIONS = 3;
 export const MAX_REMOVALS = 2;
 
 /** Ingredient ids against the menu. Persisted on signature cart lines only. */

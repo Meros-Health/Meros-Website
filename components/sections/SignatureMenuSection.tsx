@@ -1,38 +1,62 @@
 "use client";
 
+import Image from "next/image";
 import { useRef } from "react";
 import { CTAButton } from "@/components/ui/CTAButton";
-import { SignatureGallery } from "@/components/gallery/SignatureGallery";
+import { SignatureList } from "@/components/menu/SignatureList";
 import { Reveal } from "@/components/ui/ScrollReveal";
 import { useRevealReady } from "@/lib/useRevealReady";
-import { HOME_MENU_ROWS } from "@/lib/menu/menuGallery";
-import { bowlPriceSummary } from "@/lib/menu/pricing";
-import { listBowls, listSmoothies } from "@/lib/menu/signatures";
+import { bowlPriceSummary, categoryPriceLine } from "@/lib/menu/pricing";
+import { listBowls, listSmoothies, type SignatureCategory, type SignatureItem } from "@/lib/menu/signatures";
 
-// The home page's menu section: a header, the same gallery wall /menu is built
-// from showing the four bestsellers, then a cream bar that hands off to the
-// builder section below it.
+// The home page's menu section: a header, the signature bowls and smoothies
+// as two lists with a few photographs beside them, then a cream bar that
+// hands off to the builder section below it.
 //
-// It replaced a sticky image stage beside a scrolling ledger of all ten
-// signatures. Two reasons. The wall is the layout the rest of the site now
-// uses, and reprinting the whole menu here made /menu a page with nothing on it
-// the home page had not already shown.
+// The lists replaced the gallery wall on 2026-09-10. The wall showed four
+// bestsellers as rows of two photographs each, and after the menu changed
+// only The Moment and The Silk still looked like their photographs. The list
+// is the /source-menu shape: every item as type, one column, and the photos
+// we have hung beside it with the item's name under each. The Uber Eats
+// shoot supplies the four here (two bowls, two smoothies); on a phone the
+// photos go and the two bowls with a matching top-down cut-out get a small
+// thumbnail, so the section stays readable at one thumb's width.
 //
-// The way to the full menu is stated twice, above the wall and again in the bar
-// below it. Four items is exactly enough to be mistaken for the whole menu, and
-// the bar is the last thing read before the section ends, which is where that
-// misreading would otherwise stick.
+// Every signature is listed, not a preview. /menu still earns its link: it
+// carries a photograph of every item and room to read each one.
 //
-// Both are the outlined variant, the same one BuildSection's button uses. They
-// were grapefruit fills. Two loud buttons on one cream screen compete for the
-// same click, and the one in the bar sits a few lines from COMPOSE YOUR OWN's
-// button, where a filled button and an outlined one would have implied a
-// ranking between two routes that are meant to be a genuine either/or.
-//
-// Rows are shorter than /menu's: a full menu row is sized to hold an
-// eight-ingredient recipe with room around it, and three of those under a hero
-// is most of a screen each.
-const ROW_HEIGHT = "clamp(21rem, 36vw, 34rem)";
+// The way to /menu is stated twice, above the lists and again in the bar
+// below them. Both are the filled midnight variant, the same one
+// BuildSection's button uses, because the bar's button has to match COMPOSE
+// YOUR OWN's a few lines below it: a filled button and an outlined one would
+// imply a ranking between two routes that are meant to be a genuine either/or.
+
+// The items whose product photo hangs beside the list from tablet width up.
+const HOME_PHOTOS: Record<SignatureCategory, readonly string[]> = {
+  bowl: ["moment", "silk"],
+  smoothie: ["glow", "cabana"],
+};
+
+/**
+ * bowlPriceSummary() as one sentence about bowl sizes and, when the smoothies
+ * agree on a price, a second about smoothies (" Smoothies 22 oz, $15."). On a
+ * phone the combined sentence is long enough to wrap mid clause, right after
+ * "Smoothies," which reads worse than a clean break before it. This forces
+ * that break below tablet width and lets the two sentences share one line
+ * from tablet width up, same as before.
+ */
+function PriceSummary() {
+  const summary = bowlPriceSummary();
+  const split = summary.indexOf(" Smoothies");
+  if (split === -1) return <>{summary}</>;
+
+  return (
+    <>
+      {summary.slice(0, split)}
+      <span className="block md:inline">{summary.slice(split)}</span>
+    </>
+  );
+}
 
 export function SignatureMenuSection() {
   const headerRef = useRef<HTMLDivElement>(null);
@@ -40,35 +64,123 @@ export function SignatureMenuSection() {
 
   return (
     <section className="relative w-full bg-cream overflow-x-clip">
-      <div ref={headerRef} className="px-section-x pt-section pb-14">
+      <div ref={headerRef} className="px-section-x pt-section pb-14 text-center">
         <Reveal show={show} index={0}>
           <h2
             className="font-headline text-midnight tracking-headline leading-[0.9] uppercase"
             style={{ fontSize: "clamp(2.25rem, 7vw, 4.75rem)" }}
           >
-            Our Favourites
+            Our Menu
           </h2>
         </Reveal>
 
         <Reveal show={show} index={1}>
           {/* Derived from menu.json, so a price change on the board reaches
-              this sentence without anyone editing it. */}
+              this sentence without anyone editing it. Split before "Smoothies"
+              so a phone breaks the line there on purpose, rather than wherever
+              it runs out of width mid clause. */}
           <p className="font-body-mixed text-juniper text-sm leading-relaxed mt-5">
-            {bowlPriceSummary()}
+            <PriceSummary />
           </p>
-        </Reveal>
-
-        <Reveal show={show} index={2}>
-          <CTAButton href="/menu" variant="dark" className="mt-8">
-            See the full menu
-          </CTAButton>
         </Reveal>
       </div>
 
-      <SignatureGallery rows={HOME_MENU_ROWS} rowHeight={ROW_HEIGHT} />
+      <Category title="Signature bowls" category="bowl" items={listBowls()} />
+      <Category title="Signature smoothies" category="smoothie" items={listSmoothies()} />
 
       <FullMenuBar />
     </section>
+  );
+}
+
+// One category: its name and price on a line, then the list. The price is
+// stated here once rather than on every item (categoryPriceLine returns
+// undefined the moment the items stop agreeing, and a unit test fails on
+// that too). The heading is left-set with the list under it, unlike the
+// centred section header above: it is the start of a column, not a caption.
+//
+// Below tablet width, the bold rule under the heading is bowls-only: it
+// stands in for the pictured column that only exists from tablet width up
+// (MobilePicturedRow), so a phone gets the same two subtitled photographs as
+// desktop instead of a line with nothing under it. Smoothies have no photo
+// pairing on this page and keep the rule.
+function Category({
+  title,
+  category,
+  items,
+}: {
+  title: string;
+  category: SignatureCategory;
+  items: readonly SignatureItem[];
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const show = useRevealReady(ref, "-80px");
+  const price = categoryPriceLine(category);
+  const photos = HOME_PHOTOS[category];
+  const pictured = items.filter((item) => item.images?.transparent && photos.includes(item.id));
+  const mobilePictured = category === "bowl" && pictured.length > 0;
+
+  return (
+    <div ref={ref} className="px-section-x pb-16 md:pb-20">
+      <Reveal show={show} index={0}>
+        <div
+          className={`flex flex-wrap items-baseline gap-x-6 gap-y-1 pb-3 mb-6 ${
+            mobilePictured ? "md:border-b-2 md:border-midnight" : "border-b-2 border-midnight"
+          }`}
+        >
+          <h3
+            className="font-headline text-midnight uppercase leading-none"
+            style={{ fontSize: "clamp(1.5rem, 3vw, 2.25rem)" }}
+          >
+            {title}
+          </h3>
+          {price && <p className="font-body-caps text-juniper tracking-headline text-caption">{price}</p>}
+        </div>
+      </Reveal>
+
+      {mobilePictured && <MobilePicturedRow items={pictured} />}
+
+      <SignatureList
+        items={items}
+        variant="list"
+        photos={photos}
+        mobileThumb="none"
+        bestSellers={category === "bowl" ? photos : undefined}
+      />
+    </div>
+  );
+}
+
+/**
+ * Below tablet width only: the pictured items side by side, each subtitled
+ * with its name, exactly as the desktop column already subtitles them
+ * (Figure's caption). Takes the rule's place under the heading rather than
+ * sitting alongside it, so the heading area stays a single closing line at
+ * every width.
+ */
+function MobilePicturedRow({ items }: { items: readonly SignatureItem[] }) {
+  return (
+    <div className="md:hidden grid grid-cols-2 gap-6 mb-8">
+      {items.map((item) => (
+        <figure key={item.id} className="flex flex-col items-center text-center">
+          <div className="relative w-full overflow-hidden" style={{ aspectRatio: "1 / 1" }}>
+            <Image
+              src={item.images!.transparent!}
+              alt={item.name}
+              fill
+              sizes="45vw"
+              className="object-cover object-center"
+            />
+          </div>
+          <figcaption className="font-body-caps text-midnight tracking-headline mt-3 text-label uppercase">
+            {item.name}
+          </figcaption>
+          <p className="font-body-caps text-grapefruit-text tracking-headline mt-1 text-label uppercase">
+            Best Seller
+          </p>
+        </figure>
+      ))}
+    </div>
   );
 }
 
@@ -130,7 +242,7 @@ function FullMenuBar() {
           className="font-headline uppercase leading-[0.92]"
           style={{ fontSize: "var(--gallery-name-size)", color: "var(--gallery-ink)" }}
         >
-          Browse the full menu
+          See the full menu
         </h3>
 
         <p
@@ -152,7 +264,7 @@ function FullMenuBar() {
             COMPOSE YOUR OWN's button it just read as a second, slightly
             different button, which is exactly what an either/or must not look
             like. Default metrics, so the two are the same object. */}
-        <CTAButton href="/menu" variant="dark" className="mt-7">
+        <CTAButton href="/menu" variant="midnight" className="mt-7">
           Browse
         </CTAButton>
       </div>

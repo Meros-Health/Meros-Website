@@ -94,7 +94,7 @@ test("a smoothie card has nothing to choose and adds in one click", async ({ pag
   const card = page.locator("#smoothies article").first();
   await expect(card.getByRole("group", { name: "Yogurt" })).toHaveCount(0);
   // One size, so the heading needs no "from" and the panel needs no price.
-  await expect(page.locator("#smoothies")).toContainText("24 oz $15");
+  await expect(page.locator("#smoothies")).toContainText("22 oz $15");
   await expect(page.locator("#smoothies")).not.toContainText("From");
   await expect(card).not.toContainText("$");
   await card.getByRole("button", { name: /^Add .+ to cart$/ }).click();
@@ -149,43 +149,42 @@ test("the home page preview opens the add modal for a bowl and adds a smoothie o
   ]);
 });
 
-test("an item with no photography is a full menu entry, as type", async ({ page }) => {
+test("every item on /menu is a full entry with its photograph", async ({ page }) => {
   await page.goto("/menu");
   await waitForPageReady(page);
 
-  // The Seasonal has no photo by design: its fruit rotates. On the wall that
-  // makes it a text panel rather than a card with an empty image well or a
-  // stand-in photograph of some other bowl.
-  const seasonal = page.locator("#bowls article", { hasText: "Seasonal" });
-  await expect(seasonal).toHaveCount(1);
-  await seasonal.scrollIntoViewIfNeeded();
+  // The Glow was the last item to be photographed (the Uber Eats shoot of
+  // 2026-09-09). It says everything the others say and carries its photo.
+  const glow = page.locator("#smoothies article", { hasText: "Glow" });
+  await expect(glow).toHaveCount(1);
+  await glow.scrollIntoViewIfNeeded();
+  await expect(glow).toContainText("Strawberries, Raspberries");
+  await expect(glow.getByRole("button", { name: /^Add .+ to cart$/ })).toBeVisible();
 
-  // Everything a photographed item says, it says too.
-  await expect(seasonal).toContainText("Seasonal Stone Fruits, Seasonal Berries");
-  await expect(seasonal).toContainText("Featuring");
-  await expect(seasonal.getByRole("button", { name: /^Add .+ to cart$/ })).toBeVisible();
-
-  // And no image anywhere in its row's own panel.
-  await expect(seasonal.locator("img")).toHaveCount(0);
+  // One photograph per item, on every item. The list is the same component
+  // on the home page, so the count there is the same test with fewer photos.
+  const entries = page.locator("#bowls li, #smoothies li");
+  const count = await entries.count();
+  expect(count).toBeGreaterThan(0);
+  for (let i = 0; i < count; i += 1) {
+    await expect(entries.nth(i).locator("img")).toHaveCount(2); // phone thumbnail and the tablet-up photo
+  }
 });
 
-test("the home page previews the menu without reprinting it", async ({ page }) => {
+test("the home page lists every signature and links to /menu twice", async ({ page }) => {
   await page.goto("/menu");
   await waitForPageReady(page);
   const full = await page.locator("#bowls article, #smoothies article").count();
 
   await page.goto("/");
   await waitForPageReady(page);
-  const preview = page.locator("#menu article");
-  const shown = await preview.count();
+  const listed = page.locator("#menu article");
 
-  // A preview that shows everything makes /menu a page with nothing on it the
-  // home page has not already shown.
-  expect(shown).toBeGreaterThan(0);
-  expect(shown).toBeLessThan(full);
-  // Two ways out to the full menu, above the wall and in the bar below it: four
-  // items is exactly enough to be mistaken for the whole menu, and the bar is
-  // the last thing read before the section ends.
+  // The home page carries the whole menu as type (the /source-menu shape);
+  // /menu is where every item has its photograph.
+  expect(full).toBeGreaterThan(0);
+  expect(await listed.count()).toBe(full);
+  // Two ways to the full menu: above the lists and in the bar below them.
   const menuSection = page.locator("#menu");
   await expect(menuSection.getByRole("link", { name: "See the full menu" })).toHaveAttribute("href", "/menu");
   await expect(menuSection.getByRole("link", { name: "Browse", exact: true })).toHaveAttribute("href", "/menu");

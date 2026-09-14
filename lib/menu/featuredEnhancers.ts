@@ -1,35 +1,34 @@
-import { BUILD_CONFIG } from "./buildConfig";
 import { getIngredient, type Ingredient } from "./ingredients";
+import { ENHANCERS_STEP_ID, listStacks, shelfEnhancerIds, stackSize } from "./stacks";
+import { BUILD_CONFIG } from "./buildConfig";
 
 /**
- * Every enhancer the menu offers, arranged into the four columns the home
- * page Stacks section prints, and the number that runs beside each name.
+ * The home page Stacks section: the named Stacks from menu.json, one column
+ * each, with the number that runs beside every enhancer's name.
  *
- * Why this lives here and not in menu.json: that file is the ingredient and
- * pricing contract shared with the in-store Menu TV. Which column an enhancer
- * sits in, and what the column says about itself, is presentation and has no
- * business in the contract. What this file may NOT do is drift from it, so
- * every id below is checked against the enhancers step by
- * `assertEnhancerGroups()` (tests/unit/featuredEnhancers.test.ts) and by
- * scripts/validate-menu.mjs, which gates the build. The check runs both ways:
- * an id here the menu does not offer fails, and an enhancer the menu offers
- * that no column names also fails, so adding one to menu.json cannot quietly
- * leave it off the page.
+ * Until 2026-09-10 the columns were an editorial arrangement of the whole
+ * shelf (Build, Greens, Focus, Botanicals) kept in this file. The columns are
+ * now the four Stacks the store sells, so they are read from `stacks` in
+ * menu.json and a Stack renamed or recomposed there changes the page. What
+ * stays here is presentation: which figure prints beside each name, and the
+ * label it carries. `assertEnhancerGroups()` (tests/unit/featuredEnhancers.test.ts)
+ * still fails the build if a column names an enhancer the step no longer offers;
+ * scripts/validate-menu.mjs checks the same thing on the raw file.
  *
  * On the column copy: a function claim ("supports recovery", "good for your
  * gut") is a regulated claim and this menu has nothing substantiating one. The
- * column heads are shelf labels, never promises, and every number on screen is
- * read off the nutrition record rather than typed.
+ * column heads are the Stack names, never promises, and every number on screen
+ * is read off the nutrition record rather than typed.
  */
 
-export const ENHANCERS_STEP_ID = "enhancers";
+export { ENHANCERS_STEP_ID };
 
-/** Rings in the section: one per enhancer in a stack. Read off the menu. */
-export const STACK_SIZE = getBundleCount();
+/** Rings in the section: one per enhancer in a Stack. Read off the menu. */
+export const STACK_SIZE = stackSize();
 
-/** The layout is a four-by-four block of names. Both halves are asserted. */
-export const GROUP_COUNT = 4;
-export const GROUP_SIZE = 4;
+/** One column per Stack, each STACK_SIZE names tall. Both are asserted. */
+export const GROUP_COUNT = listStacks().length;
+export const GROUP_SIZE = STACK_SIZE;
 
 export interface EnhancerItem {
   ingredientId: string;
@@ -44,7 +43,7 @@ export interface EnhancerItem {
 
 export interface EnhancerGroup {
   id: string;
-  /** The column head. A shelf label, not a promise. */
+  /** The column head: the Stack's name. */
   title: string;
   items: readonly EnhancerItem[];
 }
@@ -52,58 +51,17 @@ export interface EnhancerGroup {
 const CAL = { key: "calories", label: "cal" } as const;
 const PROTEIN = { key: "protein", label: "g protein" } as const;
 
-export const ENHANCER_GROUPS: readonly EnhancerGroup[] = [
-  {
-    id: "build",
-    title: "Build",
-    items: [
-      { ingredientId: "whey-protein-isolate", stat: PROTEIN },
-      { ingredientId: "collagen-peptides", stat: PROTEIN },
-      { ingredientId: "creatine-monohydrate", stat: CAL },
-      { ingredientId: "l-glutamine", stat: CAL },
-    ],
-  },
-  {
-    id: "greens",
-    title: "Greens",
-    items: [
-      { ingredientId: "greens-powder", stat: CAL },
-      { ingredientId: "spirulina", stat: CAL },
-      { ingredientId: "nutritional-yeast", stat: PROTEIN },
-      { ingredientId: "wheat-germ", stat: CAL },
-    ],
-  },
-  {
-    id: "focus",
-    title: "Focus",
-    items: [
-      { ingredientId: "matcha", stat: CAL },
-      { ingredientId: "cacao-nibs", stat: CAL },
-      { ingredientId: "lions-mane", stat: CAL },
-      { ingredientId: "mct-oil", stat: CAL },
-    ],
-  },
-  {
-    id: "botanicals",
-    title: "Botanicals",
-    items: [
-      { ingredientId: "ashwagandha", stat: CAL },
-      { ingredientId: "maca-powder", stat: CAL },
-      { ingredientId: "turmeric-black-pepper", stat: CAL },
-      { ingredientId: "bee-pollen", stat: CAL },
-    ],
-  },
-] as const;
+/** Enhancers bought for their protein print that; everything else prints calories. */
+const PROTEIN_LED = new Set(["whey-protein-isolate", "collagen-peptides", "nutritional-yeast"]);
 
-/** The enhancers step's bundle size, which is how many rings the section draws. */
-function getBundleCount(): number {
-  const step = BUILD_CONFIG.steps.find((s) => s.id === ENHANCERS_STEP_ID);
-  const pricing = step?.pricing;
-  if (pricing?.mode === "included-then-extra" && pricing.bundle) return pricing.bundle.count;
-  // No bundle configured: the section still draws a stack, and three is the
-  // shape the layout is built around.
-  return 3;
-}
+export const ENHANCER_GROUPS: readonly EnhancerGroup[] = listStacks().map((stack) => ({
+  id: stack.id,
+  title: stack.name,
+  items: stack.enhancers.map((ingredientId) => ({
+    ingredientId,
+    stat: PROTEIN_LED.has(ingredientId) ? PROTEIN : CAL,
+  })),
+}));
 
 /** True when the enhancers step offers this ingredient. */
 export function isEnhancerOffered(ingredientId: string): boolean {
@@ -157,19 +115,29 @@ export function groupedEnhancerIds(): string[] {
 }
 
 /**
- * Throws on any drift between this file and the menu. Called by the unit test
- * and by scripts/validate-menu.mjs; not called at runtime, because a shipped
- * build has already passed both.
+ * The enhancers the step offers that no Stack names, with their records. The
+ * section lists them in one line under the columns so the whole shelf is still
+ * on the page.
+ */
+export function shelfEnhancers(): Ingredient[] {
+  return shelfEnhancerIds().flatMap((id) => {
+    const ingredient = getIngredient(id);
+    return ingredient ? [ingredient] : [];
+  });
+}
+
+/**
+ * Throws on any drift between the columns and the menu. Called by the unit
+ * test; not called at runtime, because a shipped build has already passed it.
  */
 export function assertEnhancerGroups(): void {
   const problems: string[] = [];
-  const seen = new Set<string>();
 
   if (!BUILD_CONFIG.steps.some((s) => s.id === ENHANCERS_STEP_ID)) {
     problems.push(`the menu has no "${ENHANCERS_STEP_ID}" step`);
   }
 
-  if (ENHANCER_GROUPS.length !== GROUP_COUNT) {
+  if (ENHANCER_GROUPS.length !== GROUP_COUNT || ENHANCER_GROUPS.length === 0) {
     problems.push(`the layout draws ${GROUP_COUNT} columns but ${ENHANCER_GROUPS.length} are defined`);
   }
 
@@ -177,21 +145,14 @@ export function assertEnhancerGroups(): void {
     if (group.items.length !== GROUP_SIZE) {
       problems.push(`column "${group.id}" holds ${group.items.length} enhancers, not ${GROUP_SIZE}`);
     }
+    const seen = new Set<string>();
     for (const { ingredientId: id } of group.items) {
-      if (seen.has(id)) problems.push(`"${id}" appears in more than one column`);
+      if (seen.has(id)) problems.push(`"${id}" appears twice in column "${group.id}"`);
       seen.add(id);
       if (!isEnhancerOffered(id)) {
         problems.push(`"${id}" is on the home page but the ${ENHANCERS_STEP_ID} step does not offer it`);
       }
       if (!getIngredient(id)) problems.push(`"${id}" is on the home page but is not in the ingredient registry`);
-    }
-  }
-
-  // The other direction: the section claims to show the whole shelf, so an
-  // enhancer added to menu.json has to be given a column or fail the build.
-  for (const id of offeredEnhancerIds()) {
-    if (!seen.has(id)) {
-      problems.push(`the menu offers "${id}" but no column on the home page names it`);
     }
   }
 

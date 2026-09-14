@@ -5,7 +5,7 @@ import { TransitionLink } from "@/components/transition/TransitionLink";
 
 const MotionLink = motion.create(TransitionLink);
 
-type CTAVariant = "light" | "dark" | "accent";
+type CTAVariant = "light" | "dark" | "midnight" | "accent";
 
 interface CTAButtonProps {
   children: React.ReactNode;
@@ -34,6 +34,16 @@ const THEME = {
     text: "text-midnight",
     outline: "focus-visible:outline-cream",
   },
+  // Light, inverted: midnight fill, cream type. The filled button for a cream
+  // ground, where `dark` is the outlined one. The two are meant to coexist on
+  // one screen: filled where a section names its one route on, outlined where
+  // a button sits inside a photograph's caption and should not shout over it.
+  midnight: {
+    fill: "bg-midnight",
+    border: "border border-midnight",
+    text: "text-cream",
+    outline: "focus-visible:outline-midnight",
+  },
   // The loud one: brand grapefruit filled, cream type, the same pairing
   // AddToCartButton and the nav accent already use. It reads as the primary
   // action on either ground, so one variant covers cream and midnight sections.
@@ -54,6 +64,9 @@ const THEME = {
 /**
  * Dark (outline-only): fades toward transparent on hover/press.
  * Light and accent (filled): background darkens a touch, like a natural press.
+ * Midnight (filled, near-black): brightness has nowhere darker to go, so it
+ * eases toward the ground instead, a lighter fade than dark's so the fill
+ * never reads as disabled.
  */
 const interaction = {
   dark: {
@@ -68,6 +81,13 @@ const interaction = {
     whileHover: { filter: "brightness(0.92)" },
     whileFocus: { filter: "brightness(0.92)" },
     whileTap: { filter: "brightness(0.86)" },
+    transition: { duration: 0.2, ease: "easeInOut" as const },
+  },
+  midnight: {
+    initial: { opacity: 1 },
+    whileHover: { opacity: 0.82 },
+    whileFocus: { opacity: 0.82 },
+    whileTap: { opacity: 0.7 },
     transition: { duration: 0.2, ease: "easeInOut" as const },
   },
   accent: {

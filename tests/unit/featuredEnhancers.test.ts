@@ -13,12 +13,14 @@ import {
   isEnhancerOffered,
   offeredEnhancerIds,
   resolveEnhancerGroups,
+  shelfEnhancers,
 } from "@/lib/menu/featuredEnhancers";
+import { listStacks } from "@/lib/menu/stacks";
 
-// The Stacks section prints every enhancer the menu offers in four columns of
-// four, with a number beside each name. Both the columns and the numbers are
-// derived from menu.json, and this is what makes pulling an enhancer a build
-// failure rather than a dead row on the home page.
+// The Stacks section prints the named Stacks from menu.json, one column each,
+// with a number beside each name. Columns and numbers are derived from
+// menu.json, and this is what makes pulling an enhancer a build failure rather
+// than a dead row on the home page.
 
 const enhancersStep = BUILD_CONFIG.steps.find((step) => step.id === ENHANCERS_STEP_ID);
 
@@ -28,10 +30,19 @@ describe("enhancer columns", () => {
     expect(enhancersStep?.select).toBe("multi");
   });
 
-  it("draws exactly the four-by-four block the layout is built around", () => {
+  it("draws one column per Stack, each a Stack tall", () => {
     expect(ENHANCER_GROUPS).toHaveLength(GROUP_COUNT);
+    expect(GROUP_COUNT).toBe(listStacks().length);
     for (const group of ENHANCER_GROUPS) {
       expect(group.items, `column "${group.id}"`).toHaveLength(GROUP_SIZE);
+    }
+  });
+
+  it("titles each column with its Stack's name and lists its enhancers in Stack order", () => {
+    for (const stack of listStacks()) {
+      const group = ENHANCER_GROUPS.find((g) => g.id === stack.id);
+      expect(group?.title).toBe(stack.name);
+      expect(group?.items.map((i) => i.ingredientId)).toEqual(stack.enhancers);
     }
   });
 
@@ -47,13 +58,10 @@ describe("enhancer columns", () => {
     }
   });
 
-  it("names no ingredient twice", () => {
-    const ids = groupedEnhancerIds();
-    expect(new Set(ids).size).toBe(ids.length);
-  });
-
-  it("names every enhancer the menu offers, so a new one cannot be left off the page", () => {
-    expect([...groupedEnhancerIds()].sort()).toEqual([...offeredEnhancerIds()].sort());
+  it("puts the rest of the shelf in the line under the columns, so nothing offered is left off the page", () => {
+    const shown = [...groupedEnhancerIds(), ...shelfEnhancers().map((i) => i.id)];
+    expect([...shown].sort()).toEqual([...offeredEnhancerIds()].sort());
+    expect(new Set(shown).size).toBe(shown.length);
   });
 
   it("assertEnhancerGroups passes against the live menu", () => {
@@ -91,7 +99,6 @@ describe("resolveEnhancerGroups", () => {
     );
     expect(byId.get("whey-protein-isolate")).toBe("24 g protein");
     expect(byId.get("creatine-monohydrate")).toBe("0 cal");
-    expect(byId.get("matcha")).toBe("6 cal");
     expect(byId.get("collagen-peptides")).toBe("9 g protein");
   });
 

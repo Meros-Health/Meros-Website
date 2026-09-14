@@ -35,14 +35,14 @@ export function smoothiePrice(): number | undefined {
   return prices.size === 1 ? [...prices][0] : undefined;
 }
 
-/** Smoothie size label as the board prints it ("24 oz"). */
+/** Smoothie size label as the board prints it ("22 oz"). */
 export function smoothieSizeLabel(): string | undefined {
   return getSizeTiers("smoothie")[0]?.label;
 }
 
 /**
  * The menu header's price line: "Bowls served Medium $12 or Large $15.
- * Smoothies 24 oz, $15." Sizes are listed in menu order, cheapest first.
+ * Smoothies 22 oz, $15." Sizes are listed in menu order, cheapest first.
  */
 export function bowlPriceSummary(): string {
   const sizes = BUILD_CONFIG.sizes.map((size) => `${size.label} ${formatMenuPrice(size.price)}`);
@@ -82,7 +82,7 @@ export function categoryPriceLine(category: SignatureCategory): string | undefin
     if (price === undefined) return undefined;
     // Always labelled. With two sizes the label is what tells the reader which
     // number buys which bowl; with one it is the only place the page says how
-    // big a smoothie is ("24 oz").
+    // big a smoothie is ("22 oz").
     parts.push(`${tier.label} ${formatMenuPrice(price)}`);
   }
 

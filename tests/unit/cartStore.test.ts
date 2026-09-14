@@ -452,7 +452,7 @@ describe("signature yogurt", () => {
     // notice for it; the smoothie came back on a default the customer never
     // chose, and is told once.
     const messages = store.getState().notice!.map((c) => c.message);
-    expect(messages).toEqual(["The Cabana · 24 oz is now on Vanilla Greek Yogurt. Edit it to choose another yogurt."]);
+    expect(messages).toEqual(["The Cabana · 22 oz is now on Vanilla Greek Yogurt. Edit it to choose another yogurt."]);
   });
 
   it("C3-03: the legacy-line notice shows once; the next load, with the yogurt persisted, is silent", async () => {
@@ -480,7 +480,7 @@ describe("signature yogurt", () => {
     const messages = (state.notice ?? []).map((c) => c.message);
     expect(messages).toEqual([
       "Your previous yogurt is no longer available. Choose a yogurt for The Moment · Medium.",
-      "Your previous yogurt is no longer available; The Cabana · 24 oz is now on Vanilla Greek Yogurt.",
+      "Your previous yogurt is no longer available; The Cabana · 22 oz is now on Vanilla Greek Yogurt.",
     ]);
   });
 
@@ -523,7 +523,7 @@ describe("signature yogurt", () => {
     expect(smoothie.unitPrice).toBe(15);
     const messages = store.getState().notice!.map((c) => c.message);
     expect(messages).toContain("Vegan Coconut Yogurt is no longer available. Choose a yogurt for The Moment · Medium.");
-    expect(messages).toContain("Vegan Coconut Yogurt is no longer available; The Cabana · 24 oz is now on Vanilla Greek Yogurt.");
+    expect(messages).toContain("Vegan Coconut Yogurt is no longer available; The Cabana · 22 oz is now on Vanilla Greek Yogurt.");
   });
 
   it("updateSignatureLine changes the yogurt, re-prices, keeps it when unmentioned, and refuses an unknown one on a bowl", async () => {

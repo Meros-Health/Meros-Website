@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import ScrollTrigger from "gsap/ScrollTrigger";
-import { STACK_SIZE, resolveEnhancerGroups } from "@/lib/menu/featuredEnhancers";
+import { STACK_SIZE, resolveEnhancerGroups, shelfEnhancers } from "@/lib/menu/featuredEnhancers";
 import { TransitionLink } from "@/components/transition/TransitionLink";
 import { useRevealReady } from "@/lib/useRevealReady";
 import { SCRUB_LAG_S } from "@/lib/motion";
@@ -98,6 +98,8 @@ export function StacksSection() {
   const show = useRevealReady(typeRef, "-12%");
 
   const groups = resolveEnhancerGroups();
+  // Offered one at a time, in no Stack. Named so the whole shelf is on the page.
+  const shelf = shelfEnhancers();
 
   // ── Entrance: tagline line by line, then the payoff and the columns ──────
   useGSAP(
@@ -291,7 +293,7 @@ export function StacksSection() {
           </svg>
         </div>
 
-        {/* The whole shelf: four groups, two by two. Every name is its own link;
+        {/* The four Stacks, two by two. Every name is its own link;
             `?add=` is read by components/build/PrefillNotice.tsx. */}
         <div className="mt-9 grid w-full grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-2 lg:mt-14 lg:max-w-[54%] lg:gap-x-12 lg:gap-y-12">
           {groups.map((group, i) => (
@@ -331,6 +333,12 @@ export function StacksSection() {
             </div>
           ))}
         </div>
+
+        {shelf.length > 0 && (
+          <p className="font-body-mixed mt-8 text-[length:var(--stack-stat)] leading-relaxed text-cream/70 lg:mt-10 lg:max-w-[54%]">
+            Also on the shelf, one at a time: {shelf.map((i) => i.name).join(", ")}.
+          </p>
+        )}
       </div>
     </section>
   );

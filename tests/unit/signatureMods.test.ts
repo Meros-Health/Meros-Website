@@ -47,7 +47,7 @@ describe("what the menu allows", () => {
     expect(removable).toEqual(moment().recipe);
     expect(removable).not.toContain("plain-greek-yogurt");
     expect(removable).toContain("house-granola");
-    expect(removable).toContain("toasted-almonds");
+    expect(removable).toContain("almonds");
     expect(isRemovable(moment(), "mangoes")).toBe(false);
     expect(isRemovable(moment(), "plain-greek-yogurt")).toBe(false);
   });
@@ -64,11 +64,11 @@ describe("sanitizeSignatureMods", () => {
 
   it("keeps the first picks up to the caps", () => {
     const mods = sanitizeSignatureMods(moment(), {
-      additions: ["mangoes", "pineapples", "grapes"],
+      additions: ["mangoes", "pineapples", "grapes", "melon"],
       removals: ["house-granola", "bananas", "chia-seeds"],
     });
     expect(mods.additions).toHaveLength(MAX_ADDITIONS);
-    expect(mods.additions).toEqual(["mangoes", "pineapples"]);
+    expect(mods.additions).toEqual(["mangoes", "pineapples", "grapes"]);
     expect(mods.removals).toHaveLength(MAX_REMOVALS);
     expect(mods.removals).toEqual(["house-granola", "bananas"]);
   });
@@ -87,6 +87,13 @@ describe("pricing", () => {
     expect(calcSignaturePrice("moment", "large", { additions: ["mangoes"], removals: [] })).toBe(17);
     expect(calcSignaturePrice("moment", "medium", { additions: ["mangoes", "maca-powder"], removals: [] })).toBe(17);
     expect(calcSignaturePrice("moment", "medium", { additions: ["maca-powder", "matcha"], removals: [] })).toBe(18);
+  });
+
+  it("prices three enhancer additions as a Stack, at the step's bundle price", () => {
+    // The cap is the bundle count for exactly this reason: a whole Stack on a
+    // signature costs what the Stack costs, not three single enhancers.
+    expect(calcSignaturePrice("moment", "medium", { additions: ["maca-powder", "mct-oil", "raw-cocoa-powder"], removals: [] })).toBe(19);
+    expect(calcSignaturePrice("cabana", "standard", { additions: ["greens-powder", "spirulina", "chlorella"], removals: [] })).toBe(22);
   });
 
   it("charges nothing for removals", () => {

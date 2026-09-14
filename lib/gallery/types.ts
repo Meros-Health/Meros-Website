@@ -16,8 +16,11 @@
 // 6/10 while the type panel keeps exactly the width it had before.
 //
 // This module is deliberately content-free: it knows about columns and tones,
-// not about bowls. app/menu supplies its own rows (lib/menu/menuGallery.ts) and
-// any other page can supply different ones, which is the point.
+// not about bowls. The home page's closing wall supplies its own rows
+// (lib/home/homeGallery.ts) and any other page can supply different ones,
+// which is the point. The menu itself left the wall on 2026-09-10 for
+// components/menu/SignatureList.tsx, which needs one photograph per item
+// rather than the two or three a row asks for.
 
 export const GALLERY_COLUMNS = 24;
 
@@ -75,7 +78,7 @@ export type GalleryRow = {
  * leaves a strip of background showing through the wall; one that sums to more
  * silently pushes a panel onto a second grid line and breaks the row height.
  * Neither is visible in a unit test unless it is asserted, so callers assert it
- * (see tests/unit/menuGallery.test.ts).
+ * (see tests/unit/homeGallery.test.ts).
  */
 export function rowSpanTotal(row: GalleryRow): number {
   return row.panels.reduce((total, panel) => total + panel.span, 0);

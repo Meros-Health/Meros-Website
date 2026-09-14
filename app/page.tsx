@@ -22,16 +22,16 @@ export default function HomePage() {
           knowledge panel in search. Built from the same lib/business.ts the
           footer renders from. */}
       <JsonLd data={restaurantSchema(SITE_URL, "/icons/icon-512.png", OG_IMAGE.url)} />
-      {/* Three panels, 150svh: the lockup, the image band, and "A day's fuel,
-          defined by you" over a second photograph. That line used to be a
-          cream SectionBand sitting here between the hero and the menu; it
-          reads as part of the opening, not as a divider, so it moved inside.
-          The menu section's own title now follows the hero directly. */}
-      <div id="hero">
+      {/* One full-screen panel, held in place while the page is pulled over
+          it. The wrapper carries the hold distance and the hero is sticky
+          inside it; see .hero-curtain in app/globals.css for the geometry. */}
+      <div id="hero" className="hero-curtain">
         <HeroSection />
       </div>
 
-      <div id="menu">
+      {/* The sheet. Positioned so it paints above the sticky hero; the
+          section's own cream background is what covers the photograph. */}
+      <div id="menu" className="relative">
         <SignatureMenuSection />
       </div>
 

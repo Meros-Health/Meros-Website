@@ -1,15 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useRef, type ReactElement } from "react";
+import { type ReactElement } from "react";
 import { TransitionLink } from "@/components/transition/TransitionLink";
 import { usePathname } from "next/navigation";
-import { motion, useReducedMotion } from "framer-motion";
-import { INSTAGRAM_POSTS, footerInstagramPosts, INSTAGRAM_URL, INSTAGRAM_HANDLE } from "@/lib/instagramFeed";
+import { INSTAGRAM_URL } from "@/lib/instagramFeed";
 import { BUSINESS, SOCIAL_LINKS, hoursDisplay, mapsQuery, mapsUrl, appleMapsUrl } from "@/lib/business";
 import { FOOTER_DESTINATIONS, HELP_LINKS } from "@/lib/nav";
-import { useRevealReady } from "@/lib/useRevealReady";
-import { ENTRANCE_EASE, PANEL_EASE_CSS } from "@/lib/motion";
 
 // Address, hours and phone come from lib/business.ts, the same data the
 // home page's Restaurant schema is built from.
@@ -84,9 +81,17 @@ export function Footer() {
       {/* ── Row 1: 3-column grid ────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8 px-section-x py-14 md:py-16">
 
-        {/* ── LEFT: Google Maps ─────────────────────────────────────────── */}
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
+        {/* ── LEFT + CENTER: Find Us / Follow Us ──────────────────────────── */}
+        {/* One 2x2 grid rather than two independent columns: Find Us and
+            Follow Us share a row, so the row sizes to the taller of the two
+            and both top blocks occupy the same container space; the map and
+            the storefront photo share the row under it, so their equal
+            aspect-ratio squares land at the same height and bottom-align
+            automatically. `order` reshuffles this back into one column per
+            section on mobile, where the two rows do not apply. */}
+        <div className="grid grid-cols-1 md:grid-cols-2 md:col-span-2 gap-4 md:gap-x-8 md:gap-y-8">
+          {/* Find Us */}
+          <div className="order-1 flex flex-col gap-2">
             <span className="font-body-caps text-cream/40 text-meta tracking-micro-wide">Find Us</span>
             <address className="not-italic flex flex-col gap-0.5">
               <span className="font-body-mixed text-cream text-xs leading-relaxed">{BUSINESS.address.street}</span>
@@ -98,77 +103,13 @@ export function Footer() {
               {hoursDisplay()}
             </span>
           </div>
-          <div className="w-full overflow-hidden" style={{ aspectRatio: "1/1" }}>
-            <iframe
-              src={MAPS_EMBED_URL}
-              width="100%"
-              height="100%"
-              style={{ border: 0, filter: "grayscale(1) invert(0.9) contrast(0.9)" }}
-              allowFullScreen
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-            title="MERŌS on Google Maps"
-            />
-          </div>
-        </div>
 
-        {/* ── CENTER: Instagram feed ────────────────────────────────────── */}
-        <div className="flex flex-col gap-4">
-          {/* Profile header */}
-          <div className="flex items-center gap-3">
-            {/* Avatar: Instagram-style gradient ring */}
-            <a
-              href={INSTAGRAM_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-            aria-label="Visit MERŌS on Instagram"
-              className="flex-shrink-0"
-            >
-              <div
-                className="allow-round p-[3px] overflow-hidden"
-                style={{ background: "linear-gradient(45deg, #f9ce34, #ee2a7b, #6228d7)" }}
-              >
-                <div className="bg-midnight w-[44px] h-[44px] flex items-center justify-center overflow-hidden">
-                  <div className="relative w-[78%] h-[78%]">
-                    <Image
-                      src="/logos/logo-terracotta.png"
-                      alt="MERŌS"
-                      fill
-                      className="object-contain"
-                      sizes="44px"
-                    />
-                  </div>
-                </div>
-              </div>
-            </a>
-            {/* Handle + verified badge */}
-            <div className="flex items-center gap-1.5">
-              <a
-                href={INSTAGRAM_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-body-caps text-cream text-caption tracking-label hover:text-cream/70 transition-colors duration-200"
-              >
-                {INSTAGRAM_HANDLE}
-              </a>
-              <svg width="14" height="14" viewBox="0 0 40 40" fill="none" aria-label="Verified" role="img">
-                <circle cx="20" cy="20" r="20" fill="#0095f6" />
-                <path d="M11 20.5l6.5 6.5 12-13" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-          </div>
-
-          {/* 6-post grid */}
-          <div className="grid grid-cols-3" style={{ gap: "2px" }}>
-            {footerInstagramPosts().map((post, i) => (
-              <FooterInstagramTile key={post.id} post={post} index={i} />
-            ))}
-          </div>
-
-          {/* One glyph per account, Instagram first. The label is on the
-              link, not beside the icon: three marks this recognisable carry
-              themselves, and a caption under each would crowd the row. */}
-          <div className="flex flex-col items-center gap-4 pt-8">
+          {/* Follow Us. The label is on the link, not beside the icon: three
+              marks this recognisable carry themselves, and a caption under
+              each would crowd the row. mt-10 on mobile only, where it is the
+              second block in one stacked column rather than beside Find Us,
+              restores the section break the grid gap no longer gives it. */}
+          <div className="order-3 md:order-2 flex flex-col items-center gap-4 mt-10 md:mt-0">
             <span className="font-body-caps text-cream/40 text-meta tracking-micro-wide">Follow Us</span>
             <div className="flex items-center justify-center gap-9">
               {SOCIAL_LINKS.map(({ label, href }) => {
@@ -188,6 +129,38 @@ export function Footer() {
               })}
             </div>
           </div>
+
+          {/* Google Maps */}
+          <div className="order-2 md:order-3 w-full overflow-hidden" style={{ aspectRatio: "1/1" }}>
+            <iframe
+              src={MAPS_EMBED_URL}
+              width="100%"
+              height="100%"
+              style={{ border: 0, filter: "grayscale(1) invert(0.9) contrast(0.9)" }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            title="MERŌS on Google Maps"
+            />
+          </div>
+
+          {/* Storefront photo */}
+          <a
+            href={INSTAGRAM_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Visit MERŌS on Instagram"
+            className="order-4 relative block w-full overflow-hidden"
+            style={{ aspectRatio: "1/1" }}
+          >
+            <Image
+              src="/images-web/Footer/Storefront.jpg"
+              alt="The MERŌS storefront in Yaletown"
+              fill
+              sizes="(max-width: 768px) 100vw, 33vw"
+              className="object-cover"
+            />
+          </a>
         </div>
 
         {/* ── RIGHT: Link groups ──────────────────────────────────────── */}
@@ -281,71 +254,5 @@ function TikTokIcon({ size }: { size: number }) {
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <path d="M12.53.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07Z" />
     </svg>
-  );
-}
-
-// ── Footer Instagram tile ──────────────────────────────────────────────────────
-
-interface FooterInstagramTileProps {
-  post: (typeof INSTAGRAM_POSTS)[number];
-  index: number;
-}
-
-function FooterInstagramTile({ post, index }: FooterInstagramTileProps) {
-  const reduced = useReducedMotion();
-  const [hovered, setHovered] = useState(false);
-  const ref = useRef<HTMLAnchorElement>(null);
-  // Fades in only once its own image has decoded, so the grid never shows a
-  // tile animating in around an empty frame.
-  const show = useRevealReady(ref, "-40px");
-
-  return (
-    <motion.a
-      ref={ref}
-      href={INSTAGRAM_URL}
-      target="_blank"
-      rel="noopener noreferrer"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: show ? 1 : 0 }}
-      transition={
-        reduced
-          ? { duration: 0 }
-          : {
-              delay: Math.min((index % 3) * 0.05, 0.15),
-              duration: 0.5,
-              // A scroll reveal, so the house entrance curve rather than the
-              // interactive one it shares with the hover scale below.
-              ease: ENTRANCE_EASE,
-            }
-      }
-      className="relative block overflow-hidden"
-      style={{ aspectRatio: "4/5" }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      <Image
-        src={post.imageUrl}
-        alt={post.caption}
-        fill
-        sizes="(max-width: 768px) 33vw, 200px"
-        className="object-cover"
-        style={{
-          transform: hovered && !reduced ? "scale(1.04)" : "scale(1)",
-          transition: reduced ? "none" : `transform 0.5s ${PANEL_EASE_CSS}`,
-        }}
-      />
-      <div
-        className="hidden sm:flex absolute inset-0 items-center justify-center"
-        style={{
-          background: "rgba(0,0,0,0.45)",
-          opacity: hovered ? 1 : 0,
-          transition: "opacity 0.25s ease",
-        }}
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="white" aria-hidden>
-          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-        </svg>
-      </div>
-    </motion.a>
   );
 }

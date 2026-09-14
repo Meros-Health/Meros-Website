@@ -1,8 +1,9 @@
 // The landing page's entrance timeline, in one table.
 //
-// Four beats, largest element first, so the motion order reinforces the visual
+// Five beats, largest element first, so the motion order reinforces the visual
 // hierarchy: the nav chrome, the full-screen photograph, the lockup centred
-// over it, then the two actions under that. Every beat's delay is measured
+// over it, the two actions under that, then the tagline under those. Every
+// beat's delay is measured
 // from the moment the page is ready (the preloader lifting on first load, the
 // transition cover lifting on a return to "/"), never from mount, so the
 // sequence is never half-spent behind a cover.
@@ -49,4 +50,19 @@ export const HERO_ENTRANCE = {
   logo: { delay: 1.05, duration: 1.2 },
   /** Beat 4: Visit MERŌS and Order Now. Fade and a short rise. */
   ctas: { delay: 1.5, duration: 1.1 },
+  /**
+   * Beat 5: "A day's fuel, defined by you", wiped in from its leading edge.
+   *
+   * On the cascade's own 0.45s interval, so the line arrives as the next thing
+   * after the buttons rather than as an afterthought that had to be waited for.
+   * A wipe rather than the rise the two beats above use: a rise on a line of
+   * widely tracked capitals under two buttons that just rose reads as the same
+   * movement happening twice, and the wipe is the treatment this line already
+   * had when it was a band of its own.
+   *
+   * Nothing downstream depends on when this finishes. It is over the
+   * photograph, which is the LCP element, and the LCP clock stopped at the end
+   * of beat 2.
+   */
+  tagline: { delay: 1.95, duration: 1.2 },
 } as const satisfies Record<string, EntranceBeat>;

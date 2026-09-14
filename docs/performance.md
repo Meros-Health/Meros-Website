@@ -119,17 +119,17 @@ nav bar, lockup, image band, calls to action, top of the screen down. The
 navbar reads its own beat from there too, which is why a global component
 imports a hero module.
 
-Both photographs parallax as they cross the screen, `lib/useParallax.ts`. It
-runs on `gsap.ticker` rather than on a scroll listener or framer's
-`useScroll`, because Lenis virtualises scrolling and is itself stepped by that
-ticker: a callback there runs on the same frame as the scroll it reacts to and
-reads a rect that is already current. The layer overhangs its panel by exactly
-the distance it travels, so no edge is ever briefly empty, and the two rates
-differ (12% and 19%) because equal rates read as one background sliding behind
-two windows. The rate is also coupled to the crop: the layer overhangs its
-panel by exactly the distance it travels and has not spent that travel at
-rest, so a pinned edge of the frame is held off screen by a fraction of the
-rate, about 0.67x at the top edge and about 1.33x at the bottom. Reduced motion registers no ticker callback at all.
+The hero is held at the top of the screen while the menu is pulled over it
+(`.hero-curtain` in `app/globals.css`), and the photograph drifts faintly under
+that, `useCurtainParallax` in `lib/useParallax.ts`: it climbs 5% of the
+panel's height over the hold. It runs on `gsap.ticker` rather than on a scroll
+listener or framer's `useScroll`, because Lenis virtualises scrolling and is
+itself stepped by that ticker: a callback there runs on the same frame as the
+scroll it reacts to and reads a rect that is already current. The layer
+overhangs its panel at the bottom by exactly the distance it climbs, so the
+bottom edge is never briefly empty. The menu walls do not move: fourteen
+photographs drifting on `/menu` was too many, and the sideways rate per row
+came out on 2026-09-08. Reduced motion registers no ticker callback at all.
 
 The image band is the LCP element and it is revealed with a clip path rather
 than a fade. Chrome refuses to count an element at `opacity: 0`, so a fade

@@ -58,7 +58,7 @@ describe("submitCheckout: happy path", () => {
     expect(logged.total).toBe(29);
     expect(logged.items.map((i) => i.name)).toEqual([
       "The Moment · Medium · Vegan Coconut Yogurt",
-      "The Cabana · 24 oz · Vanilla Greek Yogurt",
+      "The Cabana · 22 oz · Vanilla Greek Yogurt",
     ]);
   });
 
@@ -307,7 +307,7 @@ describe("signature additions and removals", () => {
   });
 
   const rejected: Array<[string, unknown, number, string]> = [
-    ["three additions", { additions: ["mangoes", "pineapples", "grapes"], removals: [] }, 18, "unavailable"],
+    ["four additions", { additions: ["mangoes", "pineapples", "grapes", "melon"], removals: [] }, 20, "unavailable"],
     ["three removals", { additions: [], removals: ["house-granola", "bananas", "chia-seeds"] }, 12, "unavailable"],
     ["removal of the base", { additions: [], removals: ["plain-greek-yogurt"] }, 12, "unavailable"],
     ["addition already in the recipe", { additions: ["blueberries"], removals: [] }, 14, "unavailable"],

@@ -8,9 +8,9 @@ export type SignatureCategory = "bowl" | "smoothie";
 
 export type SignatureSizeInfo = {
   price: number;
-  /** Absent on The Seasonal: removed pending a recompute from the macro sheets. */
+  /** Required by the validator since 2026-09-10; optional in the type for older persisted data. */
   calories?: number;
-  /** Absent on The Seasonal: removed pending a recompute from the macro sheets. */
+  /** Required by the validator since 2026-09-10; optional in the type for older persisted data. */
   protein?: number;
 };
 
@@ -28,19 +28,22 @@ export type SignatureItem = {
   ingredients: string;
   /**
    * The yogurt this item departs from its category default with, as a Base
-   * step ingredient id. Absent on every item today; lib/menu/signatureBase.ts
-   * resolves the default.
+   * step ingredient id. Only The Recovery sets one (High Protein 0%);
+   * lib/menu/signatureBase.ts resolves the default for the rest.
    */
   base?: string;
+  /** The Stack the menu suggests with this item, a stacks.items id. Optional. */
+  suggestedStack?: string;
   /** Keyed by size id; bowls carry two sizes, smoothies one. */
   sizes: Record<string, SignatureSizeInfo>;
   /**
-   * Absent on an item that ships without photography (The Seasonal, whose
-   * fruit changes with the season, and any item added before its shoot).
-   * Surfaces then set the item as type in the photograph's place; on the menu
-   * wall that choice is editorial and lives in lib/menu/menuGallery.ts.
+   * Absent on an item that ships without photography; surfaces then set the
+   * item as type in the photograph's place. `photo` is the product shot
+   * (the Uber Eats set, 5:4). `transparent` is the top-down cut-out, kept
+   * only where it still matches the item as built; the menu lists use it as
+   * a small thumbnail on phones.
    */
-  images?: { photo: string; transparent: string };
+  images?: { photo: string; transparent?: string };
   /**
    * What is in the case right now, printed as "Featuring {seasonNote}", so
    * write it as a lowercase phrase. Only
@@ -86,7 +89,7 @@ export function getSizeTiers(category: SignatureCategory): SizeTier[] {
   return SIZE_TIERS[category];
 }
 
-/** First tier in display order: Medium for bowls, 24 oz for smoothies. */
+/** First tier in display order: Medium for bowls, 22 oz for smoothies. */
 export function getDefaultSizeId(category: SignatureCategory): string {
   return SIZE_TIERS[category][0].id;
 }

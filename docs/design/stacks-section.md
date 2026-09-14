@@ -1,5 +1,14 @@
 # Stacks: home page section
 
+> **2026-09-10.** The columns are now the four named Stacks from `stacks.items`
+> in `menu.json` (Rebuild, Energy, Glow, Greens), three enhancers each, read
+> through `lib/menu/stacks.ts`. The editorial four-by-four arrangement below
+> (Build, Greens, Focus, Botanicals) is what the section showed before that.
+> The enhancers no Stack names are listed in one line under the columns, so the
+> whole shelf is still on the page. `assertEnhancerGroups()` no longer demands
+> that every offered enhancer sit in a column; the line covers the rest. The
+> rest of this document is unchanged and still describes the rings and motion.
+
 Built 2026-08-29. Canvas: the design lives as artboards on a Claude Design canvas
 (desktop, mobile, placement, the deep-link builder state).
 

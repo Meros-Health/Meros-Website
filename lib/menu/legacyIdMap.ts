@@ -20,8 +20,9 @@ export const LEGACY_ID_MAP: Record<string, string | null> = {
   "top-avocado": null,
 
   "top-granola": "house-granola",
-  "top-coconut-toasted": "toasted-coconut",
-  "top-coconut-shredded": "shredded-coconut",
+  // One coconut since 2026-09-10; toasted and shredded were the same shelf item.
+  "top-coconut-toasted": "coconut",
+  "top-coconut-shredded": "coconut",
   "top-cacao-nibs": "cacao-nibs",
   "top-almonds": "almonds",
   "top-almonds-toasted": "almonds",

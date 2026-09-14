@@ -529,7 +529,7 @@ function HamburgerIcon() {
           key={i}
           style={{
             display: "block",
-            height: "1.5px",
+            height: "2px",
             width: "100%",
             background: "currentColor",
             borderRadius: "0",

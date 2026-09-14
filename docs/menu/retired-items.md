@@ -44,15 +44,53 @@ Macro working, per component, is the `The Rise` block in
 `~/Documents/Meros/meros-macros-sheets/Signature_Smoothies.csv`.
 
 **If it comes back:** paste the JSON above into `signatures.smoothies`, give it a
-row in `SMOOTHIE_ROWS` (`lib/menu/menuGallery.ts`), and recompute its figures.
+photo under `public/images-web/Signature/` and `menu-tv/product-images/`, and recompute its figures.
 The recipe above predates the 2026-09-04 recompute, so 493 / 16 are the old
 numbers and should not be republished as they stand.
 
 ---
 
+## The Seasonal
+
+Retired **2026-09-10**, when Kim's Uber Eats submission became the store menu.
+It was never on that menu, and The Bloom, which it had replaced on 2026-08-28,
+came back into its slot. It had also become a source of confusion: one
+description of "the seasonal" was the availability note on the builder's Fruits
+step ("Based on availability. Ask about our seasonal fruit."), which stays,
+and the other was this bowl, which nobody could define the same way twice.
+
+It was on the menu from 2026-08-28 to 2026-09-10 at $12 / $15, with no
+photograph by design and no calories or protein (its figures were removed on
+2026-09-01 pending a recompute that never happened, because its recipe never
+settled). The validator carried a one-item exception for that; the exception
+went with it.
+
+```json
+{
+  "id": "seasonal",
+  "name": "The Seasonal",
+  "tags": ["Immune Support", "Antioxidants"],
+  "recipe": ["seasonal-stone-fruits", "seasonal-berries", "sunflower-seeds", "house-granola", "local-raw-honey", "bee-pollen"],
+  "seasonNote": "late summer stone fruit and berries",
+  "note": "Ask our staff about our seasonal offerings",
+  "sizes": { "medium": { "price": 12 }, "large": { "price": 15 } }
+}
+```
+
+Its two placeholder ingredients, `seasonal-stone-fruits` and
+`seasonal-berries`, left the registry with it; nothing else used them. No
+assets: it was never photographed and the Menu TV drew it as type.
+
+**If it comes back:** paste the JSON above into `signatures.bowls`, put the two
+placeholder ingredients back with a `group` of `fruits`, and compute its figures before it
+ships; the validator no longer lets a signature omit them. The website lists
+read the item list directly, so it needs no row anywhere else, only a photo.
+
+---
+
 ## Earlier retirements
 
-The Bloom (retired 2026-08-28 for The Seasonal) and The Tropic (renamed The
-Tropics the same day) predate this file. Their record is the `$comment` on
-`signatures` in `menu.json`, and `menu-tv/product-images/Bloom.png` and
-`Tropic.png` are still on disk.
+The Bloom (retired 2026-08-28 for The Seasonal, back on 2026-09-10 with the
+same recipe and its photographs restored from git) and The Tropic (renamed The
+Tropics on 2026-08-28, The Tropic again on 2026-09-10) predate this file. Their
+record is the `$comment` on `signatures` in `menu.json`.
