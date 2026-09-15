@@ -111,8 +111,7 @@ export function EditBuildFooter({ lineId, lineExists }: EditBuildFooterProps) {
         <button
           type="button"
           onClick={prevStep}
-          className="font-body-caps text-label tracking-headline text-juniper px-6 py-3 transition-opacity hover:opacity-70"
-          style={{ border: "0.5px solid var(--rule-strong-midnight)" }}
+          className="font-body-caps text-label tracking-headline text-cream bg-midnight px-6 py-3 transition-opacity hover:opacity-70"
         >
           Back
         </button>
@@ -123,8 +122,7 @@ export function EditBuildFooter({ lineId, lineExists }: EditBuildFooterProps) {
           type="button"
           onClick={nextStep}
           disabled={!canSave}
-          className="font-body-caps text-label tracking-headline text-midnight px-6 py-3 transition-opacity hover:opacity-70 disabled:opacity-30 disabled:cursor-not-allowed"
-          style={{ border: "0.5px solid var(--rule-strong-midnight)" }}
+          className="font-body-caps text-label tracking-headline text-cream bg-midnight px-6 py-3 transition-opacity hover:opacity-70 disabled:opacity-30 disabled:cursor-not-allowed"
         >
           Next
         </button>

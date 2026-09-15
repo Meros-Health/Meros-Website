@@ -55,8 +55,8 @@ export function StepNav({ layout = "horizontal" }: StepNavProps) {
               className="flex items-center gap-2 text-left px-3 py-2 transition-opacity disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
               style={{
                 border: isActive
-                  ? "0.5px solid var(--color-grapefruit)"
-                  : "0.5px solid var(--rule-midnight)",
+                  ? "1px solid var(--color-grapefruit)"
+                  : "1px solid var(--rule-midnight)",
                 background: isActive ? "var(--veil-grapefruit)" : "transparent",
               }}
             >

@@ -25,8 +25,8 @@ export function IngredientCard({ item, selected, priceLabel, onSelect }: Ingredi
       className="relative flex flex-col text-left transition-all duration-200"
       style={{
         border: selected
-          ? "0.5px solid var(--color-grapefruit)"
-          : "0.5px solid var(--rule-midnight)",
+          ? "1px solid var(--color-grapefruit)"
+          : "1px solid var(--rule-midnight)",
         padding: "var(--ingredient-card-padding)",
         background: selected ? "var(--color-grapefruit)" : "transparent",
       }}

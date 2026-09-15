@@ -16,8 +16,15 @@ import type { ReactNode } from "react";
 // actually own: which options exist, what a label reads, and when the control
 // should not render at all.
 
-/** Half a pixel, pulled back. Matches borderWidth.hairline in tailwind.config. */
-const HAIRLINE_PULL = "-0.5px";
+// A full 1px border, not the 0.5px `hairline` token: on real phone widths the
+// grid's left edge sits at a fractional device pixel (the page gutter is a
+// vw-based clamp()), and mobile WebKit/Chromium can round a sub-pixel border
+// on that one edge down to nothing. A whole-pixel width at the same low alpha
+// reads just as thin without the rounding failure.
+const BORDER_WIDTH = "1px";
+
+/** One pixel, pulled back, so neighbouring borders overlap instead of doubling. */
+const HAIRLINE_PULL = "-1px";
 
 // Container-query units, so a control inside a card follows that card's width.
 // A parent without `container-type` falls back to the small viewport, which
@@ -76,7 +83,7 @@ export function SegmentedControl<T extends string>({
             aria-pressed={selected}
             onClick={() => onChange(option.value)}
             className={[
-              "font-body-caps tracking-headline border-hairline transition-colors duration-200",
+              "font-body-caps tracking-headline transition-colors duration-200",
               // Touch target floor (Apple HIG, WCAG 2.2 AAA)
               "min-h-11",
               density === "page" ? "text-label py-2" : "",
@@ -90,7 +97,9 @@ export function SegmentedControl<T extends string>({
               ...(density === "card"
                 ? { fontSize: CARD_FONT_SIZE, padding: CARD_PADDING }
                 : null),
-              // Hairlines would double up where neighbours meet.
+              borderWidth: BORDER_WIDTH,
+              borderStyle: "solid",
+              // Borders would double up where neighbours meet.
               marginLeft: i % perRow === 0 ? 0 : HAIRLINE_PULL,
               marginTop: i < perRow ? 0 : HAIRLINE_PULL,
             }}

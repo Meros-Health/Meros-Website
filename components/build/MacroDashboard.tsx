@@ -28,7 +28,7 @@ export function MacroDashboard({ compact = false, expanded = false, onToggleExpa
         onClick={onToggleExpand}
         className="w-full text-left"
         style={{
-          border: "0.5px solid var(--rule-midnight)",
+          border: "1px solid var(--rule-midnight)",
           padding: "0.75rem 1rem",
         }}
         aria-expanded={false}
