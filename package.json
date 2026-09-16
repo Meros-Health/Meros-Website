@@ -24,6 +24,7 @@
     "@gsap/react": "^2.1.1",
     "framer-motion": "^11.3.19",
     "gsap": "^3.12.5",
+    "jose": "^6.2.12",
     "lenis": "^1.1.14",
     "next": "^15.3.4",
     "react": "^18",
@@ -31,9 +32,9 @@
     "zustand": "^4.5.4"
   },
   "overrides": {
+    "sharp": "^0.35.4",
     "next": {
-      "postcss": "^8.5.12",
-      "sharp": "^0.35.0"
+      "postcss": "^8.5.12"
     }
   },
   "devDependencies": {

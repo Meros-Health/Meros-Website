@@ -14,7 +14,8 @@ export default function robots(): MetadataRoute.Robots {
       // paths are keyed by a cart line id that only exists in one browser.
       // /source-menu is the staff reference for the whole menu: reachable by
       // its URL, linked from nowhere, and kept out of the index on purpose.
-      disallow: ["/checkout", "/cart/", "/source-menu"],
+      // /staff is the inventory board, same posture and Access-gated later.
+      disallow: ["/checkout", "/cart/", "/source-menu", "/staff"],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
   };

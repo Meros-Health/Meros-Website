@@ -54,7 +54,7 @@ const SOCIAL_ICONS: Record<string, (props: { size: number }) => ReactElement> = 
 // /menu is deliberately not here. It was, back when the path was /order and the
 // page was the first step of the flow. It is a page someone reads and leaves
 // from now, so it gets the footer like every other page on the site.
-const HIDDEN_ON = ["/build", "/checkout", "/cart"];
+const HIDDEN_ON = ["/build", "/checkout", "/cart", "/staff"];
 
 export function Footer() {
   const pathname = usePathname();

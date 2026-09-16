@@ -127,12 +127,25 @@ describe("the policy has not drifted from the markup", () => {
 
   it("allows no client-side network destination beyond this origin", () => {
     // Both server actions are called as functions after preventDefault, which
-    // makes them RSC POSTs on this origin. A client-side fetch anywhere else
-    // would need connect-src widened, and that should be a deliberate decision.
+    // makes them RSC POSTs on this origin. A client-side fetch is tolerated
+    // only on this origin (a relative path) and only in a file listed here,
+    // because anywhere else would need connect-src widened, and both are
+    // decisions to make deliberately, not by adding a fetch call.
+    const SAME_ORIGIN_FETCHERS = new Map([
+      ["components/staff/InventoryBoard.tsx", "polls and sets /staff/items, a live board that rereads on an interval"],
+    ]);
     const callers = SOURCES.filter(
       (f) => /"use client"/.test(f.code) && /\bfetch\(|new WebSocket\(|sendBeacon\(/.test(f.code),
-    ).map((f) => f.path);
-    expect(callers).toEqual([]);
+    );
+    const unlisted = callers.filter((f) => !SAME_ORIGIN_FETCHERS.has(f.path)).map((f) => f.path);
+    expect(unlisted, "client-side network callers not deliberately allowlisted").toEqual([]);
+    for (const f of callers) {
+      // Relative paths only: an absolute URL is a new destination even when
+      // it spells this site's own hostname, and sockets and beacons are
+      // destinations the policy does not grant at all.
+      expect(f.code, `${f.path} must fetch relative paths only`).not.toMatch(/fetch\(\s*[`"']https?:/i);
+      expect(f.code, `${f.path} must not open sockets or send beacons`).not.toMatch(/new WebSocket\(|sendBeacon\(/);
+    }
     expect(directive("connect-src")).toBe("'self'");
   });
 });

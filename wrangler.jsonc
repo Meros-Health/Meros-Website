@@ -65,5 +65,20 @@
       "database_id": "c1eb6ab0-3cbf-4332-8b9e-5fc3f006109a",
       "migrations_dir": "migrations"
     }
-  ]
+  ],
+
+  // Staff inventory board (/staff). Cloudflare Access fronts the path at the
+  // edge (One-time PIN against an email allowlist); the routes re-verify the
+  // Access JWT against the team domain's JWKS with these two values, so a
+  // request that skips the edge (workers.dev, a policy mistake) dead-ends at
+  // 403. All three must be present or lib/staff/runtime.ts keeps the portal
+  // a 404: removing any one of them is the off switch.
+  //
+  // The AUD tag identifies the Access application; like the D1 id above it is
+  // an identifier, not a credential.
+  "vars": {
+    "STAFF_PORTAL_ENABLED": "true",
+    "STAFF_ACCESS_TEAM_DOMAIN": "merosyogurt.cloudflareaccess.com",
+    "STAFF_ACCESS_AUD": "b9e5c311df029ad31e0bbcbf8e475237c26eec257282413701514cab4a205f2c"
+  }
 }

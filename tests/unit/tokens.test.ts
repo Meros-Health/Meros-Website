@@ -48,6 +48,13 @@ describe("colour tokens", () => {
     expect(contrast(BRAND.grapefruit, BRAND.midnight)).toBeGreaterThanOrEqual(4.5);
   });
 
+  it("every staff status colour on cream clears AA for small text (4.5:1)", () => {
+    // The /staff board's chip labels are 12px, so 1.4.3 small-text AA applies.
+    for (const name of ["status-in", "status-low", "status-out"] as const) {
+      expect(contrast(BRAND[name], BRAND.cream), name).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
   it("blue clears the 3:1 non-text minimum on midnight, its only ground", () => {
     // A macro ring and a Stacks ring, never type, so WCAG 1.4.11 applies
     // rather than 1.4.3. It had no assertion at all before it became a token.

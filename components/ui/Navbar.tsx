@@ -63,7 +63,21 @@ function colorForT(t: number) {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
+// The staff board behind Cloudflare Access is a work surface, not a site
+// page: it carries none of the marketing chrome (its own Back to site link
+// replaces the nav). The gate is a separate component so the early return
+// never sits among NavbarInner's hooks.
+const HIDDEN_ON = ["/staff"];
+
 export function Navbar() {
+  const pathname = usePathname();
+  if (HIDDEN_ON.some((route) => pathname === route || pathname.startsWith(`${route}/`))) {
+    return null;
+  }
+  return <NavbarInner />;
+}
+
+function NavbarInner() {
   const transitionRouter = useTransitionRouter();
   const pathname = usePathname();
   const lenis = useLenis();

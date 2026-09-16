@@ -10,6 +10,10 @@
     --color-grapefruit: #d78e77;
     --color-grapefruit-text: #ad5b44; /* copy on cream, 4.55:1; fills keep --color-grapefruit */
     --color-blue: #a4bfe1;
+    /* Staff inventory statuses (/staff): text + border + /veil wash, AA on cream. */
+    --color-status-in: #2b6339;
+    --color-status-low: #845a0f;
+    --color-status-out: #a43c33;
 
     /* ── Motion ──
        Mirrors lib/motion.ts, which owns the curves; tests/unit/motion.test.ts

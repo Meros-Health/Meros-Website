@@ -21,6 +21,14 @@ export const BRAND = {
   // Macro charts and the Stacks section. Lived only in globals.css until now,
   // which also meant the contrast test could not see it.
   blue: "#A4BFE1",
+  // Staff inventory statuses (/staff). One meaning per colour, selected-state
+  // only: the chip's text, its border, and a /veil wash of the same hue. All
+  // three clear AA on cream (asserted in tokens.test.ts). Juniper stays
+  // decorative and grapefruit stays the interactive accent, so status red and
+  // brand grapefruit never compete for a meaning.
+  "status-in": "#2B6339",
+  "status-low": "#845A0F",
+  "status-out": "#A43C33",
 } as const;
 
 export type BrandColor = keyof typeof BRAND;
