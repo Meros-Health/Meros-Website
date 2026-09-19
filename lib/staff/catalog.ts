@@ -102,7 +102,7 @@ export const INGREDIENT_GROUPS: StaffGroupDef[] = [
     "|peanut-butter",
     "almond-butter",
     "|chocolate",
-    "flaky-salt",
+    "sea-salt",
     "cinnamon",
     "evoo",
   ]),

@@ -46,5 +46,6 @@ export const LEGACY_ID_MAP: Record<string, string | null> = {
   "supp-nutritional-yeast": "nutritional-yeast",
   "supp-peanut-butter": "peanut-butter",
   "supp-almond-butter": "almond-butter",
-  "supp-sea-salt": "flaky-salt",
+  "supp-sea-salt": "sea-salt",
+  "flaky-salt": "sea-salt",
 };
