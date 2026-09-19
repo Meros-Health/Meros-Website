@@ -87,6 +87,7 @@ export const INGREDIENT_GROUPS: StaffGroupDef[] = [
     "pumpkin-seeds",
     "sunflower-seeds",
     "chia-seeds",
+    "berry-chia-pudding",
     "flax-meal",
     "hemp-hearts",
   ]),
