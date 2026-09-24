@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Reveal } from "@/components/ui/ScrollReveal";
+import { AddItemModal, type AddItemSubmit } from "@/components/staff/AddItemModal";
 import {
   INGREDIENT_GROUPS,
   SUPPLY_GROUPS,
-  type StaffGroupDef,
+  type StaffItemDef,
   type StaffStatus,
 } from "@/lib/staff/catalog";
 
@@ -26,11 +27,27 @@ import {
 // Rows appear instantly, no stagger: 91 rows on the sitewide reveal cadence
 // would take seconds to settle, and staff open this mid-shift to answer one
 // question. Only the header gets the house entrance.
+//
+// Two kinds of row share the board. The built-in rows come from the registry
+// and the supplies list in lib/staff/catalog.ts, and cannot be removed here: a
+// discontinued one is set Out. The rest were added by staff from this board
+// and carry a "-". That split is enforced on the server (the DELETE handler
+// refuses any id that is not "custom:"); the button drawn here is the
+// affordance, not the rule.
 
 const POLL_MS = 10_000;
+// A "-" left in its confirming state is a stray tap, not an intention. Long
+// enough to read "Remove?" and mean it, short enough that the row is back to
+// normal before anyone else picks up the phone.
+const CONFIRM_MS = 4_000;
 
 type ItemState = { status: StaffStatus; updatedBy: string | null; updatedAt: string };
 type Latest = { updatedBy: string | null; updatedAt: string } | null;
+type CustomItem = { id: string; name: string; section: string };
+
+/** A board row. `custom` rows are the ones staff added, and the only removable ones. */
+type BoardItem = StaffItemDef & { custom?: boolean };
+type BoardGroup = { name: string; items: BoardItem[] };
 
 const STATUS_LABELS: Record<StaffStatus, string> = { in: "In", low: "Low", out: "Out" };
 
@@ -73,14 +90,48 @@ function formatWhen(iso: string): string {
   }).format(then);
 }
 
+/**
+ * Built-in rows first, then that section's staff-added rows, separated by the
+ * same sub-cluster gap the catalog uses between the berries and the stone
+ * fruit. Sorted by name: on a shelf checklist that is easier to scan than the
+ * order people happened to add things in.
+ */
+function mergeCustom(
+  groups: readonly { name: string; items: StaffItemDef[] }[],
+  custom: CustomItem[]
+): BoardGroup[] {
+  return groups.map((group) => {
+    const added = custom
+      .filter((item) => item.section === group.name)
+      .sort((a, b) => a.name.localeCompare(b.name, "en-CA"));
+    if (added.length === 0) return group;
+    return {
+      name: group.name,
+      items: [
+        ...group.items,
+        ...added.map((item, index) => ({
+          id: item.id,
+          name: item.name,
+          custom: true,
+          ...(index === 0 ? { gapAbove: true } : {}),
+        })),
+      ],
+    };
+  });
+}
+
 export function InventoryBoard() {
   const [statuses, setStatuses] = useState<Record<string, StaffStatus>>({});
+  const [custom, setCustom] = useState<CustomItem[]>([]);
   const [latest, setLatest] = useState<Latest>(null);
   const [tab, setTab] = useState<"ingredients" | "supplies">("ingredients");
   const [phase, setPhase] = useState<"loading" | "ready" | "unavailable">("loading");
   const [revealed, setRevealed] = useState(false);
+  const [addingTo, setAddingTo] = useState<string | null>(null);
   // Polls must not overwrite a tap that is still on its way to the server.
   const inflight = useRef(0);
+  // The "+" that opened the dialog, so focus goes back where it came from.
+  const addTrigger = useRef<HTMLElement | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -90,9 +141,16 @@ export function InventoryBoard() {
         return;
       }
       if (!res.ok) return;
-      const data = (await res.json()) as { items: Record<string, ItemState>; latest: Latest };
+      const data = (await res.json()) as {
+        items: Record<string, ItemState>;
+        latest: Latest;
+        custom: CustomItem[];
+      };
       if (inflight.current > 0) return;
-      setStatuses(Object.fromEntries(Object.entries(data.items).map(([id, item]) => [id, item.status])));
+      setStatuses(
+        Object.fromEntries(Object.entries(data.items).map(([id, item]) => [id, item.status]))
+      );
+      setCustom(data.custom ?? []);
       setLatest(data.latest);
       setPhase("ready");
     } catch {
@@ -116,6 +174,13 @@ export function InventoryBoard() {
     };
   }, [refresh]);
 
+  // Every write follows the same shape: hold off the poll, send, reconcile
+  // with whatever actually landed once the last one is home.
+  const settle = useCallback(() => {
+    inflight.current -= 1;
+    if (inflight.current === 0) void refresh();
+  }, [refresh]);
+
   const setStatus = useCallback(
     (id: string, status: StaffStatus) => {
       setStatuses((prev) => ({ ...prev, [id]: status }));
@@ -127,17 +192,72 @@ export function InventoryBoard() {
         body: JSON.stringify({ id, status }),
       })
         .catch(() => undefined)
-        .then(() => {
-          inflight.current -= 1;
-          // Reconcile with whatever actually landed, ours or someone else's.
-          if (inflight.current === 0) void refresh();
-        });
+        .then(settle);
     },
-    [refresh]
+    [settle]
   );
 
+  const addItem = useCallback<AddItemSubmit>(
+    async (name, section) => {
+      inflight.current += 1;
+      try {
+        const res = await fetch("/staff/items", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, section }),
+        });
+        if (res.status === 201) {
+          const created = (await res.json()) as CustomItem;
+          setCustom((prev) => [...prev, created]);
+          return null;
+        }
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        return body?.error ?? "Could not add that item. Try again.";
+      } catch {
+        return "Could not reach the board. Check the connection and try again.";
+      } finally {
+        settle();
+      }
+    },
+    [settle]
+  );
+
+  const removeItem = useCallback(
+    (id: string) => {
+      setCustom((prev) => prev.filter((item) => item.id !== id));
+      setStatuses((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+      inflight.current += 1;
+      void fetch("/staff/items", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      })
+        .catch(() => undefined)
+        .then(settle);
+    },
+    [settle]
+  );
+
+  const openAdd = useCallback((section: string, trigger: HTMLElement | null) => {
+    addTrigger.current = trigger;
+    setAddingTo(section);
+  }, []);
+
+  const closeAdd = useCallback(() => {
+    setAddingTo(null);
+    addTrigger.current?.focus();
+    addTrigger.current = null;
+  }, []);
+
+  const ingredientGroups = useMemo(() => mergeCustom(INGREDIENT_GROUPS, custom), [custom]);
+  const supplyGroups = useMemo(() => mergeCustom(SUPPLY_GROUPS, custom), [custom]);
+
   const statusOf = (id: string): StaffStatus => statuses[id] ?? "in";
-  const counts = (groups: StaffGroupDef[]) => {
+  const counts = (groups: BoardGroup[]) => {
     let low = 0;
     let out = 0;
     for (const group of groups) {
@@ -149,7 +269,7 @@ export function InventoryBoard() {
     }
     return { low, out };
   };
-  const total = counts([...INGREDIENT_GROUPS, ...SUPPLY_GROUPS]);
+  const total = counts([...ingredientGroups, ...supplyGroups]);
 
   if (phase === "unavailable") {
     return (
@@ -207,19 +327,30 @@ export function InventoryBoard() {
 
         <BoardSection
           title="Ingredients"
-          groups={INGREDIENT_GROUPS}
+          groups={ingredientGroups}
           hiddenOnMobile={tab !== "ingredients"}
           statusOf={statusOf}
           setStatus={setStatus}
+          onAdd={openAdd}
+          onRemove={removeItem}
         />
         <BoardSection
           title="Supplies"
-          groups={SUPPLY_GROUPS}
+          groups={supplyGroups}
           hiddenOnMobile={tab !== "supplies"}
           statusOf={statusOf}
           setStatus={setStatus}
+          onAdd={openAdd}
+          onRemove={removeItem}
         />
       </Reveal>
+
+      <AddItemModal
+        open={addingTo !== null}
+        initialSection={addingTo ?? INGREDIENT_GROUPS[0].name}
+        onClose={closeAdd}
+        onSubmit={addItem}
+      />
     </div>
   );
 }
@@ -230,12 +361,16 @@ function BoardSection({
   hiddenOnMobile,
   statusOf,
   setStatus,
+  onAdd,
+  onRemove,
 }: {
   title: string;
-  groups: StaffGroupDef[];
+  groups: BoardGroup[];
   hiddenOnMobile: boolean;
   statusOf: (id: string) => StaffStatus;
   setStatus: (id: string, status: StaffStatus) => void;
+  onAdd: (section: string, trigger: HTMLElement | null) => void;
+  onRemove: (id: string) => void;
 }) {
   return (
     <section className={hiddenOnMobile ? "hidden md:block" : ""}>
@@ -244,7 +379,14 @@ function BoardSection({
       </h2>
       <div className="mt-2 md:mt-6 md:columns-3 md:gap-6">
         {groups.map((group) => (
-          <GroupCard key={group.name} group={group} statusOf={statusOf} setStatus={setStatus} />
+          <GroupCard
+            key={group.name}
+            group={group}
+            statusOf={statusOf}
+            setStatus={setStatus}
+            onAdd={onAdd}
+            onRemove={onRemove}
+          />
         ))}
       </div>
     </section>
@@ -255,11 +397,25 @@ function GroupCard({
   group,
   statusOf,
   setStatus,
+  onAdd,
+  onRemove,
 }: {
-  group: StaffGroupDef;
+  group: BoardGroup;
   statusOf: (id: string) => StaffStatus;
   setStatus: (id: string, status: StaffStatus) => void;
+  onAdd: (section: string, trigger: HTMLElement | null) => void;
+  onRemove: (id: string) => void;
 }) {
+  // Which row's "-" is waiting on its second tap. One per card is enough:
+  // confirming a second row cancels the first, which is the intent anyway.
+  const [confirming, setConfirming] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!confirming) return;
+    const timer = setTimeout(() => setConfirming(null), CONFIRM_MS);
+    return () => clearTimeout(timer);
+  }, [confirming]);
+
   let low = 0;
   let out = 0;
   for (const item of group.items) {
@@ -283,7 +439,7 @@ function GroupCard({
             className={`flex items-center justify-between gap-3 py-1 ${item.gapAbove ? "mt-3" : ""}`}
           >
             <span className="min-w-0 flex-1 text-sm md:text-caption">{item.name}</span>
-            <span className="flex shrink-0 gap-1">
+            <span className="flex shrink-0 items-center gap-1">
               {(["in", "low", "out"] as const).map((status) => {
                 const selected = statusOf(item.id) === status;
                 return (
@@ -303,10 +459,39 @@ function GroupCard({
                   </button>
                 );
               })}
+              {item.custom ? (
+                confirming === item.id ? (
+                  <button
+                    type="button"
+                    onClick={() => onRemove(item.id)}
+                    aria-label={`Confirm removing ${item.name}`}
+                    className="h-11 border border-emphasis border-status-out bg-status-out/veil px-2 text-xs font-semibold text-status-out md:h-8"
+                  >
+                    Remove?
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setConfirming(item.id)}
+                    aria-label={`Remove ${item.name}`}
+                    className="h-11 w-8 border border-midnight/rule text-sm text-midnight/70 transition-colors hover:bg-midnight/veil md:h-8"
+                  >
+                    <span aria-hidden>−</span>
+                  </button>
+                )
+              ) : null}
             </span>
           </li>
         ))}
       </ul>
+      <button
+        type="button"
+        onClick={(event) => onAdd(group.name, event.currentTarget)}
+        className="mt-2 inline-flex min-h-11 items-center gap-1.5 text-caption text-juniper transition-colors hover:text-midnight md:min-h-8"
+      >
+        <span aria-hidden>+</span>
+        Add to {group.name}
+      </button>
     </div>
   );
 }

@@ -68,3 +68,60 @@ describe("memory inventory store", () => {
     expect(new Date(rows[0].updated_at).getTime()).not.toBeNaN();
   });
 });
+
+describe("staff-added items in the memory store", () => {
+  const row = (id: string, name: string, section: string) => ({
+    id,
+    name,
+    section,
+    created_by: "saima@example.com",
+    created_at: new Date().toISOString(),
+  });
+
+  it("keeps what was added, and reports a duplicate id rather than overwriting", async () => {
+    const store = new MemoryStaffInventoryStore();
+    expect(await store.addCustom(row("custom:oat-milk", "Oat Milk", "Smoothie Bar"))).toBe(true);
+    // The same id from a second server, a moment later. The first name stands.
+    expect(await store.addCustom(row("custom:oat-milk", "oat milk", "Fruits"))).toBe(false);
+
+    const custom = await store.listCustom();
+    expect(custom).toHaveLength(1);
+    expect(custom[0]).toMatchObject({
+      id: "custom:oat-milk",
+      name: "Oat Milk",
+      section: "Smoothie Bar",
+      created_by: "saima@example.com",
+    });
+  });
+
+  it("keeps staff-added items out of the status list until one is set", async () => {
+    const store = new MemoryStaffInventoryStore();
+    await store.addCustom(row("custom:oat-milk", "Oat Milk", "Smoothie Bar"));
+    expect(await store.list()).toEqual([]);
+
+    await store.set("custom:oat-milk", "low", null);
+    expect(await store.list()).toHaveLength(1);
+  });
+
+  // A removed item that comes back should come back stocked. Leaving the
+  // status row behind would re-add it reading 'out' from whenever it left.
+  it("drops the status row along with the item", async () => {
+    const store = new MemoryStaffInventoryStore();
+    await store.addCustom(row("custom:oat-milk", "Oat Milk", "Smoothie Bar"));
+    await store.set("custom:oat-milk", "out", "kim@example.com");
+    await store.set("bananas", "low", "kim@example.com");
+
+    await store.removeCustom("custom:oat-milk");
+
+    expect(await store.listCustom()).toEqual([]);
+    const rows = await store.list();
+    expect(rows.map((r) => r.id)).toEqual(["bananas"]);
+  });
+
+  it("removes nothing when the id was never there", async () => {
+    const store = new MemoryStaffInventoryStore();
+    await store.set("bananas", "low", null);
+    await store.removeCustom("custom:never-existed");
+    expect(await store.list()).toHaveLength(1);
+  });
+});

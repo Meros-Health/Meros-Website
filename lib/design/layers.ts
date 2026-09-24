@@ -17,6 +17,8 @@ export const Z = {
   cartDrawer: 130,
   /** Above the drawer it is opened from, below the page transition cover. */
   signatureModal: 135,
+  /** The staff board's add-item dialog. That page carries no site chrome to sit over. */
+  staffModal: 137,
   /** Covers the outgoing page during a route change, so it is above the chrome. */
   pageCover: 140,
   /** First load only, and above everything by a clear margin. */
