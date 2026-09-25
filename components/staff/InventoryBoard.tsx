@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Reveal } from "@/components/ui/ScrollReveal";
 import { AddItemModal, type AddItemSubmit } from "@/components/staff/AddItemModal";
+import { lockLabel } from "@/lib/menu/dependencies";
+import { builtInItemFor } from "@/lib/staff/customItems";
 import {
   INGREDIENT_GROUPS,
   SUPPLY_GROUPS,
@@ -28,12 +30,19 @@ import {
 // would take seconds to settle, and staff open this mid-shift to answer one
 // question. Only the header gets the house entrance.
 //
-// Two kinds of row share the board. The built-in rows come from the registry
-// and the supplies list in lib/staff/catalog.ts, and cannot be removed here: a
-// discontinued one is set Out. The rest were added by staff from this board
-// and carry a "-". That split is enforced on the server (the DELETE handler
-// refuses any id that is not "custom:"); the button drawn here is the
-// affordance, not the rule.
+// Three kinds of row share the board, and the "-" differs on each:
+//
+//   staff-added         deleted outright. Only D1 ever knew it.
+//   built-in, free      hidden, and listed in "Not carrying" to restore from.
+//   built-in, locked    a signature recipe, a Stack or the required base step
+//                       needs it (lib/menu/dependencies.ts). The control shows
+//                       why instead of doing nothing silently.
+//
+// The server decides all three; these buttons are the affordance, not the rule.
+//
+// Hiding does not reach the customer site. /build is a static artifact, so a
+// hidden ingredient stays orderable until it is pulled from menu.json and
+// redeployed. The drawer says that out loud rather than implying otherwise.
 
 const POLL_MS = 10_000;
 // A "-" left in its confirming state is a stray tap, not an intention. Long
@@ -45,8 +54,8 @@ type ItemState = { status: StaffStatus; updatedBy: string | null; updatedAt: str
 type Latest = { updatedBy: string | null; updatedAt: string } | null;
 type CustomItem = { id: string; name: string; section: string };
 
-/** A board row. `custom` rows are the ones staff added, and the only removable ones. */
-type BoardItem = StaffItemDef & { custom?: boolean };
+/** A board row. `lock` set means something on the menu depends on it. */
+type BoardItem = StaffItemDef & { custom?: boolean; lock?: string };
 type BoardGroup = { name: string; items: BoardItem[] };
 
 const STATUS_LABELS: Record<StaffStatus, string> = { in: "In", low: "Low", out: "Out" };
@@ -91,38 +100,44 @@ function formatWhen(iso: string): string {
 }
 
 /**
- * Built-in rows first, then that section's staff-added rows, separated by the
+ * What each group actually draws: its built-in rows minus anything the store
+ * has stopped carrying, then that section's staff-added rows, separated by the
  * same sub-cluster gap the catalog uses between the berries and the stone
- * fruit. Sorted by name: on a shelf checklist that is easier to scan than the
- * order people happened to add things in.
+ * fruit. Added rows sort by name: on a shelf checklist that is easier to scan
+ * than the order people happened to add things in.
+ *
+ * The lock label is attached here, once per render, rather than looked up per
+ * button: it is a pure function of menu.json and never changes at runtime.
  */
-function mergeCustom(
+function buildGroups(
   groups: readonly { name: string; items: StaffItemDef[] }[],
-  custom: CustomItem[]
+  custom: CustomItem[],
+  hidden: Set<string>
 ): BoardGroup[] {
   return groups.map((group) => {
-    const added = custom
+    const built: BoardItem[] = group.items
+      .filter((item) => !hidden.has(item.id))
+      .map((item) => {
+        const lock = lockLabel(item.id);
+        return lock ? { ...item, lock } : item;
+      });
+    const added: BoardItem[] = custom
       .filter((item) => item.section === group.name)
-      .sort((a, b) => a.name.localeCompare(b.name, "en-CA"));
-    if (added.length === 0) return group;
-    return {
-      name: group.name,
-      items: [
-        ...group.items,
-        ...added.map((item, index) => ({
-          id: item.id,
-          name: item.name,
-          custom: true,
-          ...(index === 0 ? { gapAbove: true } : {}),
-        })),
-      ],
-    };
+      .sort((a, b) => a.name.localeCompare(b.name, "en-CA"))
+      .map((item, index) => ({
+        id: item.id,
+        name: item.name,
+        custom: true,
+        ...(index === 0 ? { gapAbove: true } : {}),
+      }));
+    return { name: group.name, items: [...built, ...added] };
   });
 }
 
 export function InventoryBoard() {
   const [statuses, setStatuses] = useState<Record<string, StaffStatus>>({});
   const [custom, setCustom] = useState<CustomItem[]>([]);
+  const [hidden, setHidden] = useState<string[]>([]);
   const [latest, setLatest] = useState<Latest>(null);
   const [tab, setTab] = useState<"ingredients" | "supplies">("ingredients");
   const [phase, setPhase] = useState<"loading" | "ready" | "unavailable">("loading");
@@ -145,12 +160,14 @@ export function InventoryBoard() {
         items: Record<string, ItemState>;
         latest: Latest;
         custom: CustomItem[];
+        hidden: string[];
       };
       if (inflight.current > 0) return;
       setStatuses(
         Object.fromEntries(Object.entries(data.items).map(([id, item]) => [id, item.status]))
       );
       setCustom(data.custom ?? []);
+      setHidden(data.hidden ?? []);
       setLatest(data.latest);
       setPhase("ready");
     } catch {
@@ -223,18 +240,39 @@ export function InventoryBoard() {
   );
 
   const removeItem = useCallback(
-    (id: string) => {
-      setCustom((prev) => prev.filter((item) => item.id !== id));
-      setStatuses((prev) => {
-        const next = { ...prev };
-        delete next[id];
-        return next;
-      });
+    (id: string, isCustom: boolean) => {
+      if (isCustom) {
+        // Staff-added: gone for good, status row and all.
+        setCustom((prev) => prev.filter((item) => item.id !== id));
+        setStatuses((prev) => {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
+      } else {
+        // Built-in: hidden, and its status is kept for when it comes back.
+        setHidden((prev) => (prev.includes(id) ? prev : [...prev, id]));
+      }
       inflight.current += 1;
       void fetch("/staff/items", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
+      })
+        .catch(() => undefined)
+        .then(settle);
+    },
+    [settle]
+  );
+
+  const restoreItem = useCallback(
+    (id: string) => {
+      setHidden((prev) => prev.filter((hiddenId) => hiddenId !== id));
+      inflight.current += 1;
+      void fetch("/staff/items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "restore", id }),
       })
         .catch(() => undefined)
         .then(settle);
@@ -253,8 +291,15 @@ export function InventoryBoard() {
     addTrigger.current = null;
   }, []);
 
-  const ingredientGroups = useMemo(() => mergeCustom(INGREDIENT_GROUPS, custom), [custom]);
-  const supplyGroups = useMemo(() => mergeCustom(SUPPLY_GROUPS, custom), [custom]);
+  const hiddenSet = useMemo(() => new Set(hidden), [hidden]);
+  const ingredientGroups = useMemo(
+    () => buildGroups(INGREDIENT_GROUPS, custom, hiddenSet),
+    [custom, hiddenSet]
+  );
+  const supplyGroups = useMemo(
+    () => buildGroups(SUPPLY_GROUPS, custom, hiddenSet),
+    [custom, hiddenSet]
+  );
 
   const statusOf = (id: string): StaffStatus => statuses[id] ?? "in";
   const counts = (groups: BoardGroup[]) => {
@@ -343,6 +388,7 @@ export function InventoryBoard() {
           onAdd={openAdd}
           onRemove={removeItem}
         />
+        <NotCarrying hidden={hidden} onRestore={restoreItem} />
       </Reveal>
 
       <AddItemModal
@@ -352,6 +398,66 @@ export function InventoryBoard() {
         onSubmit={addItem}
       />
     </div>
+  );
+}
+
+/**
+ * What the store has stopped carrying, and the way back. Collapsed to a single
+ * line until there is something in it.
+ *
+ * It states the customer-site caveat plainly. /build is a static artifact, so
+ * hiding a row here does not stop the website offering it; pretending
+ * otherwise would be the one genuinely dangerous thing this feature could do.
+ */
+function NotCarrying({ hidden, onRestore }: { hidden: string[]; onRestore: (id: string) => void }) {
+  const [open, setOpen] = useState(false);
+  if (hidden.length === 0) return null;
+
+  const rows = hidden
+    .map((id) => ({ id, entry: builtInItemFor(id) }))
+    .sort((a, b) => (a.entry?.name ?? a.id).localeCompare(b.entry?.name ?? b.id, "en-CA"));
+
+  return (
+    <section className="mt-10 border-t border-midnight/rule-strong pt-4">
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        aria-expanded={open}
+        className="inline-flex min-h-11 items-center gap-2 text-caption text-juniper transition-colors hover:text-midnight"
+      >
+        <span aria-hidden>{open ? "\u2212" : "+"}</span>
+        Not carrying ({hidden.length})
+      </button>
+
+      {open ? (
+        <div className="pb-2">
+          <p className="max-w-prose text-note text-juniper">
+            Off the board only. These are still on the ordering page until they come out of the menu
+            itself, which needs a deploy.
+          </p>
+          <ul className="mt-3 md:columns-3 md:gap-6">
+            {rows.map(({ id, entry }) => (
+              <li
+                key={id}
+                className="flex break-inside-avoid items-center justify-between gap-3 py-1"
+              >
+                <span className="min-w-0 flex-1 text-sm md:text-caption">
+                  {entry?.name ?? id}
+                  {entry ? <span className="text-juniper"> · {entry.section}</span> : null}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onRestore(id)}
+                  className="min-h-11 shrink-0 border border-midnight/rule px-3 text-xs tracking-body-mixed text-midnight/70 transition-colors hover:bg-midnight/veil md:h-8 md:min-h-0"
+                >
+                  Restore
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </section>
   );
 }
 
@@ -370,7 +476,7 @@ function BoardSection({
   statusOf: (id: string) => StaffStatus;
   setStatus: (id: string, status: StaffStatus) => void;
   onAdd: (section: string, trigger: HTMLElement | null) => void;
-  onRemove: (id: string) => void;
+  onRemove: (id: string, isCustom: boolean) => void;
 }) {
   return (
     <section className={hiddenOnMobile ? "hidden md:block" : ""}>
@@ -404,7 +510,7 @@ function GroupCard({
   statusOf: (id: string) => StaffStatus;
   setStatus: (id: string, status: StaffStatus) => void;
   onAdd: (section: string, trigger: HTMLElement | null) => void;
-  onRemove: (id: string) => void;
+  onRemove: (id: string, isCustom: boolean) => void;
 }) {
   // Which row's "-" is waiting on its second tap. One per card is enough:
   // confirming a second row cancels the first, which is the intent anyway.
@@ -459,27 +565,42 @@ function GroupCard({
                   </button>
                 );
               })}
-              {item.custom ? (
-                confirming === item.id ? (
-                  <button
-                    type="button"
-                    onClick={() => onRemove(item.id)}
-                    aria-label={`Confirm removing ${item.name}`}
-                    className="h-11 border border-emphasis border-status-out bg-status-out/veil px-2 text-xs font-semibold text-status-out md:h-8"
-                  >
-                    Remove?
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setConfirming(item.id)}
-                    aria-label={`Remove ${item.name}`}
-                    className="h-11 w-8 border border-midnight/rule text-sm text-midnight/70 transition-colors hover:bg-midnight/veil md:h-8"
-                  >
-                    <span aria-hidden>−</span>
-                  </button>
-                )
-              ) : null}
+              {item.lock ? (
+                // aria-disabled, not disabled: a real disabled button fires no
+                // click, and on a phone there is no hover to read the reason
+                // with. This stays tappable purely so it can answer, and a tap
+                // swaps the glyph for the two words that explain it.
+                <button
+                  type="button"
+                  aria-disabled="true"
+                  title={`${item.lock}. Set it Out instead.`}
+                  onClick={() => setConfirming(confirming === item.id ? null : item.id)}
+                  aria-label={`${item.name} cannot be removed: ${item.lock}`}
+                  className={`h-11 cursor-not-allowed border border-midnight/rule text-midnight/25 md:h-8 ${
+                    confirming === item.id ? "px-2 text-xs" : "w-8 text-sm"
+                  }`}
+                >
+                  {confirming === item.id ? item.lock : <span aria-hidden>−</span>}
+                </button>
+              ) : confirming === item.id ? (
+                <button
+                  type="button"
+                  onClick={() => onRemove(item.id, item.custom === true)}
+                  aria-label={`Confirm removing ${item.name}`}
+                  className="h-11 border border-emphasis border-status-out bg-status-out/veil px-2 text-xs font-semibold text-status-out md:h-8"
+                >
+                  Remove?
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirming(item.id)}
+                  aria-label={`Remove ${item.name}`}
+                  className="h-11 w-8 border border-midnight/rule text-sm text-midnight/70 transition-colors hover:bg-midnight/veil md:h-8"
+                >
+                  <span aria-hidden>−</span>
+                </button>
+              )}
             </span>
           </li>
         ))}

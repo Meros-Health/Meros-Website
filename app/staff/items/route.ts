@@ -4,18 +4,32 @@
 //           (the client defaults everything else to 'in'), plus the items staff
 //           added themselves.
 //   PATCH   set one item to an explicit status.
-//   POST    add an item to the board.
-//   DELETE  remove an item staff added.
+//   POST    add an item to the board, or restore one that was removed.
+//   DELETE  remove an item: delete it if staff added it, hide it if it is a
+//           built-in row nothing on the menu depends on.
 //
 // PATCH takes the status, never "toggle": concurrent taps then converge on
 // the tapped value instead of double-flipping. Ids and statuses are both
 // allowlisted, so staff_items can only ever hold rows the board can render.
 //
-// Built-in rows cannot be removed, and DELETE is where that is true. The
-// board's 70 registry ingredients and its supplies list are compiled into the
-// Worker (lib/staff/catalog.ts); only a "custom:" id, which by construction
-// means a row in staff_custom_items, is deletable. The UI draws the "-" on
-// those rows only, but the UI is not the control.
+// What may be removed, and DELETE is where that is decided:
+//
+//   staff-added   a real DELETE FROM. Nothing customer-facing knows it exists.
+//   built-in, no menu dependency   hidden: a staff_hidden_items row the board
+//                 filters on. The catalog is compiled into the Worker, so this
+//                 is the only thing "removed" can mean for it, and it is the
+//                 same shape as staff_items overlaying status.
+//   built-in, something depends on it   refused. A signature recipe, a Stack,
+//                 or the required base step locks an ingredient
+//                 (lib/menu/dependencies.ts, computed from menu.json). Out is
+//                 the right answer for those: the store still owes it.
+//
+// The board draws a disabled "-" on locked rows, but the board is not the
+// control. This handler is.
+//
+// Hiding does not reach the customer site: /build is a static artifact, so the
+// ingredient stays orderable until it is pulled from menu.json and redeployed.
+// The board's "Not carrying" drawer says so rather than letting them drift.
 //
 // POST takes a name, never an id: the id is slugified here. A client-chosen
 // primary key would let a staff session write a row keyed `bananas` and shadow
@@ -37,6 +51,7 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 import { verifyStaffAccess } from "@/lib/staff/access";
+import { lockLabel } from "@/lib/menu/dependencies";
 import { isStaffItemId, isStaffStatus } from "@/lib/staff/catalog";
 import {
   MAX_CUSTOM_ITEMS,
@@ -83,9 +98,10 @@ export async function GET(request: NextRequest) {
   const admitted = await admit(request);
   if ("response" in admitted) return admitted.response;
 
-  const [rows, customRows] = await Promise.all([
+  const [rows, customRows, hiddenRows] = await Promise.all([
     admitted.store.list(),
     admitted.store.listCustom(),
+    admitted.store.listHidden(),
   ]);
 
   const items: Record<string, { status: string; updatedBy: string | null; updatedAt: string }> = {};
@@ -105,7 +121,8 @@ export async function GET(request: NextRequest) {
     createdAt: row.created_at,
   }));
 
-  return NextResponse.json({ items, latest, custom }, { headers: NO_STORE });
+  const hidden = hiddenRows.map((row) => row.id);
+  return NextResponse.json({ items, latest, custom, hidden }, { headers: NO_STORE });
 }
 
 export async function PATCH(request: NextRequest) {
@@ -138,6 +155,15 @@ export async function POST(request: NextRequest) {
 
   const body = await readJson(request);
   if (!body) return fail("invalid JSON", 400);
+
+  // Putting a hidden built-in back. Absent action means add, so a client from
+  // before this shipped still works.
+  if (body.action === "restore") {
+    const { id } = body as { id?: unknown };
+    if (typeof id !== "string" || !isStaffItemId(id)) return fail("unknown item", 400);
+    await admitted.store.unhide(id);
+    return NextResponse.json({ ok: true }, { headers: NO_STORE });
+  }
 
   const checked = checkStaffItemName(body.name);
   if (!checked.ok) return fail(checked.message, 400);
@@ -187,9 +213,23 @@ export async function DELETE(request: NextRequest) {
   const body = await readJson(request);
   if (!body) return fail("invalid JSON", 400);
 
-  // The one guard that keeps the built-in catalog unremovable.
-  if (!isCustomStaffItemId(body.id)) return fail("This item cannot be removed.", 400);
+  const { id } = body as { id?: unknown };
+  if (typeof id !== "string") return fail("unknown item", 400);
 
-  await admitted.store.removeCustom(body.id);
+  // Staff-added: it only ever existed in D1, so it really goes, status and all.
+  if (isCustomStaffItemId(id)) {
+    await admitted.store.removeCustom(id);
+    return NextResponse.json({ ok: true }, { headers: NO_STORE });
+  }
+
+  if (!isStaffItemId(id)) return fail("unknown item", 400);
+
+  // The guard. Supplies have no menu to depend on them, so they are never
+  // locked; an ingredient is locked exactly when menu.json says something
+  // needs it.
+  const locked = lockLabel(id);
+  if (locked) return fail(`${locked}. Set it Out instead.`, 409);
+
+  await admitted.store.hide(id, admitted.email);
   return NextResponse.json({ ok: true }, { headers: NO_STORE });
 }

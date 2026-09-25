@@ -7,6 +7,9 @@
 //                       built-in or staff-added. An id with no row reads 'in'.
 //   staff_custom_items  the rows staff added themselves. The built-in rows are
 //                       code (lib/staff/catalog.ts), so they are not in here.
+//   staff_hidden_items  built-in rows the store stopped carrying. The catalog
+//                       cannot change at runtime, so the board filters on these
+//                       instead, the same way staff_items overlays status.
 //
 // Reuses the site's single D1 database (the ORDERS_DB binding), same as the
 // order record and the catering inquiries: a second binding for two tables
@@ -24,6 +27,12 @@ export type StaffStatusRow = {
   status: StaffStatus;
   updated_by: string | null;
   updated_at: string;
+};
+
+export type StaffHiddenItemRow = {
+  id: string;
+  hidden_by: string | null;
+  hidden_at: string;
 };
 
 export type StaffCustomItemRow = {
@@ -55,6 +64,9 @@ export interface StaffInventoryStore {
   /** False when the id was already taken, which is how a concurrent duplicate add is caught. */
   addCustom(row: StaffCustomItemRow): Promise<boolean>;
   removeCustom(id: string): Promise<void>;
+  listHidden(): Promise<StaffHiddenItemRow[]>;
+  hide(id: string, hiddenBy: string | null): Promise<void>;
+  unhide(id: string): Promise<void>;
 }
 
 export class D1StaffInventoryStore implements StaffInventoryStore {
@@ -107,6 +119,30 @@ export class D1StaffInventoryStore implements StaffInventoryStore {
     await this.db.prepare("DELETE FROM staff_custom_items WHERE id = ?1").bind(id).run();
     await this.db.prepare("DELETE FROM staff_items WHERE id = ?1").bind(id).run();
   }
+
+  async listHidden(): Promise<StaffHiddenItemRow[]> {
+    const { results } = await this.db
+      .prepare("SELECT id, hidden_by, hidden_at FROM staff_hidden_items")
+      .all<StaffHiddenItemRow>();
+    return results;
+  }
+
+  // Idempotent: hiding something already hidden is not an error, it is two
+  // people reaching the same conclusion. The first one keeps the attribution.
+  async hide(id: string, hiddenBy: string | null): Promise<void> {
+    await this.db
+      .prepare(
+        "INSERT INTO staff_hidden_items (id, hidden_by, hidden_at) VALUES (?1, ?2, ?3) ON CONFLICT (id) DO NOTHING"
+      )
+      .bind(id, hiddenBy, new Date().toISOString())
+      .run();
+  }
+
+  // The status row deliberately survives. The ingredient still exists and may
+  // come back, so what it was last set to is worth keeping.
+  async unhide(id: string): Promise<void> {
+    await this.db.prepare("DELETE FROM staff_hidden_items WHERE id = ?1").bind(id).run();
+  }
 }
 
 // In-memory fallback for `next dev` without Worker bindings and for unit
@@ -115,6 +151,7 @@ export class D1StaffInventoryStore implements StaffInventoryStore {
 export class MemoryStaffInventoryStore implements StaffInventoryStore {
   private rows = new Map<string, StaffStatusRow>();
   private custom = new Map<string, StaffCustomItemRow>();
+  private hidden = new Map<string, StaffHiddenItemRow>();
 
   async list(): Promise<StaffStatusRow[]> {
     return [...this.rows.values()];
@@ -137,5 +174,18 @@ export class MemoryStaffInventoryStore implements StaffInventoryStore {
   async removeCustom(id: string): Promise<void> {
     this.custom.delete(id);
     this.rows.delete(id);
+  }
+
+  async listHidden(): Promise<StaffHiddenItemRow[]> {
+    return [...this.hidden.values()];
+  }
+
+  async hide(id: string, hiddenBy: string | null): Promise<void> {
+    if (this.hidden.has(id)) return;
+    this.hidden.set(id, { id, hidden_by: hiddenBy, hidden_at: new Date().toISOString() });
+  }
+
+  async unhide(id: string): Promise<void> {
+    this.hidden.delete(id);
   }
 }

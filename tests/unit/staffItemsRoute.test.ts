@@ -6,10 +6,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // lib/staff/runtime.ts, whose production branches staffRuntime.test.ts pins),
 // so these drive the actual request path rather than a stand-in for it.
 //
-// What is worth testing here is not that an add adds. It is the two rules the
-// UI cannot be trusted to keep:
+// What is worth testing here is not that an add adds. It is the rules the UI
+// cannot be trusted to keep:
 //
-//   - a built-in row cannot be removed, whatever the request says
+//   - a built-in the menu depends on cannot be removed, whatever the request says
+//   - one nothing depends on is hidden, not deleted, and comes back intact
 //   - an id is never taken from the client
 //
 // Both live in the handler, and both are what a mistyped fetch or a stale
@@ -24,6 +25,14 @@ vi.mock("@opennextjs/cloudflare", () => ({
 import { NextRequest } from "next/server";
 import { DELETE, GET, PATCH, POST } from "@/app/staff/items/route";
 import { MAX_CUSTOM_ITEMS } from "@/lib/staff/customItems";
+import { INGREDIENT_GROUPS } from "@/lib/staff/catalog";
+import { isRemovableIngredient } from "@/lib/menu/dependencies";
+
+// Picked from the registry rather than named, so retiring a topping from
+// menu.json cannot quietly turn these into tests of nothing.
+const BOARD_INGREDIENTS = INGREDIENT_GROUPS.flatMap((g) => g.items.map((i) => i.id));
+const FREE = BOARD_INGREDIENTS.filter(isRemovableIngredient);
+const [FREE_A, FREE_B] = FREE;
 
 const ENDPOINT = "http://localhost/staff/items";
 
@@ -37,6 +46,7 @@ type CustomItem = {
 type BoardState = {
   items: Record<string, { status: string; updatedBy: string | null; updatedAt: string }>;
   custom: CustomItem[];
+  hidden: string[];
 };
 
 function request(method: string, body?: unknown): NextRequest {
@@ -160,13 +170,48 @@ describe("removing an item", () => {
     expect(state.items["custom:oat-milk"]).toBeUndefined();
   });
 
-  // The rule the whole design rests on. The board draws no "-" on these rows,
-  // but the UI is not the control: the handler is.
-  it("refuses every built-in id, ingredient or supply", async () => {
-    for (const id of ["bananas", "napkins", "plain-greek-yogurt", "sanitizer-fluid"]) {
+  // The rule the whole design rests on. The board draws a dead "-" on these
+  // rows, but the UI is not the control: the handler is.
+  it("refuses a built-in the menu depends on, and says which kind", async () => {
+    const cases: Array<[string, string]> = [
+      ["strawberries", "Signature ingredient"],
+      ["bananas", "Signature ingredient"],
+      ["creatine-monohydrate", "Stack ingredient"],
+      ["plain-greek-yogurt", "Base ingredient"],
+      ["vanilla-greek-yogurt", "Base ingredient"],
+    ];
+    for (const [id, label] of cases) {
       const response = await DELETE(request("DELETE", { id }));
-      expect(response.status, id).toBe(400);
+      expect(response.status, id).toBe(409);
+      expect(await errorFrom(response), id).toContain(label);
     }
+    expect((await board()).hidden).toEqual([]);
+  });
+
+  it("hides a built-in nothing depends on, ingredient or supply", async () => {
+    expect(FREE.length, "no removable ingredient left in the registry").toBeGreaterThan(1);
+    const ids = [FREE_A, FREE_B, "napkins", "sanitizer-fluid"];
+    for (const id of ids) {
+      expect((await DELETE(request("DELETE", { id }))).status, id).toBe(200);
+    }
+    expect((await board()).hidden.sort()).toEqual([...ids].sort());
+  });
+
+  // A hidden ingredient still exists and may come back, so what it was last
+  // set to is worth keeping. A staff-added delete clears its status instead.
+  it("keeps the status row of a hidden built-in", async () => {
+    await PATCH(request("PATCH", { id: FREE_A, status: "out" }));
+    await DELETE(request("DELETE", { id: FREE_A }));
+
+    const state = await board();
+    expect(state.hidden).toEqual([FREE_A]);
+    expect(state.items[FREE_A].status).toBe("out");
+  });
+
+  it("is idempotent, so two servers hiding the same thing agree", async () => {
+    expect((await DELETE(request("DELETE", { id: FREE_A }))).status).toBe(200);
+    expect((await DELETE(request("DELETE", { id: FREE_A }))).status).toBe(200);
+    expect((await board()).hidden).toEqual([FREE_A]);
   });
 
   it("refuses an id that is not in the custom namespace at all", async () => {
@@ -212,5 +257,37 @@ describe("setting a status", () => {
   it("still refuses an unknown status and an unknown built-in", async () => {
     expect((await PATCH(request("PATCH", { id: "bananas", status: "toggle" }))).status).toBe(400);
     expect((await PATCH(request("PATCH", { id: "banana-phone", status: "out" }))).status).toBe(400);
+  });
+});
+
+describe("restoring a hidden item", () => {
+  it("puts it back, with the status it had", async () => {
+    await PATCH(request("PATCH", { id: FREE_A, status: "low" }));
+    await DELETE(request("DELETE", { id: FREE_A }));
+    expect((await board()).hidden).toEqual([FREE_A]);
+
+    const response = await POST(request("POST", { action: "restore", id: FREE_A }));
+    expect(response.status).toBe(200);
+
+    const state = await board();
+    expect(state.hidden).toEqual([]);
+    expect(state.items[FREE_A].status).toBe("low");
+  });
+
+  it("refuses an id the board does not carry", async () => {
+    for (const id of ["banana-phone", "", undefined, 7]) {
+      expect((await POST(request("POST", { action: "restore", id }))).status).toBe(400);
+    }
+  });
+
+  it("is harmless on something that was never hidden", async () => {
+    expect((await POST(request("POST", { action: "restore", id: "bananas" }))).status).toBe(200);
+    expect((await board()).hidden).toEqual([]);
+  });
+
+  // The board before this shipped posts {name, section} with no action.
+  it("still treats a body with no action as an add", async () => {
+    const response = await POST(request("POST", { name: "Oat Milk", section: "Smoothie Bar" }));
+    expect(response.status).toBe(201);
   });
 });
