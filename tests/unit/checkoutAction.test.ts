@@ -68,10 +68,12 @@ describe("submitCheckout: happy path", () => {
       "medium",
       {
         base: ["plain-greek-yogurt"],
-        fruits: ["strawberries", "nectarines", "pineapples", "dragon-fruit", "blueberries", "peaches", "grapes", "papaya", "blackberries", "mangoes", "bananas", "melon"],
+        fruits: ["strawberries", "nectarines", "pineapples", "dragon-fruit", "blueberries", "peaches", "papaya", "blackberries", "mangoes", "bananas", "melon"],
         enhancers: ["whey-protein-isolate", "collagen-peptides", "creatine-monohydrate", "greens-powder"],
       },
-      { unitPrice: 42 }
+      // One fruit fewer than this fixture used to carry: grapes came off the
+      // menu 2026-09-25, and a fruit past the included picks is $2.
+      { unitPrice: 40 }
     );
     const result = await submit([line]);
     expect(result.status).toBe("success");
@@ -307,7 +309,7 @@ describe("signature additions and removals", () => {
   });
 
   const rejected: Array<[string, unknown, number, string]> = [
-    ["four additions", { additions: ["mangoes", "pineapples", "grapes", "melon"], removals: [] }, 20, "unavailable"],
+    ["four additions", { additions: ["mangoes", "pineapples", "dragon-fruit", "melon"], removals: [] }, 20, "unavailable"],
     ["three removals", { additions: [], removals: ["house-granola", "bananas", "chia-seeds"] }, 12, "unavailable"],
     ["removal of the base", { additions: [], removals: ["plain-greek-yogurt"] }, 12, "unavailable"],
     ["addition already in the recipe", { additions: ["blueberries"], removals: [] }, 14, "unavailable"],

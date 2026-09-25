@@ -38,7 +38,11 @@ function ingredients(name: string, ids: string[]): StaffGroupDef {
     items: ids.map((entry) => {
       const gapAbove = entry.startsWith("|");
       const id = gapAbove ? entry.slice(1) : entry;
-      return { id, name: LABEL_OVERRIDES[id] ?? ingredientName(id), ...(gapAbove ? { gapAbove } : {}) };
+      return {
+        id,
+        name: LABEL_OVERRIDES[id] ?? ingredientName(id),
+        ...(gapAbove ? { gapAbove } : {}),
+      };
     }),
   };
 }
@@ -65,7 +69,6 @@ export const INGREDIENT_GROUPS: StaffGroupDef[] = [
     "raspberries",
     "|peaches",
     "nectarines",
-    "grapes",
     "melon",
     "|pineapples",
     "mangoes",

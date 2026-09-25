@@ -64,11 +64,11 @@ describe("sanitizeSignatureMods", () => {
 
   it("keeps the first picks up to the caps", () => {
     const mods = sanitizeSignatureMods(moment(), {
-      additions: ["mangoes", "pineapples", "grapes", "melon"],
+      additions: ["mangoes", "pineapples", "dragon-fruit", "melon"],
       removals: ["house-granola", "bananas", "chia-seeds"],
     });
     expect(mods.additions).toHaveLength(MAX_ADDITIONS);
-    expect(mods.additions).toEqual(["mangoes", "pineapples", "grapes"]);
+    expect(mods.additions).toEqual(["mangoes", "pineapples", "dragon-fruit"]);
     expect(mods.removals).toHaveLength(MAX_REMOVALS);
     expect(mods.removals).toEqual(["house-granola", "bananas"]);
   });

@@ -65,7 +65,7 @@ test("the add modal takes additions and removals within the caps, and a fresh op
   await modal.getByRole("group", { name: "Yogurt" }).getByRole("button", { name: "Plain", exact: true }).click();
   await modal.getByRole("button", { name: "Mangoes +$2.00" }).click();
   await modal.getByRole("button", { name: "Pineapples +$2.00" }).click();
-  await expect(modal.getByRole("button", { name: "Grapes +$2.00" })).toBeDisabled();
+  await expect(modal.getByRole("button", { name: "Dragon Fruit +$2.00" })).toBeDisabled();
   await modal.getByRole("button", { name: "House Granola", exact: true }).click();
   await expect(modal.locator("[data-edit-price]")).toContainText("$19.00");
   await modal.getByRole("button", { name: "Add to cart" }).click();

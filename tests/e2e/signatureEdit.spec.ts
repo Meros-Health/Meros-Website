@@ -88,7 +88,7 @@ test("adds two, disables the third, removes one, and saves price and text to the
 
   await modal(page).getByRole("button", { name: "Mangoes +$2.00" }).click();
   await modal(page).getByRole("button", { name: "Pineapples +$2.00" }).click();
-  await expect(modal(page).getByRole("button", { name: "Grapes +$2.00" })).toBeDisabled();
+  await expect(modal(page).getByRole("button", { name: "Dragon Fruit +$2.00" })).toBeDisabled();
   await expect(modal(page).getByRole("button", { name: "Pineapples +$2.00" })).toBeEnabled();
 
   await modal(page).getByRole("button", { name: "House Granola", exact: true }).click();
