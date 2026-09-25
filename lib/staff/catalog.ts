@@ -3,12 +3,16 @@
 // through the same accessor everything else uses; only the grouping and
 // ordering live here. Supplies have no registry, so their names live here too.
 //
-// Ordering is the design: within a group, sub-clusters (the berries, the three
-// mousses, the protein powders) sit together, separated by `gapAbove` on the
-// first item of each cluster. tests/unit/staffInventory.test.ts holds this
-// file and the registry together: every registry ingredient appears exactly
-// once, so an ingredient added to menu.json fails the build until it has a
-// place on the board.
+// Ordering is the design, and it is the only thing carrying it: within a group
+// the berries sit together, then the stone fruit, then the tropical, but
+// nothing draws a gap between them. Sub-clusters used to get extra space and
+// that could not survive the board being edited, because a row added or
+// removed at runtime has no answer for which side of a gap it belongs on. The
+// order still reads as grouped; the spacing is even.
+//
+// tests/unit/staffInventory.test.ts holds this file and the registry together:
+// every registry ingredient appears exactly once, so an ingredient added to
+// menu.json fails the build until it has a place on the board.
 
 import { ingredientName } from "@/lib/menu/ingredients";
 
@@ -22,8 +26,6 @@ export function isStaffStatus(value: unknown): value is StaffStatus {
 export type StaffItemDef = {
   id: string;
   name: string;
-  /** Starts a new sub-cluster: the row above gets breathing room. */
-  gapAbove?: boolean;
 };
 
 export type StaffGroupDef = {
@@ -31,19 +33,10 @@ export type StaffGroupDef = {
   items: StaffItemDef[];
 };
 
-/** `"|id"` marks the first item of a sub-cluster. */
 function ingredients(name: string, ids: string[]): StaffGroupDef {
   return {
     name,
-    items: ids.map((entry) => {
-      const gapAbove = entry.startsWith("|");
-      const id = gapAbove ? entry.slice(1) : entry;
-      return {
-        id,
-        name: LABEL_OVERRIDES[id] ?? ingredientName(id),
-        ...(gapAbove ? { gapAbove } : {}),
-      };
-    }),
+    items: ids.map((id) => ({ id, name: LABEL_OVERRIDES[id] ?? ingredientName(id) })),
   };
 }
 
@@ -62,15 +55,15 @@ export const INGREDIENT_GROUPS: StaffGroupDef[] = [
     "high-protein-yogurt",
   ]),
   ingredients("Fruits", [
-    // Berries, stone fruit and vine, then tropical.
+    // Berries, then stone fruit, then tropical.
     "strawberries",
     "blueberries",
     "blackberries",
     "raspberries",
-    "|peaches",
+    "peaches",
     "nectarines",
     "melon",
-    "|pineapples",
+    "pineapples",
     "mangoes",
     "papaya",
     "dragon-fruit",
@@ -83,7 +76,7 @@ export const INGREDIENT_GROUPS: StaffGroupDef[] = [
     "cashews",
     "peanuts",
     "pistachios",
-    "|coconut",
+    "coconut",
     "goji-berries",
   ]),
   ingredients("Seeds", [
@@ -97,18 +90,18 @@ export const INGREDIENT_GROUPS: StaffGroupDef[] = [
     // Syrups, granolas, mousses, spreads, toppers, then the pudding.
     "canadian-maple-syrup",
     "local-raw-honey",
-    "|house-granola",
+    "house-granola",
     "chocolate-granola",
-    "|chocolate-mousse",
+    "chocolate-mousse",
     "peanut-butter-mousse",
     "passion-fruit-mousse",
-    "|peanut-butter",
+    "peanut-butter",
     "almond-butter",
-    "|chocolate",
+    "chocolate",
     "sea-salt",
     "cinnamon",
     "evoo",
-    "|berry-chia-pudding",
+    "berry-chia-pudding",
   ]),
   ingredients("Enhancers", [
     // Proteins, greens, fruit powders, adaptogens, then pantry.
@@ -118,19 +111,19 @@ export const INGREDIENT_GROUPS: StaffGroupDef[] = [
     "creatine-monohydrate",
     "l-glutamine",
     "pb-powder",
-    "|greens-powder",
+    "greens-powder",
     "spirulina",
     "chlorella",
     "moringa",
     "matcha",
-    "|acai-powder",
+    "acai-powder",
     "pitaya-powder",
     "camu-camu",
-    "|maca-powder",
+    "maca-powder",
     "ashwagandha",
     "lions-mane",
     "turmeric-black-pepper",
-    "|nutritional-yeast",
+    "nutritional-yeast",
     "wheat-germ",
     "mct-oil",
     "cacao-nibs",
@@ -148,7 +141,7 @@ export const SUPPLY_GROUPS: StaffGroupDef[] = [
       { id: "bowls-large", name: "Large Bowls" },
       { id: "bowl-lids", name: "Bowl Lids" },
       { id: "smoothie-cups", name: "Smoothie Cups (22 oz)" },
-      { id: "spoons", name: "Spoons", gapAbove: true },
+      { id: "spoons", name: "Spoons" },
       { id: "sampling-spoons", name: "Sampling Spoons" },
       { id: "straws", name: "Straws" },
       { id: "napkins", name: "Napkins" },
@@ -163,7 +156,7 @@ export const SUPPLY_GROUPS: StaffGroupDef[] = [
       { id: "sanitizer-test-strips", name: "Sanitizer Test Strips" },
       { id: "dish-soap", name: "Dish Soap" },
       { id: "hand-soap", name: "Hand Soap" },
-      { id: "paper-towels", name: "Paper Towels", gapAbove: true },
+      { id: "paper-towels", name: "Paper Towels" },
       { id: "nitrile-gloves", name: "Nitrile Gloves" },
       { id: "cleaning-cloths", name: "Cleaning Cloths" },
       { id: "garbage-bags", name: "Garbage Bags" },

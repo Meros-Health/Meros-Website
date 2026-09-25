@@ -35,8 +35,8 @@ import {
 //   staff-added         deleted outright. Only D1 ever knew it.
 //   built-in, free      hidden, and listed in "Not carrying" to restore from.
 //   built-in, locked    a signature recipe, a Stack or the required base step
-//                       needs it (lib/menu/dependencies.ts). The control shows
-//                       why instead of doing nothing silently.
+//                       needs it (lib/menu/dependencies.ts). The control is
+//                       dead and says why in a tooltip.
 //
 // The server decides all three; these buttons are the affordance, not the rule.
 //
@@ -101,10 +101,11 @@ function formatWhen(iso: string): string {
 
 /**
  * What each group actually draws: its built-in rows minus anything the store
- * has stopped carrying, then that section's staff-added rows, separated by the
- * same sub-cluster gap the catalog uses between the berries and the stone
- * fruit. Added rows sort by name: on a shelf checklist that is easier to scan
- * than the order people happened to add things in.
+ * has stopped carrying, then that section's staff-added rows. Evenly spaced,
+ * no gaps: a row that can appear and disappear at runtime has no answer for
+ * which side of a visual break it belongs on, so the order carries the
+ * grouping on its own. Added rows sort by name, which on a shelf checklist
+ * scans better than the order people happened to add things in.
  *
  * The lock label is attached here, once per render, rather than looked up per
  * button: it is a pure function of menu.json and never changes at runtime.
@@ -124,12 +125,7 @@ function buildGroups(
     const added: BoardItem[] = custom
       .filter((item) => item.section === group.name)
       .sort((a, b) => a.name.localeCompare(b.name, "en-CA"))
-      .map((item, index) => ({
-        id: item.id,
-        name: item.name,
-        custom: true,
-        ...(index === 0 ? { gapAbove: true } : {}),
-      }));
+      .map((item) => ({ id: item.id, name: item.name, custom: true }));
     return { name: group.name, items: [...built, ...added] };
   });
 }
@@ -540,10 +536,7 @@ function GroupCard({
       </div>
       <ul className="pt-2">
         {group.items.map((item) => (
-          <li
-            key={item.id}
-            className={`flex items-center justify-between gap-3 py-1 ${item.gapAbove ? "mt-3" : ""}`}
-          >
+          <li key={item.id} className="flex items-center justify-between gap-3 py-1">
             <span className="min-w-0 flex-1 text-sm md:text-caption">{item.name}</span>
             <span className="flex shrink-0 items-center gap-1">
               {(["in", "low", "out"] as const).map((status) => {
@@ -566,21 +559,18 @@ function GroupCard({
                 );
               })}
               {item.lock ? (
-                // aria-disabled, not disabled: a real disabled button fires no
-                // click, and on a phone there is no hover to read the reason
-                // with. This stays tappable purely so it can answer, and a tap
-                // swaps the glyph for the two words that explain it.
                 <button
                   type="button"
+                  // aria-disabled rather than disabled: a truly disabled
+                  // control is skipped by the accessibility tree and, in most
+                  // browsers, shows no title on hover. This one carries no
+                  // handler, so a click does nothing either way.
                   aria-disabled="true"
-                  title={`${item.lock}. Set it Out instead.`}
-                  onClick={() => setConfirming(confirming === item.id ? null : item.id)}
-                  aria-label={`${item.name} cannot be removed: ${item.lock}`}
-                  className={`h-11 cursor-not-allowed border border-midnight/rule text-midnight/25 md:h-8 ${
-                    confirming === item.id ? "px-2 text-xs" : "w-8 text-sm"
-                  }`}
+                  title={item.lock}
+                  aria-label={`${item.name}: ${item.lock}, cannot be removed`}
+                  className="h-11 w-8 cursor-not-allowed border border-midnight/rule text-sm text-midnight/25 md:h-8"
                 >
-                  {confirming === item.id ? item.lock : <span aria-hidden>−</span>}
+                  <span aria-hidden>−</span>
                 </button>
               ) : confirming === item.id ? (
                 <button
