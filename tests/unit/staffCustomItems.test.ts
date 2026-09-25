@@ -10,6 +10,7 @@ import {
   customStaffItemId,
   isCustomStaffItemId,
   isStaffSection,
+  resolveSection,
   slugifyStaffItemName,
   tabForSection,
 } from "@/lib/staff/customItems";
@@ -156,6 +157,31 @@ describe("sections", () => {
     expect(isStaffSection("fruits")).toBe(false);
     expect(isStaffSection("Robert'); DROP TABLE staff_items;--")).toBe(false);
     expect(isStaffSection(undefined)).toBe(false);
+  });
+
+  // A stored row names the section it was filed under, so renaming a group
+  // strands every row still carrying the old name unless something maps it.
+  it("maps a renamed section to its current name", () => {
+    expect(resolveSection("Cleaning + Sanitation")).toBe("Maintenance");
+  });
+
+  it("passes a current section through unchanged", () => {
+    for (const section of STAFF_SECTIONS) {
+      expect(resolveSection(section.name), section.name).toBe(section.name);
+    }
+  });
+
+  it("returns null for a name no version of the board had", () => {
+    expect(resolveSection("Nowhere")).toBeNull();
+    expect(resolveSection("")).toBeNull();
+  });
+
+  // An alias pointing at a group that no longer exists is worse than no alias:
+  // it looks handled and still strands the rows.
+  it("points every alias at a section that exists", () => {
+    const aliased = resolveSection("Cleaning + Sanitation");
+    expect(aliased).not.toBeNull();
+    expect(STAFF_SECTIONS.map((s) => s.name)).toContain(aliased);
   });
 });
 

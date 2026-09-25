@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Reveal } from "@/components/ui/ScrollReveal";
 import { AddItemModal, type AddItemSubmit } from "@/components/staff/AddItemModal";
 import { lockLabel } from "@/lib/menu/dependencies";
-import { builtInItemFor } from "@/lib/staff/customItems";
+import { builtInItemFor, resolveSection } from "@/lib/staff/customItems";
 import {
   INGREDIENT_GROUPS,
   SUPPLY_GROUPS,
@@ -288,14 +288,34 @@ export function InventoryBoard() {
   }, []);
 
   const hiddenSet = useMemo(() => new Set(hidden), [hidden]);
+
+  // A row stores the section it was filed under, so a group renamed in the
+  // catalog leaves it naming something that no longer exists. resolveSection
+  // maps the renames; anything it cannot place is gathered into "Unfiled"
+  // below rather than dropped, because a row that vanishes from the board is
+  // still there in the table, still counting against the cap, and invisible.
+  const filed = useMemo(
+    () =>
+      custom.map((item) => ({ ...item, section: resolveSection(item.section) ?? item.section })),
+    [custom]
+  );
   const ingredientGroups = useMemo(
-    () => buildGroups(INGREDIENT_GROUPS, custom, hiddenSet),
-    [custom, hiddenSet]
+    () => buildGroups(INGREDIENT_GROUPS, filed, hiddenSet),
+    [filed, hiddenSet]
   );
-  const supplyGroups = useMemo(
-    () => buildGroups(SUPPLY_GROUPS, custom, hiddenSet),
-    [custom, hiddenSet]
-  );
+  const supplyGroups = useMemo(() => {
+    const groups = buildGroups(SUPPLY_GROUPS, filed, hiddenSet);
+    const known = new Set([...INGREDIENT_GROUPS, ...SUPPLY_GROUPS].map((g) => g.name));
+    const orphans = filed.filter((item) => !known.has(item.section));
+    if (orphans.length === 0) return groups;
+    return [
+      ...groups,
+      {
+        name: "Unfiled",
+        items: orphans.map((item) => ({ id: item.id, name: item.name, custom: true })),
+      },
+    ];
+  }, [filed, hiddenSet]);
 
   const statusOf = (id: string): StaffStatus => statuses[id] ?? "in";
   const counts = (groups: BoardGroup[]) => {

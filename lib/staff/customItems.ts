@@ -59,7 +59,33 @@ export const STAFF_SECTIONS: StaffSection[] = [
   ...SUPPLY_GROUPS.map((group) => ({ name: group.name, tab: "supplies" as const })),
 ];
 
+/**
+ * Sections that have been renamed, old name to current. A staff-added row
+ * stores the section it was filed under, so renaming a group in the catalog
+ * would otherwise strand every row still naming the old one: the board matches
+ * on the string, finds no group, and the row disappears while still occupying
+ * its place against the cap.
+ *
+ * Same idea as legacyIdMap for renamed ingredient ids. Entries are cheap and
+ * permanent; deleting one strands whatever rows still carry it.
+ */
+const SECTION_ALIASES: Record<string, string> = {
+  // 2026-09-25, owner: the group covers more than cleaning.
+  "Cleaning + Sanitation": "Maintenance",
+};
+
 const SECTION_NAMES = new Set(STAFF_SECTIONS.map((section) => section.name));
+
+/**
+ * The section a stored row should be drawn under: itself, or what it was
+ * renamed to. Returns null for a name no version of the board ever had, so the
+ * caller decides rather than guessing at a home for it.
+ */
+export function resolveSection(stored: string): string | null {
+  if (SECTION_NAMES.has(stored)) return stored;
+  const renamed = SECTION_ALIASES[stored];
+  return renamed && SECTION_NAMES.has(renamed) ? renamed : null;
+}
 
 export function isStaffSection(value: unknown): value is string {
   return typeof value === "string" && SECTION_NAMES.has(value);

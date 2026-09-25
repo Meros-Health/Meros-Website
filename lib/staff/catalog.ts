@@ -150,7 +150,7 @@ export const SUPPLY_GROUPS: StaffGroupDef[] = [
     ],
   },
   {
-    name: "Cleaning + Sanitation",
+    name: "Maintenance",
     items: [
       { id: "sanitizer-fluid", name: "Sanitizer Fluid" },
       { id: "sanitizer-test-strips", name: "Sanitizer Test Strips" },
