@@ -87,12 +87,11 @@ export const INGREDIENT_GROUPS: StaffGroupDef[] = [
     "pumpkin-seeds",
     "sunflower-seeds",
     "chia-seeds",
-    "berry-chia-pudding",
     "flax-meal",
     "hemp-hearts",
   ]),
   ingredients("Finishes", [
-    // Syrups, granolas, mousses, spreads, toppers.
+    // Syrups, granolas, mousses, spreads, toppers, then the pudding.
     "canadian-maple-syrup",
     "local-raw-honey",
     "|house-granola",
@@ -106,6 +105,7 @@ export const INGREDIENT_GROUPS: StaffGroupDef[] = [
     "sea-salt",
     "cinnamon",
     "evoo",
+    "|berry-chia-pudding",
   ]),
   ingredients("Enhancers", [
     // Proteins, greens, fruit powders, adaptogens, then pantry.
