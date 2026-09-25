@@ -333,6 +333,28 @@ else {
   }
 }
 
+// The liquid a category's items are blended with. Like the yogurt it is a
+// base, not a topping, so it deliberately appears in no recipe and on no step:
+// house whey water goes in every smoothie and prints on none of them. Saying
+// it here is what keeps it from reading as an ingredient nothing needs, which
+// is how the staff board decides whether it is safe to stop carrying something
+// (lib/menu/dependencies.ts).
+const defaultLiquid = signatures.defaultLiquid === undefined ? {} : signatures.defaultLiquid;
+if (!isObj(defaultLiquid)) fail("signatures.defaultLiquid: must be an object keyed by category");
+else {
+  for (const [listKey, id] of Object.entries(defaultLiquid)) {
+    if (!(listKey in CATEGORY_TIERS)) fail(`signatures.defaultLiquid: unknown category "${listKey}"`);
+    if (!isNonEmptyString(id) || !ingredientIds.has(id)) {
+      fail(`signatures.defaultLiquid.${listKey}: "${id}" is not an ingredient`);
+    } else if (isBase(id)) {
+      fail(`signatures.defaultLiquid.${listKey}: "${id}" is a yogurt base, not a liquid`);
+    } else {
+      // Referenced, so the orphan sweep below stops calling it unused.
+      referencedIds.add(id);
+    }
+  }
+}
+
 for (const [listKey, tierKey] of Object.entries(CATEGORY_TIERS)) {
   const items = Array.isArray(signatures[listKey]) ? signatures[listKey] : [];
   if (!Array.isArray(signatures[listKey])) fail(`signatures.${listKey}: missing`);
