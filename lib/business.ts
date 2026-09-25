@@ -13,6 +13,18 @@ export const SOCIAL_LINKS = [
   { label: "TikTok", href: "https://www.tiktok.com/@meros_yogurt" },
 ] as const;
 
+// The Uber Eats storefront. Delivery is the platform's and not ours, which the
+// checkout copy already says at the payment screen, so every mention of it on
+// the site is a link off the site. What that channel sells and for how much is
+// lib/menu/delivery.ts, read from menu.json; this is only the way to it.
+//
+// It lives here rather than in lib/menu/delivery.ts because the footer links it
+// and the footer is a client component on every page: importing the delivery
+// module there would put menu.json in reach of the shared bundle for the sake
+// of one string.
+export const UBER_EATS_URL =
+  "https://www.ubereats.com/store-browse-uuid/fe0c3f1b-d319-5c5f-9cb7-c1cd0a6455bc?diningMode=DELIVERY";
+
 export const BUSINESS = {
   name: "MERŌS House of Yogurt",
   description: "Greek yogurt bowls and smoothies, strained and built in-house. Yaletown, Vancouver.",

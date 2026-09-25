@@ -5,7 +5,7 @@ import { type ReactElement } from "react";
 import { TransitionLink } from "@/components/transition/TransitionLink";
 import { usePathname } from "next/navigation";
 import { INSTAGRAM_URL } from "@/lib/instagramFeed";
-import { BUSINESS, SOCIAL_LINKS, hoursDisplay, mapsQuery, mapsUrl, appleMapsUrl } from "@/lib/business";
+import { BUSINESS, SOCIAL_LINKS, UBER_EATS_URL, hoursDisplay, mapsQuery, mapsUrl, appleMapsUrl } from "@/lib/business";
 import { FOOTER_DESTINATIONS, HELP_LINKS } from "@/lib/nav";
 
 // Address, hours and phone come from lib/business.ts, the same data the
@@ -20,7 +20,7 @@ const MAPS_EMBED_URL = `https://www.google.com/maps?q=${encodeURIComponent(mapsQ
 const CONTACT_MAILTO = `mailto:${BUSINESS.email}?subject=${encodeURIComponent("Website inquiry")}`;
 const CONTACT_TEL = `tel:${BUSINESS.phone.replace(/-/g, "")}`;
 
-// The right column: four short lists rather than a paragraph and a button.
+// The right column: five short lists rather than a paragraph and a button.
 // Every destination the site has, grouped by what the visitor came to do.
 const FOOTER_GROUPS = [
   {
@@ -32,6 +32,12 @@ const FOOTER_GROUPS = [
   },
   { heading: "Help", links: HELP_LINKS },
   { heading: "Go", links: FOOTER_DESTINATIONS },
+  // Its own column rather than a fifth entry in Go. Go is FOOTER_DESTINATIONS,
+  // which is NAV_LINKS by identity and holds only routes on this site; the one
+  // place someone can order without walking in is not one of those, and saying
+  // so under its own heading is also clearer than burying it among four
+  // internal links.
+  { heading: "Order", links: [{ label: "Uber Eats", href: UBER_EATS_URL }] },
   {
     heading: "Find Us",
     links: [

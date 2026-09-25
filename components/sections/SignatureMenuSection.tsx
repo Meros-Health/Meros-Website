@@ -7,6 +7,7 @@ import { SignatureList } from "@/components/menu/SignatureList";
 import { Reveal } from "@/components/ui/ScrollReveal";
 import { useRevealReady } from "@/lib/useRevealReady";
 import { bowlPriceSummary, categoryPriceLine } from "@/lib/menu/pricing";
+import { UBER_EATS_URL } from "@/lib/business";
 import { listBowls, listSmoothies, type SignatureCategory, type SignatureItem } from "@/lib/menu/signatures";
 
 // The home page's menu section: a header, the signature bowls and smoothies
@@ -85,11 +86,54 @@ export function SignatureMenuSection() {
         </Reveal>
       </div>
 
+      <DeliveryNote />
+
       <Category title="Signature bowls" category="bowl" items={listBowls()} />
       <Category title="Signature smoothies" category="smoothie" items={listSmoothies()} />
 
       <FullMenuBar />
     </section>
+  );
+}
+
+// Uber Eats, between the section header and the first category: the one place
+// on the home page that says the menu can be had without coming to Yaletown.
+//
+// It is its own block rather than a third line inside the header. The header is
+// already a heading and a price sentence, and a second sentence in the same
+// type under the first would read as more of the same subtitle rather than as a
+// different offer. Standing in its own space, with the section's stated prices
+// above it and the bowls below, it reads as the aside it is.
+//
+// Outlined, not filled. Browse and Compose Your Own further down are filled
+// because they are the site's own routes; a filled button here would put a
+// third party's app at the top of the section's hierarchy.
+//
+// No prices. Uber Eats charges its own, commission included, and the ones
+// stated a few lines above are the store's.
+function DeliveryNote() {
+  const ref = useRef<HTMLDivElement>(null);
+  const show = useRevealReady(ref, "-80px");
+
+  return (
+    <div ref={ref} className="px-section-x pb-16 md:pb-20 flex flex-col items-center text-center">
+      <Reveal show={show} index={0}>
+        <p className="font-body-mixed text-juniper text-sm leading-relaxed">
+          We&rsquo;re on Uber Eats. Order delivery in the app on your phone, or on the web.
+        </p>
+      </Reveal>
+      <Reveal show={show} index={1}>
+        <CTAButton
+          href={UBER_EATS_URL}
+          variant="dark"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-6"
+        >
+          Order on Uber Eats
+        </CTAButton>
+      </Reveal>
+    </div>
   );
 }
 
