@@ -6,7 +6,7 @@ import { CTAButton } from "@/components/ui/CTAButton";
 import { SignatureList } from "@/components/menu/SignatureList";
 import { Reveal } from "@/components/ui/ScrollReveal";
 import { useRevealReady } from "@/lib/useRevealReady";
-import { bowlPriceSummary, categoryPriceLine } from "@/lib/menu/pricing";
+import { inStorePriceSummary, priceChannelNote, categoryPriceLine } from "@/lib/menu/pricing";
 import { UBER_EATS_URL } from "@/lib/business";
 import { listBowls, listSmoothies, type SignatureCategory, type SignatureItem } from "@/lib/menu/signatures";
 
@@ -39,15 +39,15 @@ const HOME_PHOTOS: Record<SignatureCategory, readonly string[]> = {
 };
 
 /**
- * bowlPriceSummary() as one sentence about bowl sizes and, when the smoothies
- * agree on a price, a second about smoothies (" Smoothies 22 oz, $15."). On a
- * phone the combined sentence is long enough to wrap mid clause, right after
- * "Smoothies," which reads worse than a clean break before it. This forces
- * that break below tablet width and lets the two sentences share one line
- * from tablet width up, same as before.
+ * inStorePriceSummary() as one sentence about bowl sizes and, when the
+ * smoothies agree on a price, a second about smoothies (" Smoothies, 22 oz,
+ * $15."). On a phone the combined sentence is long enough to wrap mid clause,
+ * right after "Smoothies," which reads worse than a clean break before it.
+ * This forces that break below tablet width and lets the two sentences share
+ * one line from tablet width up, same as before.
  */
 function PriceSummary() {
-  const summary = bowlPriceSummary();
+  const summary = inStorePriceSummary();
   const split = summary.indexOf(" Smoothies");
   if (split === -1) return <>{summary}</>;
 
@@ -79,7 +79,11 @@ export function SignatureMenuSection() {
           {/* Derived from menu.json, so a price change on the board reaches
               this sentence without anyone editing it. Split before "Smoothies"
               so a phone breaks the line there on purpose, rather than wherever
-              it runs out of width mid clause. */}
+              it runs out of width mid clause.
+
+              It names the channel ("In-store prices") because an Uber Eats
+              button sits a few lines below and the platform charges more for
+              the same bowl. */}
           <p className="font-body-mixed text-juniper text-sm leading-relaxed mt-5">
             <PriceSummary />
           </p>
@@ -99,18 +103,21 @@ export function SignatureMenuSection() {
 // Uber Eats, between the section header and the first category: the one place
 // on the home page that says the menu can be had without coming to Yaletown.
 //
-// It is its own block rather than a third line inside the header. The header is
-// already a heading and a price sentence, and a second sentence in the same
-// type under the first would read as more of the same subtitle rather than as a
-// different offer. Standing in its own space, with the section's stated prices
-// above it and the bowls below, it reads as the aside it is.
+// The button carries the sentence. It said "We're on Uber Eats. Order delivery
+// in the app on your phone, or on the web." for one day, which is a line of
+// marketing telling a reader what a button labelled ORDER ON UBER EATS has
+// already told them. What the block does need is the price disclaimer, so the
+// copy under it is the disclaimer and nothing else.
+//
+// Disclaimer under the button rather than over it: it qualifies the thing it
+// follows, and set above the button it would read as the block's subtitle and
+// put a caveat ahead of the offer. Smaller and quieter type than the header's
+// price line for the same reason, so the eye takes it as a footnote to the
+// button rather than as a second, competing statement of prices.
 //
 // Outlined, not filled. Browse and Compose Your Own further down are filled
 // because they are the site's own routes; a filled button here would put a
 // third party's app at the top of the section's hierarchy.
-//
-// No prices. Uber Eats charges its own, commission included, and the ones
-// stated a few lines above are the store's.
 function DeliveryNote() {
   const ref = useRef<HTMLDivElement>(null);
   const show = useRevealReady(ref, "-80px");
@@ -118,20 +125,19 @@ function DeliveryNote() {
   return (
     <div ref={ref} className="px-section-x pb-16 md:pb-20 flex flex-col items-center text-center">
       <Reveal show={show} index={0}>
-        <p className="font-body-mixed text-juniper text-sm leading-relaxed">
-          We&rsquo;re on Uber Eats. Order delivery in the app on your phone, or on the web.
-        </p>
-      </Reveal>
-      <Reveal show={show} index={1}>
         <CTAButton
           href={UBER_EATS_URL}
           variant="dark"
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-6"
         >
           Order on Uber Eats
         </CTAButton>
+      </Reveal>
+      <Reveal show={show} index={1}>
+        <p className="font-body-mixed text-juniper text-label leading-relaxed mt-4">
+          {priceChannelNote()}
+        </p>
       </Reveal>
     </div>
   );

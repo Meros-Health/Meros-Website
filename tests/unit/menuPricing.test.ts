@@ -6,12 +6,14 @@
 import { describe, expect, it } from "vitest";
 import { BUILD_CONFIG } from "@/lib/menu/buildConfig";
 import {
-  bowlPriceSummary,
   categoryPriceLine,
   formatMenuPrice,
+  inStorePriceSummary,
+  priceChannelNote,
   smoothiePrice,
   startingBowlPrice,
 } from "@/lib/menu/pricing";
+import { DELIVERY } from "@/lib/menu/delivery";
 import { getSizeTiers, listBowls, listSmoothies } from "@/lib/menu/signatures";
 
 describe("prices in copy come from menu.json", () => {
@@ -20,7 +22,7 @@ describe("prices in copy come from menu.json", () => {
   });
 
   it("names every build size and its price", () => {
-    const summary = bowlPriceSummary();
+    const summary = inStorePriceSummary();
     for (const size of BUILD_CONFIG.sizes) {
       expect(summary, `missing ${size.label}`).toContain(size.label);
       expect(summary, `missing ${size.label} price`).toContain(formatMenuPrice(size.price));
@@ -31,7 +33,7 @@ describe("prices in copy come from menu.json", () => {
     const prices = new Set(
       listSmoothies().flatMap((item) => Object.values(item.sizes).map((s) => s.price))
     );
-    const summary = bowlPriceSummary();
+    const summary = inStorePriceSummary();
     if (prices.size === 1) {
       expect(smoothiePrice()).toBe([...prices][0]);
       expect(summary).toContain("Smoothies");
@@ -46,6 +48,34 @@ describe("prices in copy come from menu.json", () => {
   it("writes a whole-dollar menu price without cents", () => {
     expect(formatMenuPrice(12)).toBe("$12");
     expect(formatMenuPrice(12.5)).toBe("$12.50");
+  });
+});
+
+// Since 2026-09-24 the site links the Uber Eats storefront from the home page,
+// /menu and the footer, and the platform sells the same bowl for more. Every
+// price the site prints is the store's, so the two claims below are what keep
+// the page from quoting one channel's numbers beside another channel's button.
+// They are here rather than left to review because the failure is not a broken
+// page: it is a page that still renders perfectly while misleading a customer.
+describe("the price line says which channel it is quoting", () => {
+  it("names the in-store channel", () => {
+    expect(inStorePriceSummary()).toContain("In-store");
+  });
+
+  it("says the channels are priced differently, and names the platform", () => {
+    const note = priceChannelNote();
+    expect(note).toContain("in-store");
+    expect(note).toContain(DELIVERY.platform);
+  });
+
+  it("quotes no delivery price and no size of the gap", () => {
+    // A figure we do not control goes stale silently. The platform's own
+    // prices live in menu.json for /source-menu to explain; no customer-facing
+    // line may repeat them, and no line may claim a percentage.
+    const copy = `${inStorePriceSummary()} ${priceChannelNote()}`;
+    expect(copy).not.toContain(formatMenuPrice(DELIVERY.prices.bowl));
+    expect(copy).not.toContain(formatMenuPrice(DELIVERY.prices.smoothie));
+    expect(copy).not.toMatch(/%|percent/i);
   });
 });
 

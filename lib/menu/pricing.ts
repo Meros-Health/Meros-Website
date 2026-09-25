@@ -7,6 +7,7 @@
 // These helpers derive the sentence instead, so a price change in menu.json
 // rewrites it.
 import { BUILD_CONFIG } from "./buildConfig";
+import { DELIVERY } from "./delivery";
 import { listBowls, listSmoothies, getSizeTiers, type SignatureCategory } from "./signatures";
 
 /**
@@ -41,17 +42,45 @@ export function smoothieSizeLabel(): string | undefined {
 }
 
 /**
- * The menu header's price line: "Bowls served Medium $12 or Large $15.
- * Smoothies 22 oz, $15." Sizes are listed in menu order, cheapest first.
+ * The menu header's price line: "In-store prices: Bowls, Medium $12, Large
+ * $15. Smoothies, 22 oz, $15." Sizes are listed in menu order, cheapest first.
+ *
+ * "In-store" is load-bearing, not a flourish. These are the store's prices;
+ * Uber Eats sells the same bowls for more, because the platform's commission
+ * is in its numbers. Until 2026-09-24 the site linked no other channel and an
+ * unqualified "Bowls served Medium $12" could only mean one thing. Now that
+ * the storefront is one button away, a visitor who reads $12 here and is
+ * charged $19.99 there has been misled by this sentence, so the sentence says
+ * which channel it is quoting. priceChannelNote() states the difference
+ * outright next to the button itself.
+ *
+ * What it does not do is quote the platform's prices or the size of the gap.
+ * Uber Eats sets those and can change them without telling us, and a number we
+ * cannot keep current is worse than no number: it is the same staleness this
+ * whole module exists to prevent, just pointed at someone else's menu.
  */
-export function bowlPriceSummary(): string {
+export function inStorePriceSummary(): string {
   const sizes = BUILD_CONFIG.sizes.map((size) => `${size.label} ${formatMenuPrice(size.price)}`);
-  const bowls = `Bowls served ${sizes.slice(0, -1).join(", ")} or ${sizes[sizes.length - 1]}.`;
+  const bowls = `In-store prices: Bowls, ${sizes.join(", ")}.`;
 
   const smoothie = smoothiePrice();
   const label = smoothieSizeLabel();
   if (smoothie === undefined || !label) return bowls;
-  return `${bowls} Smoothies ${label}, ${formatMenuPrice(smoothie)}.`;
+  return `${bowls} Smoothies, ${label}, ${formatMenuPrice(smoothie)}.`;
+}
+
+/**
+ * The disclaimer that rides with every link to the delivery storefront.
+ *
+ * Stated plainly and without a figure. The honest thing to disclose is that
+ * the two channels are priced differently, which is durably true; "about 25%
+ * higher" is true this week and unverifiable next, and a stale percentage is a
+ * worse claim than none. The platform is named from menu.json rather than
+ * typed here, so the day a second marketplace exists this line cannot quietly
+ * keep naming only the first.
+ */
+export function priceChannelNote(): string {
+  return `Prices vary between in-store and ${DELIVERY.platform}.`;
 }
 
 /**

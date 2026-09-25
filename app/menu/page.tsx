@@ -7,6 +7,7 @@ import { EntranceReveal } from "@/components/transition/EntranceReveal";
 import { CategoryHeading } from "@/components/gallery/CategoryHeading";
 import { listBowls, listSmoothies } from "@/lib/menu/signatures";
 import { CTAButton } from "@/components/ui/CTAButton";
+import { priceChannelNote } from "@/lib/menu/pricing";
 import { UBER_EATS_URL } from "@/lib/business";
 
 // The whole menu, as two lists with a product photo on every item. What an
@@ -56,17 +57,23 @@ export default function MenuPage() {
             not filled, the same reasoning as everywhere else on the site: the
             filled button is for a route the site owns, and this one leaves it.
 
-            Only the link is here. What Uber Eats sells and for how much is a
-            different menu with the platform's commission in it, and printing
-            those prices on a store surface would make the two disagree. */}
+            The disclaimer is the only copy here, and it earns its place where a
+            sentence about the app would not: every price this page prints, on
+            every item below, is the store's, and the platform charges more for
+            the same bowl. It sits under the button because it qualifies it, and
+            because the page's own subtitle above should stay the page's.
+
+            The platform's prices are deliberately absent. They are a different
+            menu with a commission in it, and a number we cannot keep current is
+            the stale price lib/menu/pricing.ts exists to prevent. */}
         <EntranceReveal index={2}>
           <div className="mt-8 flex flex-col items-start gap-4">
-            <p className="font-body-mixed text-sm text-juniper max-w-md">
-              We&rsquo;re on Uber Eats. Order delivery in the app on your phone, or on the web.
-            </p>
             <CTAButton href={UBER_EATS_URL} variant="dark" target="_blank" rel="noopener noreferrer">
               Order on Uber Eats
             </CTAButton>
+            <p className="font-body-mixed text-label text-juniper max-w-md">
+              {priceChannelNote()}
+            </p>
           </div>
         </EntranceReveal>
       </section>
