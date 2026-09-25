@@ -17,6 +17,14 @@
 //   base     It is a yogurt. The base step is `required: true`, so every bowl
 //            has to have one; a board tap is not how the store stops offering
 //            a yogurt. Covers the defaultBase smoothies fall back to.
+//
+// The liquid is the subtle one. House whey water goes in every smoothie, but
+// it prints on none of them: like the yogurt it is a base, not a topping, so
+// it is deliberately absent from every `recipe` array. That left it reading as
+// an ingredient nothing needs, one tap from being dropped. signatures
+// .defaultLiquid says it out loud, and it locks as a signature ingredient
+// because that is what it is. (The Crave is the exception the data already
+// covers: its liquid is cold brew, which is in its recipe.)
 //   (none)   Everything else. An optional topping in an optional step, or an
 //            ingredient no customer surface offers at all.
 //
@@ -45,6 +53,7 @@ const menu = menuData as unknown as {
   stacks: { items: { enhancers?: string[] }[] };
   signatures: {
     defaultBase?: Record<string, string>;
+    defaultLiquid?: Record<string, string>;
     bowls?: Signature[];
     smoothies?: Signature[];
   };
@@ -70,6 +79,11 @@ function buildLockIndex(): Map<string, LockReason> {
       if (signature.base) locks.set(signature.base, "recipe");
     }
   }
+
+  // Last, and as "recipe": the liquid is in every smoothie even though it
+  // prints in none, which is exactly what "Signature ingredient" should mean
+  // to whoever is holding the phone.
+  for (const id of Object.values(menu.signatures.defaultLiquid ?? {})) locks.set(id, "recipe");
   return locks;
 }
 

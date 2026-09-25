@@ -26,6 +26,7 @@ const menu = menuData as unknown as {
   stacks: { items: { enhancers?: string[] }[] };
   signatures: {
     defaultBase?: Record<string, string>;
+    defaultLiquid?: Record<string, string>;
     bowls?: { recipe?: string[]; base?: string }[];
     smoothies?: { recipe?: string[]; base?: string }[];
   };
@@ -101,6 +102,29 @@ describe("what locks an ingredient", () => {
     expect(lockReason("strawberries")).toBe("recipe");
   });
 
+  // The one an ingredient-by-ingredient reading of the recipes misses. House
+  // whey water is in every smoothie and prints on none of them, because it is
+  // a liquid base like the yogurt rather than a topping. Before
+  // signatures.defaultLiquid existed it read as an ingredient nothing needed,
+  // which is one tap from being dropped out from under the whole roster.
+  it("locks the smoothie liquid even though no recipe prints it", () => {
+    expect(isRemovableIngredient("house-whey-water")).toBe(false);
+    expect(lockLabel("house-whey-water")).toBe("Signature ingredient");
+
+    const printed = [menu.signatures.bowls ?? [], menu.signatures.smoothies ?? []]
+      .flat()
+      .flatMap((sig) => sig.recipe ?? []);
+    expect(printed, "it is a base, not a topping, so it must stay unprinted").not.toContain(
+      "house-whey-water"
+    );
+  });
+
+  it("locks every declared default liquid", () => {
+    const liquids = Object.values(menu.signatures.defaultLiquid ?? {});
+    expect(liquids.length, "no default liquid declared").toBeGreaterThan(0);
+    for (const id of liquids) expect(isRemovableIngredient(id), id).toBe(false);
+  });
+
   it("keeps every label to the two words a phone control can show", () => {
     for (const label of Object.values(LOCK_LABELS)) {
       expect(label.split(" ").length).toBeLessThanOrEqual(2);
@@ -132,7 +156,7 @@ describe("what stays removable", () => {
   });
 
   it("calls an ingredient no customer surface offers inert", () => {
-    for (const id of ["peanut-butter", "coconut-milk", "house-whey-water"]) {
+    for (const id of ["peanut-butter", "coconut-milk", "chocolate"]) {
       expect(removalClass(id), id).toBe("inert");
       expect(isOfferedInBuild(id), id).toBe(false);
     }
