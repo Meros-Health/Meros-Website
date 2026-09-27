@@ -371,6 +371,28 @@ for (const [listKey, tierKey] of Object.entries(CATEGORY_TIERS)) {
     if (item?.ingredients !== undefined) fail(`${where}: "ingredients" is no longer supported, use "recipe" (ingredient ids)`);
 
     if (item?.note !== undefined && !isNonEmptyString(item.note)) fail(`${where}: note must be a string`);
+    // An optional group header printed above the item on the Menu TV, the
+    // print menu and the website list. Items sharing one must be adjacent:
+    // every surface emits the header when the section changes from the item
+    // before, so a split group would print its header twice.
+    if (item?.section !== undefined) {
+      if (!isNonEmptyString(item.section)) fail(`${where}: section must be a non-empty string, or absent`);
+      else {
+        const firstAt = items.findIndex((other) => other?.section === item.section);
+        if (firstAt < i && items[i - 1]?.section !== item.section) {
+          fail(`${where}: section "${item.section}" also appears at index ${firstAt} with other items between them; a section's items must be adjacent`);
+        }
+      }
+    }
+    // A limited-time item, printed with this label: the Menu TV draws it as
+    // a featured row at the top of its panel, the website badges it, the
+    // handheld print menu leaves it out. Specials open their category so
+    // every surface can take them off the head of the list in one pass.
+    if (item?.special !== undefined) {
+      if (!isNonEmptyString(item.special)) fail(`${where}: special must be a non-empty string, or absent`);
+      if (i > 0 && items[i - 1]?.special === undefined) fail(`${where}: a special must come before every regular item in ${listKey}`);
+      if (item?.section !== undefined) fail(`${where}: a special cannot also carry a section`);
+    }
     if (item?.suggestedStack !== undefined && !stackIds.has(item.suggestedStack)) {
       fail(`${where}: suggestedStack "${item.suggestedStack}" is not a stack id (${[...stackIds].join(", ")})`);
     }

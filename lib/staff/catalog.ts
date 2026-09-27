@@ -68,11 +68,13 @@ export const INGREDIENT_GROUPS: StaffGroupDef[] = [
     "papaya",
     "dragon-fruit",
     "bananas",
+    "apples",
   ]),
   ingredients("Nuts", [
     // Coconut and goji are dried, not nuts, but they live on the same shelf.
     "almonds",
     "walnuts",
+    "pecans",
     "cashews",
     "peanuts",
     "pistachios",
@@ -95,6 +97,7 @@ export const INGREDIENT_GROUPS: StaffGroupDef[] = [
     "chocolate-mousse",
     "peanut-butter-mousse",
     "passion-fruit-mousse",
+    "pumpkin-spice-mousse",
     "peanut-butter",
     "almond-butter",
     "chocolate",

@@ -65,7 +65,7 @@ export function stackIngredients(stack: Stack): Ingredient[] {
   });
 }
 
-/** "Whey Protein Isolate, Creatine Monohydrate, L-Glutamine". */
+/** "Grass Fed Whey Protein, Creatine Monohydrate, L-Glutamine". */
 export function formatStack(stack: Stack): string {
   return stack.enhancers.map(ingredientName).join(", ");
 }

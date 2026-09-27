@@ -1,14 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { BUILD_CONFIG, getStepForIngredient } from "@/lib/menu/buildConfig";
 import { getStepInstruction } from "@/lib/menu/calcBowlPrice";
 import { DELIVERY, isDeliveryExtra, isOnDelivery } from "@/lib/menu/delivery";
 import { getIngredient, listIngredients, type Ingredient } from "@/lib/menu/ingredients";
 import { formatMenuPrice, smoothiePrice, smoothieSizeLabel } from "@/lib/menu/pricing";
-import { getDefaultBaseId } from "@/lib/menu/signatureBase";
-import { getSizeLabel, listBowls, listSmoothies, type SignatureItem } from "@/lib/menu/signatures";
+import { getDefaultBaseId, getBaseDeparture, sharedBaseDeparture } from "@/lib/menu/signatureBase";
+import { getSizeLabel, groupBySection, listBowls, listSmoothies, type SignatureItem } from "@/lib/menu/signatures";
 import { getStack, listStacks, singleEnhancerPrice, stackPrice, stackSize, type Stack } from "@/lib/menu/stacks";
+import { SectionHeader } from "@/components/menu/SignatureList";
 
 // The menu reference (/source-menu). Everything here is read from menu.json
 // through the same accessors the builder, the cart and the Menu TV use, so
@@ -354,22 +355,51 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 function SignatureList({ items }: { items: SignatureItem[] }) {
+  // Grouped the same way the Menu TV and the other lists are (groupBySection
+  // in lib/menu/signatures.ts): a run's header spans both columns, and its
+  // items skip their own "Made on" line when the header already said it
+  // (sharedBaseDeparture, lib/menu/signatureBase.ts).
+  const runs = groupBySection(items);
   return (
     <ul className="grid grid-cols-1 gap-x-10 gap-y-5 md:grid-cols-2">
-      {items.map((item) => {
-        const base = getDefaultBaseId(item);
-        const stack = item.suggestedStack ? getStack(item.suggestedStack) : undefined;
+      {runs.map((run, index) => {
+        const note = run.section ? sharedBaseDeparture(run.items) || undefined : undefined;
         return (
-          <li key={item.id} className="border-t border-midnight pt-3">
-            <h3 className="font-headline text-midnight text-xl uppercase leading-none">{item.name}</h3>
-            <p className="font-body-caps text-grapefruit-text tracking-headline mt-1.5 text-label uppercase">{item.tags.join(" · ")}</p>
-            <p className="font-body-mixed text-midnight mt-2 text-sm leading-relaxed">{item.ingredients}.</p>
-            <p className="font-body-mixed text-juniper mt-1 text-caption leading-relaxed">
-              {base ? `Made on ${getIngredient(base)?.name ?? base}.` : "Made on the yogurt you choose."}
-              {stack ? ` Pairs with the ${stack.name}.` : ""}
-              {isOnDelivery(item.id) ? "" : ` In store only.`}
-            </p>
-          </li>
+          <Fragment key={run.section ?? `run-${index}`}>
+            {run.section && (
+              <li className="md:col-span-2">
+                <SectionHeader section={run.section} note={note} />
+              </li>
+            )}
+            {run.items.map((item) => {
+              const base = getDefaultBaseId(item);
+              const stack = item.suggestedStack ? getStack(item.suggestedStack) : undefined;
+              const saidByHeader = note !== undefined && getBaseDeparture(item) === note;
+              const baseLine = saidByHeader
+                ? ""
+                : base
+                  ? `Made on ${getIngredient(base)?.name ?? base}.`
+                  : "Made on the yogurt you choose.";
+              const inStoreOnly = !isOnDelivery(item.id);
+              return (
+                <li key={item.id} className="border-t border-midnight pt-3">
+                  {item.special && (
+                    <p className="font-body-caps text-grapefruit-text tracking-headline mb-1.5 text-label uppercase">{item.special}</p>
+                  )}
+                  <h3 className="font-headline text-midnight text-xl uppercase leading-none">{item.name}</h3>
+                  <p className="font-body-caps text-grapefruit-text tracking-headline mt-1.5 text-label uppercase">{item.tags.join(" · ")}</p>
+                  <p className="font-body-mixed text-midnight mt-2 text-sm leading-relaxed">{item.ingredients}.</p>
+                  {(baseLine || stack || inStoreOnly) && (
+                    <p className="font-body-mixed text-juniper mt-1 text-caption leading-relaxed">
+                      {baseLine}
+                      {stack ? ` Pairs with the ${stack.name}.` : ""}
+                      {inStoreOnly ? ` In store only.` : ""}
+                    </p>
+                  )}
+                </li>
+              );
+            })}
+          </Fragment>
         );
       })}
     </ul>

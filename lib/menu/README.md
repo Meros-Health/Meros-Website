@@ -10,6 +10,7 @@ a menu reads from it:
 | Home page Stacks section, the Stack named on each menu panel | `lib/menu/stacks.ts`, `lib/menu/featuredEnhancers.ts` |
 | The menu reference page (`/source-menu`, unlinked) | every accessor above plus `lib/menu/delivery.ts` |
 | In-store Menu TV, both panels | `../menu-tv/sync-menu.sh` writes `menu-data.js` |
+| In-store handheld print menu | `../menu-tv/print-menu.html` reads the same `menu-data.js` |
 
 There are no other copies. If a name, price or ingredient appears somewhere
 that is not derived from this file, that is a bug.
@@ -89,6 +90,10 @@ reach either surface.
       { "id": "moment", "name": "The Moment", "tags": ["Energy", "Antioxidants"],
         "base": "plain-greek-yogurt",                          // optional: this item departs from its category default
         "suggestedStack": "glow",                              // optional: a stacks.items id, printed as "Pairs with the Glow Stack"
+        "special": "Seasonal Special",                         // optional: a limited-time item, printed under this label. Must open its
+                                                                //   category. TV: featured row; website: badge; print menu: left out
+        "section": "High Protein",                             // optional: a group header printed above the first item of a run
+                                                                //   of consecutive items sharing it (The Recovery and The Crave)
         "recipe": ["blueberries", ...],                        // toppings only, ingredient ids, printed in this order
         "sizes": { "medium": { "price": 12, "calories": 581, "protein": 17 }, "large": {...} },
         "images": { "photo": "/images-web/Signature/moment.jpg",             // optional: an item with no photography is set as type
@@ -144,6 +149,8 @@ A custom bowl costs `sizes[sizeId].price + option surcharges + per-step extras`.
 - `ingredients[].group`, when set, is the id of a `select: "multi"` step.
 - Every signature carries `calories` and `protein` at every size. (The Seasonal was allowed to omit them from 2026-09-01 until it was retired on 2026-09-10.)
 - `stacks.items`: ids and names unique; each holds exactly `bundle.count` enhancers, each offered in the `enhancers` step; `pairsWith` names real signatures. `suggestedStack` on a signature names a real stack.
+- `special`, when set, is a non-empty string on an item that comes before every regular item in its category (surfaces take specials off the head of the list), never alongside `section`.
+- `section`, when set, is a non-empty string; every item sharing the same `section` within a category must be adjacent (no other item, or a differently-sectioned one, between them), so every surface can find a section's runs in a single pass and print one header per run.
 - `delivery`: prices are numbers, `bowlSizes` are bowl tier ids, `extras` are real non-base ingredients, `singleEnhancer.ingredientId` is offered in the enhancers step, `excludes` names real signatures.
 - When `images` is given, `photo` is required and `transparent` optional; every path given exists under `public/`. `images` may be absent.
 - `seasonNote`, when given, is a non-empty string on an item that has no `images` (it is only ever rendered in a photograph's place, so on a photographed item it would silently go stale).
@@ -181,6 +188,12 @@ one fails at the board and nowhere earlier.
 **Add a step.** Append to `build.steps`. The builder, cart, checkout and Menu
 TV pick it up. The TV needs a column-count hint for the new step id in
 `../menu-tv/sync-menu.sh` (`COLS`), otherwise it defaults to three columns.
+
+**Add a limited-time special.** Add the item at the head of its category with
+`"special": "Seasonal Special"` (the printed label), its recipe, figures and
+photo like any other item, and list it in `delivery.excludes` unless it was
+submitted to the platform. The TV draws it as an inverted featured row, the
+website badges it, the print menu skips it. Retire it like any other item.
 
 **Change a signature's default yogurt.** Edit `signatures.defaultBase`, or set
 `base` on the one item that differs. Never put a yogurt in `recipe[]`.

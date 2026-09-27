@@ -142,3 +142,28 @@ export function formatBaseCaption(item: SignatureItem): string {
   const defaultName = getIngredient(defaultId)?.name ?? defaultId;
   return `Made with ${defaultName} · Swap for ${joinOr(choices)}`;
 }
+
+/**
+ * The ingredient name when `item.base` departs from its category's default,
+ * the same "baseNote" ../menu-tv/sync-menu.sh computes: undefined when the
+ * item carries no override or the override equals the category default.
+ * A section header (see groupBySection in signatures.ts) hoists this when
+ * every item in its run shares it, so the rows below the header do not
+ * repeat it; see sharedBaseDeparture.
+ */
+export function getBaseDeparture(item: SignatureItem): string | undefined {
+  const categoryDefault = DEFAULT_BASE[LIST_KEY[item.category]];
+  if (item.base === undefined || item.base === categoryDefault) return undefined;
+  return getIngredient(item.base)?.name;
+}
+
+/**
+ * The base note a run of same-`section` items shares, "" when they do not
+ * all agree (including when some carry no departure at all). Mirrors the
+ * Menu TV's rule: the run's departures collapse to a Set of size one before
+ * the header is allowed to say it once.
+ */
+export function sharedBaseDeparture(items: readonly SignatureItem[]): string {
+  const notes = new Set(items.map((item) => getBaseDeparture(item) ?? ""));
+  return notes.size === 1 ? [...notes][0] : "";
+}

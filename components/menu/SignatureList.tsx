@@ -9,8 +9,8 @@ import { useAddedBeat } from "@/lib/useAddedBeat";
 import { useRevealReady } from "@/lib/useRevealReady";
 import { getIngredient } from "@/lib/menu/ingredients";
 import { addSignatureDirect, needsConfiguration, startingPrice } from "@/lib/menu/signatureAdd";
-import { getDefaultBaseId } from "@/lib/menu/signatureBase";
-import { shortName, type SignatureItem } from "@/lib/menu/signatures";
+import { getDefaultBaseId, getBaseDeparture, sharedBaseDeparture } from "@/lib/menu/signatureBase";
+import { groupBySection, shortName, type SectionRun, type SignatureItem } from "@/lib/menu/signatures";
 import { getStack } from "@/lib/menu/stacks";
 
 // A category of the menu as a list: name, tags, the recipe, the yogurt it is
@@ -53,16 +53,23 @@ const THUMB = "4.5rem";
 export function SignatureList({ items, variant, photos, mobileThumb, bestSellers }: SignatureListProps) {
   const hasPhoto = (item: SignatureItem) =>
     item.images !== undefined && (photos === "all" || photos.includes(item.id));
+  const runs = groupBySection(items);
 
   if (variant === "list") {
     const pictured = items.filter(hasPhoto);
     return (
       <div className="grid grid-cols-1 gap-x-12 gap-y-10 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <ul className="grid grid-cols-1 gap-y-6">
-          {items.map((item) => (
-            <RevealRow key={item.id}>
-              <Entry item={item} thumb={thumbSrc(item, mobileThumb)} />
-            </RevealRow>
+          {runs.map((run, index) => (
+            <RunRows key={run.section ?? `run-${index}`} run={run}>
+              {(note) =>
+                run.items.map((item) => (
+                  <RevealRow key={item.id}>
+                    <Entry item={item} thumb={thumbSrc(item, mobileThumb)} sectionNote={note} />
+                  </RevealRow>
+                ))
+              }
+            </RunRows>
           ))}
         </ul>
         {pictured.length > 0 && (
@@ -85,15 +92,21 @@ export function SignatureList({ items, variant, photos, mobileThumb, bestSellers
 
   return (
     <ul className="grid grid-cols-1 gap-x-10 gap-y-8 md:grid-cols-2 md:gap-y-14">
-      {items.map((item) => (
-        <RevealRow key={item.id}>
-          {hasPhoto(item) && (
-            <div className="hidden md:block mb-5">
-              <Figure item={item} sizes="(min-width: 768px) 45vw, 100vw" />
-            </div>
-          )}
-          <Entry item={item} thumb={thumbSrc(item, mobileThumb)} />
-        </RevealRow>
+      {runs.map((run, index) => (
+        <RunRows key={run.section ?? `run-${index}`} run={run} headerLiClassName="md:col-span-2">
+          {(note) =>
+            run.items.map((item) => (
+              <RevealRow key={item.id}>
+                {hasPhoto(item) && (
+                  <div className="hidden md:block mb-5">
+                    <Figure item={item} sizes="(min-width: 768px) 45vw, 100vw" />
+                  </div>
+                )}
+                <Entry item={item} thumb={thumbSrc(item, mobileThumb)} sectionNote={note} />
+              </RevealRow>
+            ))
+          }
+        </RunRows>
       ))}
     </ul>
   );
@@ -116,20 +129,75 @@ export function SignatureList({ items, variant, photos, mobileThumb, bestSellers
  */
 function RevealRow({
   delay = 0,
+  liClassName,
   children,
 }: {
   /** Extra delay, for a second column revealing a beat behind the first. */
   delay?: number;
+  /** Grid-span utilities and the like; the `<li>` is the actual grid item. */
+  liClassName?: string;
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLLIElement>(null);
   const show = useRevealReady(ref, "-80px");
   return (
-    <li ref={ref}>
+    <li ref={ref} className={liClassName}>
       <Reveal show={show} delay={delay}>
         {children}
       </Reveal>
     </li>
+  );
+}
+
+/**
+ * One section run: an optional group header (see groupBySection in
+ * signatures.ts) followed by its rows, handed to the caller as a render prop
+ * so "list" and "cards" can lay their rows out differently. The header
+ * prints the section label and, when every item in the run shares the same
+ * base departure (sharedBaseDeparture), that note beside it; the run's
+ * items then get that note passed down so Entry can leave its own "Made on"
+ * line for the header to have said once.
+ */
+function RunRows({
+  run,
+  headerLiClassName,
+  children,
+}: {
+  run: SectionRun;
+  /** Grid-span utilities for the header's `<li>` on a multi-column grid. */
+  headerLiClassName?: string;
+  children: (note: string | undefined) => React.ReactNode;
+}) {
+  const note = run.section ? sharedBaseDeparture(run.items) || undefined : undefined;
+  return (
+    <>
+      {run.section && (
+        <RevealRow liClassName={headerLiClassName}>
+          <SectionHeader section={run.section} note={note} />
+        </RevealRow>
+      )}
+      {children(note)}
+    </>
+  );
+}
+
+/**
+ * A group header above a run of signatures sharing `section`: the label in
+ * the brand terracotta, the shared base note beside it in a muted tone, then
+ * a hairline rule out to the container's edge. Mirrors the Menu TV's
+ * row-section treatment (../../menu-tv/index.html), rebuilt in the site's
+ * own type and rule tokens rather than the board's. Exported so /source-menu
+ * (SourceMenu.tsx, its own signature list) draws the same header.
+ */
+export function SectionHeader({ section, note }: { section: string; note?: string }) {
+  return (
+    <div className="flex items-baseline gap-3 pt-2">
+      <span className="font-body-caps text-grapefruit-text tracking-headline text-label uppercase whitespace-nowrap">
+        {section}
+      </span>
+      {note && <span className="font-body-mixed text-juniper text-caption whitespace-nowrap">Made with {note}</span>}
+      <span aria-hidden className="flex-1 self-center border-t border-midnight/rule" />
+    </div>
   );
 }
 
@@ -174,9 +242,11 @@ function Figure({
 /**
  * One item's type and its add button. `thumb` is drawn beside the text below
  * tablet width only; it is display:none above it, which the reveal gate
- * already ignores (revealImages skips images with no box).
+ * already ignores (revealImages skips images with no box). `sectionNote`,
+ * when set, is the base note the item's group header already said (see
+ * RunRows): this item leaves its own "Made on" line out rather than repeat it.
  */
-function Entry({ item, thumb }: { item: SignatureItem; thumb?: string }) {
+function Entry({ item, thumb, sectionNote }: { item: SignatureItem; thumb?: string; sectionNote?: string }) {
   const addItem = useCartStore((s) => s.addItem);
   const openAdd = useCartStore((s) => s.openAdd);
   const { added, flash } = useAddedBeat(item.id);
@@ -185,6 +255,8 @@ function Entry({ item, thumb }: { item: SignatureItem; thumb?: string }) {
   const starting = startingPrice(item);
   const base = getDefaultBaseId(item);
   const stack = item.suggestedStack ? getStack(item.suggestedStack) : undefined;
+  const saidByHeader = sectionNote !== undefined && getBaseDeparture(item) === sectionNote;
+  const baseLine = saidByHeader ? "" : base ? `Made on ${getIngredient(base)?.name ?? base}.` : "Made on the yogurt you choose.";
 
   const handleAdd = () => {
     if (added) return;
@@ -204,6 +276,9 @@ function Entry({ item, thumb }: { item: SignatureItem; thumb?: string }) {
       )}
 
       <div className="min-w-0 flex flex-col items-start">
+        {item.special && (
+          <p className="font-body-caps text-grapefruit-text tracking-headline mb-2 text-label uppercase">{item.special}</p>
+        )}
         <h3
           className="font-headline text-midnight uppercase leading-[0.92]"
           style={{ fontSize: "clamp(1.5rem, 2.6vw, 2.25rem)" }}
@@ -218,10 +293,12 @@ function Entry({ item, thumb }: { item: SignatureItem; thumb?: string }) {
         {/* Toppings only. The yogurt is chosen in the add modal. */}
         <p className="font-body-mixed text-midnight mt-3 text-sm leading-relaxed">{item.ingredients}.</p>
 
-        <p className="font-body-mixed text-juniper mt-1 text-caption leading-relaxed">
-          {base ? `Made on ${getIngredient(base)?.name ?? base}.` : "Made on the yogurt you choose."}
-          {stack ? ` Pairs with the ${stack.name}.` : ""}
-        </p>
+        {(baseLine || stack) && (
+          <p className="font-body-mixed text-juniper mt-1 text-caption leading-relaxed">
+            {baseLine}
+            {stack ? ` Pairs with the ${stack.name}.` : ""}
+          </p>
+        )}
 
         {starting === undefined && (
           <p className="font-body-caps text-grapefruit-text tracking-headline mt-2 text-label uppercase">Unavailable</p>

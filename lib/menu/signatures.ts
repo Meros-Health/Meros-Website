@@ -28,12 +28,26 @@ export type SignatureItem = {
   ingredients: string;
   /**
    * The yogurt this item departs from its category default with, as a Base
-   * step ingredient id. Only The Recovery sets one (High Protein 0%);
-   * lib/menu/signatureBase.ts resolves the default for the rest.
+   * step ingredient id. lib/menu/signatureBase.ts resolves the default for
+   * every item that does not set one.
    */
   base?: string;
   /** The Stack the menu suggests with this item, a stacks.items id. Optional. */
   suggestedStack?: string;
+  /**
+   * A group header printed above the first item of a run of consecutive
+   * items sharing it, e.g. "High Protein" over The Recovery and The Crave.
+   * The validator enforces that a section's items are adjacent, so a
+   * single pass (see `groupBySection`) is enough to find the runs.
+   */
+  section?: string;
+  /**
+   * A limited-time item, printed under this label ("Seasonal Special").
+   * Specials open their category (the validator enforces it): the Menu TV
+   * draws them as featured rows at the top of the panel, the lists here
+   * badge them, the handheld print menu leaves them out.
+   */
+  special?: string;
   /** Keyed by size id; bowls carry two sizes, smoothies one. */
   sizes: Record<string, SignatureSizeInfo>;
   /**
@@ -123,4 +137,27 @@ export function formatSizeStat(item: SignatureItem, field: "calories" | "protein
     .map((tier) => item.sizes[tier.id]?.[field])
     .filter((value): value is number => typeof value === "number")
     .join(" / ");
+}
+
+export type SectionRun = {
+  /** Undefined for a run of items with no section; most lists are one such run. */
+  section?: string;
+  items: SignatureItem[];
+};
+
+/**
+ * Items grouped into runs by `section`, the same rule the Menu TV's
+ * sectionedRows() applies (../menu-tv/index.html): a new run starts wherever
+ * `section` changes from the item before it. The validator guarantees a
+ * section's items are adjacent, so this single pass is enough for any list
+ * to print a header above the first item of each labelled run.
+ */
+export function groupBySection(items: readonly SignatureItem[]): SectionRun[] {
+  const runs: SectionRun[] = [];
+  for (const item of items) {
+    const last = runs[runs.length - 1];
+    if (last && last.section === item.section) last.items.push(item);
+    else runs.push({ section: item.section, items: [item] });
+  }
+  return runs;
 }
