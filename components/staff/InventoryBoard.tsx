@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Reveal } from "@/components/ui/ScrollReveal";
 import { AddItemModal, type AddItemSubmit } from "@/components/staff/AddItemModal";
+import { Cell, ColumnLabel, StaffBackLink, formatDay, packLabel } from "@/components/staff/staffUi";
+import { BOARD_GRID, CELL_MD, CELL_XL, EMPTY, STAFF_PAGE } from "@/lib/design/staffLayout";
 import { lockLabel } from "@/lib/menu/dependencies";
 import { builtInItemFor, resolveSection } from "@/lib/staff/customItems";
 import {
@@ -12,11 +14,22 @@ import {
   type StaffItemDef,
   type StaffStatus,
 } from "@/lib/staff/catalog";
-import { PACK_MEASURES, formatCents } from "@/lib/staff/purchases";
+import { formatCents } from "@/lib/staff/purchases";
 
-// The staff inventory board (/staff). Phones get two tabs and one column;
-// desktop shows everything at once in three columns, because Saima's question
-// is "what do I order", which wants the whole board in one glance.
+// The staff inventory board (/staff): every ingredient and supply the store
+// runs through, what each one is down to, and when it was last bought.
+//
+// A table, one category to a band, edge to edge. It was three masonry columns
+// of name-plus-chips cards until the ordering log started feeding it order
+// history, at which point every row carried a sentence of numbers under its
+// name and the board became 109 paragraphs. Numbers are read by comparison, and
+// nothing can be compared down a column that does not exist.
+//
+// So: fixed columns, one declaration for all of them (BOARD_GRID in
+// staffUi.tsx), and a cell that is empty still holds its place. A row in
+// Fruits lines up with a row in Enhancers. Columns drop out below xl rather
+// than narrowing, because a squeezed price column is worse than no price
+// column on a phone held behind a counter.
 //
 // The board renders without the site's nav and footer (both hide themselves
 // on /staff): this is a work surface staff open mid-shift, and the only way
@@ -27,7 +40,7 @@ import { PACK_MEASURES, formatCents } from "@/lib/staff/purchases";
 // State refreshes every 10 seconds and whenever the tab regains focus; at two
 // or three concurrent users that is the right amount of realtime.
 //
-// Rows appear instantly, no stagger: 91 rows on the sitewide reveal cadence
+// Rows appear instantly, no stagger: 109 rows on the sitewide reveal cadence
 // would take seconds to settle, and staff open this mid-shift to answer one
 // question. Only the header gets the house entrance.
 //
@@ -53,7 +66,12 @@ const CONFIRM_MS = 4_000;
 
 type ItemState = { status: StaffStatus; updatedBy: string | null; updatedAt: string };
 
-/** The last order of an item, as /staff/purchases reports it. */
+/**
+ * The last order of an item, as /staff/purchases reports it. The route already
+ * sends the whole serialized purchase, so `receivedAt` costs nothing and is
+ * what the Delivered column reads: ordered and arrived are different questions
+ * and the gap between them is how long this supplier takes.
+ */
 type LastOrder = {
   quantity: number;
   unit: string;
@@ -61,6 +79,7 @@ type LastOrder = {
   packSizeCount: number | null;
   packPriceCents: number | null;
   orderedAt: string;
+  receivedAt: string | null;
   supplierId: string | null;
 };
 type Latest = { updatedBy: string | null; updatedAt: string } | null;
@@ -71,20 +90,6 @@ type BoardItem = StaffItemDef & { custom?: boolean; lock?: string };
 type BoardGroup = { name: string; items: BoardItem[] };
 
 const STATUS_LABELS: Record<StaffStatus, string> = { in: "In", low: "Low", out: "Out" };
-
-// The board's only route out; the site chrome is hidden here. Padded to a
-// 44px touch target since staff hit this on phones.
-function BackToSite() {
-  return (
-    <Link
-      href="/"
-      className="inline-flex min-h-11 items-center gap-2 self-start text-caption text-juniper underline-offset-4 hover:underline"
-    >
-      <span aria-hidden>←</span>
-      Back to site
-    </Link>
-  );
-}
 
 // Selected chip: the status colour as text + border + a faint wash of the
 // same hue. Full class strings so Tailwind sees them.
@@ -109,35 +114,6 @@ function formatWhen(iso: string): string {
     hour: "numeric",
     minute: "2-digit",
   }).format(then);
-}
-
-/**
- * The one line under a row that answers the question this board was always
- * being asked around: when did we last order this, how much, and what did it
- * cost. It reads "3 x 1 kg Bag . $16.99 . Costco . Sep 21", and it is only
- * here because the ordering log already records every piece of it.
- *
- * Every part is optional, because a hurried entry is still a useful entry. An
- * order with no price simply shows no price rather than showing a zero.
- */
-function lastOrderLine(last: LastOrder, supplierNames: Map<string, string>): string {
-  const size = last.packSizeG
-    ? last.packSizeG >= 1000
-      ? `${+(last.packSizeG / 1000).toFixed(3)} ${PACK_MEASURES.kg.label} `
-      : `${+last.packSizeG.toFixed(1)} ${PACK_MEASURES.g.label} `
-    : last.packSizeCount
-      ? `${+last.packSizeCount.toFixed(0)} ct `
-      : "";
-  const parts = [`${+last.quantity.toFixed(2)} \u00d7 ${size}${last.unit}`];
-  const price = formatCents(last.packPriceCents);
-  if (price) parts.push(price);
-  const supplier = last.supplierId ? supplierNames.get(last.supplierId) : null;
-  if (supplier) parts.push(supplier);
-  const when = new Date(last.orderedAt);
-  if (!Number.isNaN(when.getTime())) {
-    parts.push(new Intl.DateTimeFormat("en-CA", { month: "short", day: "numeric" }).format(when));
-  }
-  return parts.join(" \u00b7 ");
 }
 
 /**
@@ -213,9 +189,9 @@ export function InventoryBoard() {
       // Transient network failure: keep what we have, the next poll retries.
     }
 
-    // The last-order line is an extra, fetched separately and allowed to fail
-    // on its own. The board answers "what do I order"; if the ordering log is
-    // unreachable the rows still work, they just stop carrying their history.
+    // The order history is an extra, fetched separately and allowed to fail on
+    // its own. The board answers "what do I order"; if the ordering log is
+    // unreachable the rows still work, their history columns just read empty.
     try {
       const res = await fetch("/staff/purchases", { cache: "no-store" });
       if (!res.ok) return;
@@ -393,8 +369,8 @@ export function InventoryBoard() {
 
   if (phase === "unavailable") {
     return (
-      <div className="px-section-x pb-24 pt-10">
-        <BackToSite />
+      <div className={STAFF_PAGE}>
+        <StaffBackLink href="/">Back to site</StaffBackLink>
         <h1 className="mt-6 font-headline text-3xl">Inventory</h1>
         <p className="mt-4 max-w-md text-caption text-midnight/70">
           The inventory board is not switched on in this environment.
@@ -404,10 +380,10 @@ export function InventoryBoard() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-5 pb-24 pt-10 md:px-8 md:pt-12">
+    <div className={STAFF_PAGE}>
       <Reveal show={revealed} index={0}>
         <header className="flex flex-col gap-1.5">
-          <BackToSite />
+          <StaffBackLink href="/">Back to site</StaffBackLink>
           <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
             <h1 className="font-headline text-3xl">Inventory</h1>
             <div className="flex items-center gap-4">
@@ -418,7 +394,7 @@ export function InventoryBoard() {
               {/*
                 The same weight as "Log an order" on the page it leads to: the
                 two are one task seen from either end, and a text link here
-                read as a footnote next to a board of 90 tappable controls.
+                read as a footnote next to a board of 109 tappable rows.
               */}
               <Link
                 href="/staff/ordering"
@@ -517,7 +493,7 @@ function NotCarrying({ hidden, onRestore }: { hidden: string[]; onRestore: (id: 
         aria-expanded={open}
         className="inline-flex min-h-11 items-center gap-2 text-caption text-juniper transition-colors hover:text-midnight"
       >
-        <span aria-hidden>{open ? "\u2212" : "+"}</span>
+        <span aria-hidden>{open ? "−" : "+"}</span>
         Not carrying ({hidden.length})
       </button>
 
@@ -527,13 +503,13 @@ function NotCarrying({ hidden, onRestore }: { hidden: string[]; onRestore: (id: 
             Off the board only. These are still on the ordering page until they come out of the menu
             itself, which needs a deploy.
           </p>
-          <ul className="mt-3 md:columns-3 md:gap-6">
+          <ul className="mt-3 md:columns-3 md:gap-6 xl:columns-4">
             {rows.map(({ id, entry }) => (
               <li
                 key={id}
                 className="flex break-inside-avoid items-center justify-between gap-3 py-1"
               >
-                <span className="min-w-0 flex-1 text-sm md:text-caption">
+                <span className="min-w-0 flex-1 truncate text-sm md:text-caption">
                   {entry?.name ?? id}
                   {entry ? <span className="text-juniper"> · {entry.section}</span> : null}
                 </span>
@@ -553,6 +529,16 @@ function NotCarrying({ hidden, onRestore }: { hidden: string[]; onRestore: (id: 
   );
 }
 
+/**
+ * One half of the board: its own heading, its own column labels, and its
+ * category bands stacked down the page.
+ *
+ * The heading and the labels stick to the top of the viewport together, so
+ * fourteen rows into Enhancers the columns are still named and it is still
+ * obvious which half of the board this is. They stop at the section's own
+ * bottom edge, which is how the Supplies block takes over from the Ingredients
+ * one without either of them being told about the other.
+ */
 function BoardSection({
   title,
   groups,
@@ -574,14 +560,60 @@ function BoardSection({
   lastOrders: Record<string, LastOrder>;
   supplierNames: Map<string, string>;
 }) {
+  let low = 0;
+  let out = 0;
+  let rows = 0;
+  for (const group of groups) {
+    rows += group.items.length;
+    for (const item of group.items) {
+      const s = statusOf(item.id);
+      if (s === "low") low += 1;
+      if (s === "out") out += 1;
+    }
+  }
+
   return (
     <section className={hiddenOnMobile ? "hidden md:block" : ""}>
-      <h2 className="mt-10 hidden border-b border-midnight/rule-strong pb-2 font-headline text-lg md:block">
-        {title}
-      </h2>
-      <div className="mt-2 md:mt-6 md:columns-3 md:gap-6">
+      {/*
+        The heading a phone gets, which is the tab it just pressed. The visible
+        one below is hidden there along with the column labels, and a section
+        with no heading at all would leave a screen reader reading 72 rows with
+        nothing saying where they start.
+      */}
+      <h2 className="sr-only md:hidden">{title}</h2>
+      {/*
+        Hidden on phones, where the tabs above already say which half of the
+        board this is and there are no columns to label.
+      */}
+      <div className="sticky top-0 z-10 hidden bg-cream pt-10 md:block">
+        <div className="flex items-baseline justify-between gap-4 border-b border-midnight/rule-strong pb-2">
+          <h2 className="font-headline text-lg">{title}</h2>
+          <p className="text-note text-juniper">
+            {rows} rows
+            {out > 0 ? <span className="text-status-out"> · {out} out</span> : null}
+            {low > 0 ? <span className="text-status-low"> · {low} low</span> : null}
+          </p>
+        </div>
+        {/*
+          The transparent side borders are not decoration: they stand in for the
+          1px each band below draws, so a label sits over its own column rather
+          than a pixel to the left of it.
+        */}
+        <div className={`${BOARD_GRID} border-x border-transparent px-3 pb-1 pt-2`}>
+          <ColumnLabel>Item</ColumnLabel>
+          <ColumnLabel className={CELL_XL}>Last pack</ColumnLabel>
+          <ColumnLabel className={`${CELL_XL} text-right`}>Price</ColumnLabel>
+          <ColumnLabel className={CELL_XL}>Supplier</ColumnLabel>
+          <ColumnLabel className={CELL_MD}>Ordered</ColumnLabel>
+          <ColumnLabel className={CELL_MD}>Delivered</ColumnLabel>
+          <ColumnLabel>Stock</ColumnLabel>
+          <span aria-hidden />
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-4 pt-4 md:gap-5 md:pt-2">
         {groups.map((group) => (
-          <GroupCard
+          <GroupBand
             key={group.name}
             group={group}
             statusOf={statusOf}
@@ -597,7 +629,15 @@ function BoardSection({
   );
 }
 
-function GroupCard({
+/**
+ * One category, as a band across the board: Yogurt, then Fruits, then Nuts.
+ *
+ * The band's own header is a three-slot grid rather than a flex row, and the
+ * title slot is a fixed width, so "Add to Seeds" and "Add to Back of House"
+ * sit at the same x on every band. A button that moves with the length of the
+ * word beside it is a button you have to look for eleven times.
+ */
+function GroupBand({
   group,
   statusOf,
   setStatus,
@@ -614,7 +654,7 @@ function GroupCard({
   lastOrders: Record<string, LastOrder>;
   supplierNames: Map<string, string>;
 }) {
-  // Which row's "-" is waiting on its second tap. One per card is enough:
+  // Which row's "-" is waiting on its second tap. One per band is enough:
   // confirming a second row cancels the first, which is the intent anyway.
   const [confirming, setConfirming] = useState<string | null>(null);
 
@@ -635,87 +675,154 @@ function GroupCard({
   const tone = out > 0 ? META_TONE.out : low > 0 ? META_TONE.low : META_TONE.clean;
 
   return (
-    <div className="break-inside-avoid pt-6 md:mb-6 md:border md:border-midnight/rule md:p-5 md:pt-4">
-      <div className="flex items-baseline justify-between gap-3 border-b border-midnight/rule-strong pb-2">
-        <h3 className="font-headline text-lg md:text-body">{group.name}</h3>
-        <p className={`text-note ${tone}`}>{parts.length ? parts.join(" · ") : "all stocked"}</p>
+    <div className="border border-midnight/rule">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 border-b border-midnight/rule-strong bg-midnight/veil px-2 py-2 md:grid-cols-[11rem_auto_minmax(0,1fr)] md:px-3">
+        <h3 className="truncate font-headline text-body md:text-lg">{group.name}</h3>
+        <button
+          type="button"
+          onClick={(event) => onAdd(group.name, event.currentTarget)}
+          className="inline-flex min-h-11 items-center gap-1.5 justify-self-start whitespace-nowrap border border-midnight/rule bg-cream px-3 text-caption text-midnight/70 transition-colors hover:border-midnight hover:text-midnight md:h-8 md:min-h-0"
+        >
+          <span aria-hidden>+</span>
+          Add to {group.name}
+        </button>
+        <p className={`text-note md:text-right ${tone}`}>
+          {parts.length ? parts.join(" · ") : "all stocked"}
+        </p>
       </div>
-      <ul className="pt-2">
+
+      <ul className="px-2 py-1 md:px-3">
         {group.items.map((item) => (
-          <li key={item.id} className="flex items-center justify-between gap-3 py-1">
-            <span className="min-w-0 flex-1 text-sm md:text-caption">
-              {item.name}
-              {lastOrders[item.id] ? (
-                <span className="block text-note text-juniper">
-                  {lastOrderLine(lastOrders[item.id], supplierNames)}
-                </span>
-              ) : null}
-            </span>
-            <span className="flex shrink-0 items-center gap-1">
-              {(["in", "low", "out"] as const).map((status) => {
-                const selected = statusOf(item.id) === status;
-                return (
-                  <button
-                    key={status}
-                    type="button"
-                    onClick={() => setStatus(item.id, status)}
-                    aria-pressed={selected}
-                    aria-label={`${item.name}: ${STATUS_LABELS[status]}`}
-                    className={`h-11 w-[52px] border text-xs tracking-body-mixed transition-colors active:translate-y-px md:h-8 md:w-12 ${
-                      selected
-                        ? SELECTED[status]
-                        : "border-midnight/rule text-midnight/70 hover:bg-midnight/veil"
-                    }`}
-                  >
-                    {STATUS_LABELS[status]}
-                  </button>
-                );
-              })}
-              {item.lock ? (
-                <button
-                  type="button"
-                  // aria-disabled rather than disabled: a truly disabled
-                  // control is skipped by the accessibility tree and, in most
-                  // browsers, shows no title on hover. This one carries no
-                  // handler, so a click does nothing either way.
-                  aria-disabled="true"
-                  title={item.lock}
-                  aria-label={`${item.name}: ${item.lock}, cannot be removed`}
-                  className="h-11 w-8 cursor-not-allowed border border-midnight/rule text-sm text-midnight/25 md:h-8"
-                >
-                  <span aria-hidden>−</span>
-                </button>
-              ) : confirming === item.id ? (
-                <button
-                  type="button"
-                  onClick={() => onRemove(item.id, item.custom === true)}
-                  aria-label={`Confirm removing ${item.name}`}
-                  className="h-11 border border-emphasis border-status-out bg-status-out/veil px-2 text-xs font-semibold text-status-out md:h-8"
-                >
-                  Remove?
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setConfirming(item.id)}
-                  aria-label={`Remove ${item.name}`}
-                  className="h-11 w-8 border border-midnight/rule text-sm text-midnight/70 transition-colors hover:bg-midnight/veil md:h-8"
-                >
-                  <span aria-hidden>−</span>
-                </button>
-              )}
-            </span>
-          </li>
+          <ItemRow
+            key={item.id}
+            item={item}
+            status={statusOf(item.id)}
+            setStatus={setStatus}
+            last={lastOrders[item.id]}
+            supplierNames={supplierNames}
+            confirming={confirming === item.id}
+            onConfirm={setConfirming}
+            onRemove={onRemove}
+          />
         ))}
       </ul>
-      <button
-        type="button"
-        onClick={(event) => onAdd(group.name, event.currentTarget)}
-        className="mt-2 inline-flex min-h-11 items-center gap-1.5 text-caption text-juniper transition-colors hover:text-midnight md:min-h-8"
-      >
-        <span aria-hidden>+</span>
-        Add to {group.name}
-      </button>
     </div>
+  );
+}
+
+/**
+ * One item: what it is, what the last order of it was, and what it is down to.
+ *
+ * Every cell is rendered whether or not there is anything in it, and the three
+ * order-history columns below xl collapse into the one line under the name
+ * rather than disappearing, so a phone still answers "when did we last buy
+ * this" without a horizontal scroll.
+ */
+function ItemRow({
+  item,
+  status,
+  setStatus,
+  last,
+  supplierNames,
+  confirming,
+  onConfirm,
+  onRemove,
+}: {
+  item: BoardItem;
+  status: StaffStatus;
+  setStatus: (id: string, status: StaffStatus) => void;
+  last: LastOrder | undefined;
+  supplierNames: Map<string, string>;
+  confirming: boolean;
+  onConfirm: (id: string | null) => void;
+  onRemove: (id: string, isCustom: boolean) => void;
+}) {
+  const pack = last ? packLabel(last) : null;
+  const price = last ? formatCents(last.packPriceCents) : null;
+  const supplier = last?.supplierId ? (supplierNames.get(last.supplierId) ?? null) : null;
+  const ordered = last ? formatDay(last.orderedAt) : null;
+  const delivered = last ? formatDay(last.receivedAt) : null;
+  // The same three cells, joined, for the tiers that have no room for them.
+  const inline = [pack, price, supplier].filter(Boolean).join(" · ");
+
+  return (
+    <li className={`${BOARD_GRID} min-h-11 border-b border-midnight/rule py-1 last:border-b-0`}>
+      <span className="min-w-0">
+        {/*
+          A phone wraps the name and a monitor truncates it. Truncation there is
+          safe because the column is 20rem wide and the full string is one hover
+          away; on a phone there is no hover and no width, so an ambiguous
+          "Chocolate Whey Pr..." would be worse than a second line.
+        */}
+        <span className="block text-sm text-midnight md:truncate md:text-caption" title={item.name}>
+          {item.name}
+        </span>
+        <span className="block truncate text-note text-juniper xl:hidden" title={inline}>
+          {inline === "" ? EMPTY : inline}
+        </span>
+      </span>
+
+      <Cell value={pack} className={CELL_XL} />
+      <Cell value={price} className={`${CELL_XL} text-right`} numeric />
+      <Cell value={supplier} className={CELL_XL} />
+      <Cell value={ordered} className={CELL_MD} numeric />
+      <Cell value={delivered} className={CELL_MD} numeric />
+
+      <span className="flex shrink-0 items-center gap-1">
+        {(["in", "low", "out"] as const).map((option) => {
+          const selected = status === option;
+          return (
+            <button
+              key={option}
+              type="button"
+              onClick={() => setStatus(item.id, option)}
+              aria-pressed={selected}
+              aria-label={`${item.name}: ${STATUS_LABELS[option]}`}
+              className={`h-11 w-[52px] border text-xs tracking-body-mixed transition-colors active:translate-y-px md:h-8 md:w-12 ${
+                selected
+                  ? SELECTED[option]
+                  : "border-midnight/rule text-midnight/70 hover:bg-midnight/veil"
+              }`}
+            >
+              {STATUS_LABELS[option]}
+            </button>
+          );
+        })}
+      </span>
+
+      {item.lock ? (
+        <button
+          type="button"
+          // aria-disabled rather than disabled: a truly disabled control is
+          // skipped by the accessibility tree and, in most browsers, shows no
+          // title on hover. This one carries no handler, so a click does
+          // nothing either way.
+          aria-disabled="true"
+          title={item.lock}
+          aria-label={`${item.name}: ${item.lock}, cannot be removed`}
+          className="h-11 w-8 cursor-not-allowed justify-self-end border border-midnight/rule text-sm text-midnight/25 md:h-8"
+        >
+          <span aria-hidden>&minus;</span>
+        </button>
+      ) : confirming ? (
+        <button
+          type="button"
+          onClick={() => onRemove(item.id, item.custom === true)}
+          aria-label={`Confirm removing ${item.name}`}
+          className="h-11 justify-self-end border border-emphasis border-status-out bg-status-out/veil px-2 text-xs font-semibold text-status-out md:h-8"
+        >
+          Remove?
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => onConfirm(item.id)}
+          aria-label={`Remove ${item.name}`}
+          className="h-11 w-8 justify-self-end border border-midnight/rule text-sm text-midnight/70 transition-colors hover:bg-midnight/veil md:h-8"
+        >
+          <span aria-hidden>&minus;</span>
+        </button>
+      )}
+    </li>
   );
 }

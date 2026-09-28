@@ -1,13 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { Reveal } from "@/components/ui/ScrollReveal";
 import { LogOrderModal, type LogOrderSubmit } from "@/components/staff/LogOrderModal";
 import { SupplierManager, type Supplier } from "@/components/staff/SupplierManager";
+import { Cell, ColumnLabel, StaffBackLink, formatDay, packLabel } from "@/components/staff/staffUi";
+import { CARD_FIELDS, STAFF_PAGE } from "@/lib/design/staffLayout";
 import {
   MS_PER_DAY,
-  PACK_MEASURES,
   SPEND_CLASS_LABELS,
   STALE_IN_TRANSIT_DAYS,
   formatCents,
@@ -18,14 +18,20 @@ import {
 // The ordering log (/staff/ordering): what is on order now, and what every
 // past order cost and how long it lasted.
 //
-// It is its own page rather than a tab on the board. The board's tabs are
-// md:hidden, phones only, because desktop shows both of its sections at once;
-// a third tab there would simply vanish above 768px.
+// A board of four columns, one per state, left to right in the order an order
+// actually travels: on the way, in use, finished, and the tracker history
+// behind all of it. It was two stacked lists, Current and Archive, which was
+// fine at eleven rows and unreadable at two hundred: the one question this page
+// answers is "where is everything", and a list answers "what happened next".
+// Columns make the state the position, so the answer is a glance rather than a
+// scroll, and each column scrolls on its own so a long archive cannot bury a
+// delivery that is late.
 //
-// Rows, not a table. Nothing else in this codebase is a <table>, and a table
-// of eight columns on a phone held in one hand behind a counter is a
-// horizontal scroll nobody does twice. Each order is one row with its numbers
-// underneath, the same shape as the board.
+// Cards, not table rows. Unlike the inventory board, where every row carries
+// the same eight fields and comparison down a column is the whole point, an
+// order is read one at a time: what it was, what it cost, when it moved. So
+// each field is labelled and sits in a fixed slot, and a field nobody filled
+// in still holds its place rather than sliding the one below it up.
 //
 // Polling matches the board: every 10 seconds and whenever the tab regains
 // focus, with in-flight writes holding off the poll so a tap is never stomped
@@ -76,44 +82,25 @@ type LastOrder = {
   costPerKgCents: number | null;
 };
 
-function formatDay(iso: string): string {
-  const then = new Date(iso);
-  if (Number.isNaN(then.getTime())) return "";
-  return new Intl.DateTimeFormat("en-CA", { month: "short", day: "numeric" }).format(then);
-}
-
 function daysSince(iso: string): number {
   const then = Date.parse(iso);
   if (Number.isNaN(then)) return 0;
   return Math.floor((Date.now() - then) / MS_PER_DAY);
 }
 
-/** "3 × 1 kg Bag", or "3 × Bag" when nobody recorded what a bag holds. */
-function quantityLabel(row: Pick<Purchase, "quantity" | "unit" | "packSizeG" | "packSizeCount">) {
-  const size = row.packSizeG
-    ? row.packSizeG >= 1000
-      ? `${+(row.packSizeG / 1000).toFixed(3)} ${PACK_MEASURES.kg.label}`
-      : `${+row.packSizeG.toFixed(1)} ${PACK_MEASURES.g.label}`
-    : row.packSizeCount
-      ? `${+row.packSizeCount.toFixed(0)} ct`
-      : null;
-  return `${+row.quantity.toFixed(2)} × ${size ? `${size} ` : ""}${row.unit}`;
+/** "$4.50/kg", or "$0.23 a piece", or nothing: whichever axis the pack was sold on. */
+function rateLabel(row: Purchase): string | null {
+  const perKg = formatCents(row.costPerKgCents);
+  if (perKg) return `${perKg}/kg`;
+  const perCount = formatCents(row.costPerCountCents);
+  return perCount ? `${perCount} a piece` : null;
 }
 
-/** The money line: what a pack cost, what the order cost, and the per-kilo rate. */
-function priceLabel(row: Purchase, suppliers: Map<string, string>): string {
-  const parts: string[] = [];
-  const pack = formatCents(row.packPriceCents);
-  if (pack) parts.push(`${pack} each`);
-  const total = formatCents(row.totalCents);
-  if (total && row.quantity !== 1) parts.push(`${total} total`);
-  const perKg = formatCents(row.costPerKgCents);
-  if (perKg) parts.push(`${perKg}/kg`);
-  const perCount = formatCents(row.costPerCountCents);
-  if (perCount) parts.push(`${perCount} a piece`);
-  const supplier = row.supplierId ? suppliers.get(row.supplierId) : null;
-  if (supplier) parts.push(supplier);
-  return parts.join(" · ");
+/** "12 days", and says so when the number is measured from the order date. */
+function durationLabel(duration: Duration): string | null {
+  if (!duration) return null;
+  const days = `${duration.days} ${duration.days === 1 ? "day" : "days"}`;
+  return duration.approximate ? `${days}, approximate` : days;
 }
 
 export function OrderLog() {
@@ -307,13 +294,19 @@ export function OrderLog() {
     [suppliers]
   );
 
+  // The four columns, from the two lists the route sends. `current` is what is
+  // still open and `archive` is what is not; the state on each row is what
+  // decides which column it belongs in, so the split lives in one place and
+  // the server keeps deciding what a state means.
   const onTheWay = current.filter((row) => row.state === "on-the-way");
   const inUse = current.filter((row) => row.state === "in-use");
+  const finished = archive.filter((row) => row.state === "exhausted");
+  const imported = archive.filter((row) => row.state === "imported");
 
   if (phase === "unavailable") {
     return (
-      <div className="px-section-x pb-24 pt-10">
-        <BackToBoard />
+      <div className={STAFF_PAGE}>
+        <StaffBackLink href="/staff">Back to inventory</StaffBackLink>
         <h1 className="mt-6 font-headline text-3xl">Ordering</h1>
         <p className="mt-4 max-w-md text-caption text-midnight/70">
           The ordering log is not switched on in this environment.
@@ -323,11 +316,11 @@ export function OrderLog() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-5 pb-24 pt-10 md:px-8 md:pt-12">
+    <div className={STAFF_PAGE}>
       <Reveal show={revealed} index={0}>
         <header className="flex flex-col gap-1.5">
-          <BackToBoard />
-          <div className="mt-6 flex flex-wrap items-baseline justify-between gap-4">
+          <StaffBackLink href="/staff">Back to inventory</StaffBackLink>
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
             <h1 className="font-headline text-3xl">Ordering</h1>
             <button
               type="button"
@@ -340,51 +333,53 @@ export function OrderLog() {
           <p className="text-note text-juniper">
             {phase === "loading"
               ? "Loading…"
-              : `${current.length} on the books · ${archive.length} finished`}
+              : `${current.length} on the books · ${finished.length} finished · ${imported.length} from the tracker`}
           </p>
         </header>
       </Reveal>
 
       <Reveal show={revealed} index={1}>
-        <Section title="Current">
-          {current.length === 0 ? (
-            <Empty>Nothing on order. Log one as it is placed and this fills itself in.</Empty>
-          ) : (
-            <ul>
-              {[...onTheWay, ...inUse].map((row) => (
-                <OrderRow
-                  key={row.id}
-                  row={row}
-                  suppliers={supplierNames}
-                  onAct={act}
-                  onRemove={removeOrder}
-                />
-              ))}
-            </ul>
-          )}
-        </Section>
-
-        <Section title="Archive">
-          {archive.length === 0 ? (
-            <Empty>
-              An order lands here when the board says its item ran out, with how long it lasted.
-            </Empty>
-          ) : (
-            <ul>
-              {archive.map((row) => (
-                <OrderRow
-                  key={row.id}
-                  row={row}
-                  suppliers={supplierNames}
-                  onAct={act}
-                  onRemove={removeOrder}
-                />
-              ))}
-            </ul>
-          )}
-        </Section>
+        <div className="mt-6 grid items-start gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <OrderColumn
+            title="On the way"
+            note="Placed, and not here yet."
+            empty="Nothing on order. Log one as it is placed and this fills itself in."
+            rows={onTheWay}
+            suppliers={supplierNames}
+            onAct={act}
+            onRemove={removeOrder}
+          />
+          <OrderColumn
+            title="In use"
+            note="Arrived and open on the shelf."
+            empty="Nothing open. An order lands here when it is marked as arrived."
+            rows={inUse}
+            suppliers={supplierNames}
+            onAct={act}
+            onRemove={removeOrder}
+          />
+          <OrderColumn
+            title="Finished"
+            note="Ran out, with how long it lasted."
+            empty="An order lands here when the board says its item ran out."
+            rows={finished}
+            suppliers={supplierNames}
+            onAct={act}
+            onRemove={removeOrder}
+          />
+          <OrderColumn
+            title="From the tracker"
+            note="Imported history. No arrival or finish date was ever recorded for these."
+            empty="No imported history."
+            rows={imported}
+            suppliers={supplierNames}
+            onAct={act}
+            onRemove={removeOrder}
+          />
+        </div>
 
         <SupplierManager suppliers={suppliers} onAdd={addSupplier} onRemove={removeSupplier} />
+        <OffBoardSpend rows={offBoard} />
       </Reveal>
 
       <LogOrderModal
@@ -398,39 +393,96 @@ export function OrderLog() {
   );
 }
 
-function BackToBoard() {
+/**
+ * One column of the board: its state, how many orders are in it, and what that
+ * state means in a line, because "In use" and "Finished" are obvious and "From
+ * the tracker" is not.
+ *
+ * The column scrolls inside itself from md up rather than growing the page. The
+ * imported history is two hundred cards and the late delivery is one: a page
+ * that scrolls as one thing hides the one behind the two hundred.
+ */
+function OrderColumn({
+  title,
+  note,
+  empty,
+  rows,
+  suppliers,
+  onAct,
+  onRemove,
+}: {
+  title: string;
+  note: string;
+  empty: string;
+  rows: Purchase[];
+  suppliers: Map<string, string>;
+  onAct: (id: string, action: "receive" | "exhaust" | "reopen") => void;
+  onRemove: (id: string) => void;
+}) {
   return (
-    <Link
-      href="/staff"
-      className="inline-flex min-h-11 items-center gap-2 self-start text-caption text-juniper underline-offset-4 hover:underline"
-    >
-      <span aria-hidden>←</span>
-      Back to inventory
-    </Link>
-  );
-}
+    <section className="flex min-w-0 flex-col border border-midnight/rule">
+      <div className="border-b border-midnight/rule-strong bg-midnight/veil px-3 py-2">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="truncate font-headline text-body md:text-lg">{title}</h2>
+          <p className="shrink-0 text-note tabular-nums text-juniper">{rows.length}</p>
+        </div>
+        <p className="mt-0.5 text-note text-juniper">{note}</p>
+      </div>
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section>
-      <h2 className="mt-10 border-b border-midnight/rule-strong pb-2 font-headline text-lg">
-        {title}
-      </h2>
-      <div className="mt-2">{children}</div>
+      {rows.length === 0 ? (
+        <p className="px-3 py-4 text-note text-juniper">{empty}</p>
+      ) : (
+        <ul className="flex flex-col gap-2 p-2 md:max-h-[68vh] md:overflow-y-auto">
+          {rows.map((row) => (
+            <OrderCard
+              key={row.id}
+              row={row}
+              suppliers={suppliers}
+              onAct={onAct}
+              onRemove={onRemove}
+            />
+          ))}
+        </ul>
+      )}
     </section>
   );
 }
 
-function Empty({ children }: { children: React.ReactNode }) {
-  return <p className="max-w-prose py-3 text-note text-juniper">{children}</p>;
+/** One labelled field of a card. Empty is a value here, and it keeps its slot. */
+function Field({
+  label,
+  value,
+  numeric = false,
+}: {
+  label: string;
+  value: string | null;
+  numeric?: boolean;
+}) {
+  return (
+    <>
+      <dt>
+        <ColumnLabel className="leading-5">{label}</ColumnLabel>
+      </dt>
+      <dd className="min-w-0">
+        <Cell value={value} numeric={numeric} className="leading-5" />
+      </dd>
+    </>
+  );
 }
 
+const CARD_ACTION =
+  "min-h-11 border border-midnight/rule px-3 text-xs tracking-body-mixed text-midnight/70 " +
+  "transition-colors hover:bg-midnight/veil md:h-8 md:min-h-0";
+
 /**
- * One order. The item and the quantity read first, the money and the dates
- * sit underneath in a quieter tone, and the one control that matters for this
- * row's state sits on the right.
+ * One order. The item reads first, then nine fields in the same nine places on
+ * every card, then the one control this row's state allows.
+ *
+ * The fields are a definition list because that is what they are: a label and
+ * the value it names, which is also what makes the card legible to a screen
+ * reader without the column header a table would have given it.
  */
-function OrderRow({
+function OrderCard({
   row,
   suppliers,
   onAct,
@@ -449,76 +501,52 @@ function OrderRow({
     return () => clearTimeout(timer);
   }, [confirming]);
 
-  const price = priceLabel(row, suppliers);
   const stale = row.state === "on-the-way" && daysSince(row.orderedAt) >= STALE_IN_TRANSIT_DAYS;
 
-  let status: React.ReactNode;
-  if (row.state === "on-the-way") {
-    status = stale ? (
-      // Not an error, a question. Seven days on the way is usually a delivery
-      // that arrived and nobody said so, and left alone it turns into an
-      // approximate duration later.
-      <span className="text-status-low">Ordered {formatDay(row.orderedAt)} · did this arrive?</span>
-    ) : (
-      <>On the way · ordered {formatDay(row.orderedAt)}</>
-    );
-  } else if (row.state === "in-use") {
-    status = <>In use · here since {formatDay(row.receivedAt ?? row.orderedAt)}</>;
-  } else if (row.state === "imported") {
-    // No duration and no finish date, because the tracker recorded neither.
-    // Saying where it came from is the honest version of both.
-    status = <>Ordered {formatDay(row.orderedAt)} · from the tracker</>;
-  } else {
-    const days = row.duration;
-    status = days ? (
-      <>
-        Lasted {days.days} {days.days === 1 ? "day" : "days"}
-        {days.approximate ? (
-          <span className="text-juniper"> (approximate, no arrival recorded)</span>
-        ) : null}
-      </>
-    ) : (
-      <>Finished {formatDay(row.exhaustedAt ?? row.orderedAt)}</>
-    );
-  }
-
   return (
-    <li className="flex items-start justify-between gap-3 border-b border-midnight/rule py-3 last:border-b-0">
-      <div className="min-w-0 flex-1">
-        <p className="text-sm text-midnight md:text-caption">
-          <span className="font-semibold">{row.itemName}</span>
-          <span className="text-midnight/70"> · {quantityLabel(row)}</span>
-        </p>
-        {price ? <p className="mt-0.5 text-note text-midnight/70">{price}</p> : null}
-        <p className="mt-0.5 text-note text-juniper">{status}</p>
-        {row.notes ? <p className="mt-0.5 text-note text-juniper">{row.notes}</p> : null}
-      </div>
+    <li className="border border-midnight/rule bg-cream p-3">
+      <p className="truncate text-caption font-semibold text-midnight" title={row.itemName}>
+        {row.itemName}
+      </p>
 
-      <div className="flex shrink-0 items-center gap-1">
+      <dl className={`mt-2 ${CARD_FIELDS}`}>
+        <Field label="Pack" value={packLabel(row)} />
+        <Field label="Each" value={formatCents(row.packPriceCents)} numeric />
+        <Field label="Total" value={formatCents(row.totalCents)} numeric />
+        <Field label="Rate" value={rateLabel(row)} numeric />
+        <Field
+          label="From"
+          value={row.supplierId ? (suppliers.get(row.supplierId) ?? null) : null}
+        />
+        <Field label="Ordered" value={formatDay(row.orderedAt)} numeric />
+        <Field label="Arrived" value={formatDay(row.receivedAt)} numeric />
+        <Field label="Lasted" value={durationLabel(row.duration)} numeric />
+        <Field label="Notes" value={row.notes} />
+      </dl>
+
+      {/*
+        Not an error, a question. Seven days on the way is usually a delivery
+        that arrived and nobody said so, and left alone it turns into an
+        approximate duration later. It is the one line allowed to appear on some
+        cards and not others, because that is the whole point of it.
+      */}
+      {stale ? (
+        <p className="mt-2 text-note font-semibold text-status-low">Did this arrive?</p>
+      ) : null}
+
+      <div className="mt-3 flex items-center justify-end gap-1 border-t border-midnight/rule pt-2">
         {row.state === "on-the-way" ? (
-          <button
-            type="button"
-            onClick={() => onAct(row.id, "receive")}
-            className="min-h-11 border border-midnight/rule px-3 text-xs tracking-body-mixed text-midnight/70 transition-colors hover:bg-midnight/veil md:h-8 md:min-h-0"
-          >
+          <button type="button" onClick={() => onAct(row.id, "receive")} className={CARD_ACTION}>
             Arrived
           </button>
         ) : null}
         {row.state === "in-use" ? (
-          <button
-            type="button"
-            onClick={() => onAct(row.id, "exhaust")}
-            className="min-h-11 border border-midnight/rule px-3 text-xs tracking-body-mixed text-midnight/70 transition-colors hover:bg-midnight/veil md:h-8 md:min-h-0"
-          >
+          <button type="button" onClick={() => onAct(row.id, "exhaust")} className={CARD_ACTION}>
             Used up
           </button>
         ) : null}
         {row.state === "exhausted" && !row.imported ? (
-          <button
-            type="button"
-            onClick={() => onAct(row.id, "reopen")}
-            className="min-h-11 border border-midnight/rule px-3 text-xs tracking-body-mixed text-midnight/70 transition-colors hover:bg-midnight/veil md:h-8 md:min-h-0"
-          >
+          <button type="button" onClick={() => onAct(row.id, "reopen")} className={CARD_ACTION}>
             Reopen
           </button>
         ) : null}
@@ -538,7 +566,7 @@ function OrderRow({
             aria-label={`Delete the ${row.itemName} order`}
             className="min-h-11 w-8 border border-midnight/rule text-sm text-midnight/70 transition-colors hover:bg-midnight/veil md:h-8 md:min-h-0"
           >
-            <span aria-hidden>−</span>
+            <span aria-hidden>&minus;</span>
           </button>
         )}
       </div>
@@ -561,14 +589,14 @@ function OffBoardSpend({ rows }: { rows: OffBoard[] }) {
   const total = rows.reduce((sum, row) => sum + row.cents, 0);
 
   return (
-    <section className="mt-10 border-t border-midnight/rule-strong pt-4">
+    <section className="mt-6 border-t border-midnight/rule-strong pt-4">
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
         aria-expanded={open}
         className="inline-flex min-h-11 items-center gap-2 border border-midnight/rule px-4 text-caption font-semibold text-midnight transition-colors hover:bg-midnight/veil"
       >
-        <span aria-hidden>{open ? "\u2212" : "+"}</span>
+        <span aria-hidden>{open ? "−" : "+"}</span>
         Spend with no board item ({formatCents(total)})
       </button>
 
@@ -578,21 +606,25 @@ function OffBoardSpend({ rows }: { rows: OffBoard[] }) {
             From the imported tracker history. Split by kind, because these are not one thing: a
             trial that becomes a menu item was worth buying, and equipment is an asset, not a loss.
           </p>
-          <ul className="mt-3">
+          <ul className="mt-3 md:columns-2 md:gap-6 xl:columns-3">
             {rows.map((row) => {
               const label = SPEND_CLASS_LABELS[row.spendClass as keyof typeof SPEND_CLASS_LABELS];
               if (!label) return null;
               return (
                 <li
                   key={row.spendClass}
-                  className="flex items-baseline justify-between gap-4 border-b border-midnight/rule py-2 last:border-b-0"
+                  className="flex break-inside-avoid items-baseline justify-between gap-4 border-b border-midnight/rule py-2"
                 >
                   <span className="min-w-0 flex-1">
-                    <span className="text-sm text-midnight md:text-caption">{label.name}</span>
-                    <span className="block text-note text-juniper">{label.note}</span>
+                    <span className="block truncate text-sm text-midnight md:text-caption">
+                      {label.name}
+                    </span>
+                    <span className="block truncate text-note text-juniper" title={label.note}>
+                      {label.note}
+                    </span>
                   </span>
                   <span className="shrink-0 text-right">
-                    <span className="block text-sm font-semibold text-midnight md:text-caption">
+                    <span className="block text-sm font-semibold tabular-nums text-midnight md:text-caption">
                       {formatCents(row.cents)}
                     </span>
                     <span className="block text-note text-juniper">

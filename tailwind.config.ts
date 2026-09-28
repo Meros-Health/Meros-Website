@@ -2,9 +2,15 @@ import type { Config } from "tailwindcss";
 import { ALPHA, BRAND } from "./lib/design/colors";
 
 const config: Config = {
+  // lib/ is scanned too, not only the two view directories. A class string two
+  // components have to agree on belongs beside the other design tokens
+  // (lib/design/staffLayout.ts owns the staff board's column grid), and an
+  // unscanned class is silent: the build succeeds, the page renders, and the
+  // layout is simply absent. tests/unit/staffLayout.test.ts asserts this glob.
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./lib/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     // No default max-width container; sections are full-bleed by default.
