@@ -133,6 +133,7 @@ describe("the policy has not drifted from the markup", () => {
     // decisions to make deliberately, not by adding a fetch call.
     const SAME_ORIGIN_FETCHERS = new Map([
       ["components/staff/InventoryBoard.tsx", "polls and sets /staff/items, a live board that rereads on an interval"],
+      ["components/staff/OrderLog.tsx", "polls and writes /staff/purchases and /staff/suppliers, the ordering log beside the board"],
     ]);
     const callers = SOURCES.filter(
       (f) => /"use client"/.test(f.code) && /\bfetch\(|new WebSocket\(|sendBeacon\(/.test(f.code),

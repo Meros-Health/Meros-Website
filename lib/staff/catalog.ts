@@ -136,15 +136,31 @@ export const INGREDIENT_GROUPS: StaffGroupDef[] = [
   ingredients("Smoothie Bar", ["coconut-milk", "house-whey-water", "cold-brew-coffee"]),
 ];
 
+// Supplies have no registry behind them, so both the names and the order are
+// hand-kept here. The delivery lines came off the tracker Saima maintains:
+// they are real purchases with real suppliers, and an item nobody can select
+// is an order that goes back into a spreadsheet.
 export const SUPPLY_GROUPS: StaffGroupDef[] = [
   {
     name: "Serviceware",
     items: [
+      // Dine-in, then the delivery packaging, then the loose serviceware.
       { id: "bowls-medium", name: "Medium Bowls" },
       { id: "bowls-large", name: "Large Bowls" },
       { id: "bowl-lids", name: "Bowl Lids" },
       { id: "smoothie-cups", name: "Smoothie Cups (22 oz)" },
+      { id: "sample-cups-4oz", name: "Sample Cups (4 oz)" },
+      { id: "delivery-containers-24oz", name: "Delivery Containers (24 oz)" },
+      { id: "delivery-container-lids-24oz", name: "Delivery Container Lids (24 oz)" },
+      { id: "square-containers-16oz", name: "Square Containers (16 oz)" },
+      { id: "square-containers-22oz", name: "Square Containers (22 oz)" },
+      { id: "square-container-lids", name: "Square Container Lids" },
+      { id: "smoothie-delivery-trays", name: "Smoothie Delivery Trays" },
+      { id: "insulated-bags-regular", name: "Insulated Bags (Regular)" },
+      { id: "insulated-bags-large", name: "Insulated Bags (Large)" },
+      { id: "tamper-seals", name: "Tamper-Proof Seals" },
       { id: "spoons", name: "Spoons" },
+      { id: "spoons-wrapped", name: "Spoons (Wrapped)" },
       { id: "sampling-spoons", name: "Sampling Spoons" },
       { id: "straws", name: "Straws" },
       { id: "napkins", name: "Napkins" },
@@ -163,6 +179,7 @@ export const SUPPLY_GROUPS: StaffGroupDef[] = [
       { id: "nitrile-gloves", name: "Nitrile Gloves" },
       { id: "cleaning-cloths", name: "Cleaning Cloths" },
       { id: "garbage-bags", name: "Garbage Bags" },
+      { id: "mop-heads", name: "Mop / Mop Heads" },
     ],
   },
   {
@@ -171,6 +188,9 @@ export const SUPPLY_GROUPS: StaffGroupDef[] = [
       { id: "toilet-paper", name: "Toilet Paper" },
       { id: "receipt-paper", name: "Receipt Paper" },
       { id: "label-stickers", name: "Label Stickers" },
+      { id: "tape", name: "Tape" },
+      { id: "small-jars", name: "Small Jars" },
+      { id: "steel-spoons", name: "Steel Spoons (Large)" },
       { id: "first-aid", name: "First Aid Restock" },
     ],
   },

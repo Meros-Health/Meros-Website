@@ -12,6 +12,7 @@ import {
   type StaffItemDef,
   type StaffStatus,
 } from "@/lib/staff/catalog";
+import { PACK_MEASURES, formatCents } from "@/lib/staff/purchases";
 
 // The staff inventory board (/staff). Phones get two tabs and one column;
 // desktop shows everything at once in three columns, because Saima's question
@@ -51,6 +52,17 @@ const POLL_MS = 10_000;
 const CONFIRM_MS = 4_000;
 
 type ItemState = { status: StaffStatus; updatedBy: string | null; updatedAt: string };
+
+/** The last order of an item, as /staff/purchases reports it. */
+type LastOrder = {
+  quantity: number;
+  unit: string;
+  packSizeG: number | null;
+  packSizeCount: number | null;
+  packPriceCents: number | null;
+  orderedAt: string;
+  supplierId: string | null;
+};
 type Latest = { updatedBy: string | null; updatedAt: string } | null;
 type CustomItem = { id: string; name: string; section: string };
 
@@ -100,6 +112,35 @@ function formatWhen(iso: string): string {
 }
 
 /**
+ * The one line under a row that answers the question this board was always
+ * being asked around: when did we last order this, how much, and what did it
+ * cost. It reads "3 x 1 kg Bag . $16.99 . Costco . Sep 21", and it is only
+ * here because the ordering log already records every piece of it.
+ *
+ * Every part is optional, because a hurried entry is still a useful entry. An
+ * order with no price simply shows no price rather than showing a zero.
+ */
+function lastOrderLine(last: LastOrder, supplierNames: Map<string, string>): string {
+  const size = last.packSizeG
+    ? last.packSizeG >= 1000
+      ? `${+(last.packSizeG / 1000).toFixed(3)} ${PACK_MEASURES.kg.label} `
+      : `${+last.packSizeG.toFixed(1)} ${PACK_MEASURES.g.label} `
+    : last.packSizeCount
+      ? `${+last.packSizeCount.toFixed(0)} ct `
+      : "";
+  const parts = [`${+last.quantity.toFixed(2)} \u00d7 ${size}${last.unit}`];
+  const price = formatCents(last.packPriceCents);
+  if (price) parts.push(price);
+  const supplier = last.supplierId ? supplierNames.get(last.supplierId) : null;
+  if (supplier) parts.push(supplier);
+  const when = new Date(last.orderedAt);
+  if (!Number.isNaN(when.getTime())) {
+    parts.push(new Intl.DateTimeFormat("en-CA", { month: "short", day: "numeric" }).format(when));
+  }
+  return parts.join(" \u00b7 ");
+}
+
+/**
  * What each group actually draws: its built-in rows minus anything the store
  * has stopped carrying, then that section's staff-added rows. Evenly spaced,
  * no gaps: a row that can appear and disappear at runtime has no answer for
@@ -135,6 +176,8 @@ export function InventoryBoard() {
   const [custom, setCustom] = useState<CustomItem[]>([]);
   const [hidden, setHidden] = useState<string[]>([]);
   const [latest, setLatest] = useState<Latest>(null);
+  const [lastOrders, setLastOrders] = useState<Record<string, LastOrder>>({});
+  const [supplierNames, setSupplierNames] = useState<Map<string, string>>(new Map());
   const [tab, setTab] = useState<"ingredients" | "supplies">("ingredients");
   const [phase, setPhase] = useState<"loading" | "ready" | "unavailable">("loading");
   const [revealed, setRevealed] = useState(false);
@@ -168,6 +211,22 @@ export function InventoryBoard() {
       setPhase("ready");
     } catch {
       // Transient network failure: keep what we have, the next poll retries.
+    }
+
+    // The last-order line is an extra, fetched separately and allowed to fail
+    // on its own. The board answers "what do I order"; if the ordering log is
+    // unreachable the rows still work, they just stop carrying their history.
+    try {
+      const res = await fetch("/staff/purchases", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = (await res.json()) as {
+        lastByItem: Record<string, LastOrder>;
+        suppliers: { id: string; name: string }[];
+      };
+      setLastOrders(data.lastByItem ?? {});
+      setSupplierNames(new Map((data.suppliers ?? []).map((row) => [row.id, row.name])));
+    } catch {
+      // As above: the board is the thing that has to keep working.
     }
   }, []);
 
@@ -349,12 +408,25 @@ export function InventoryBoard() {
       <Reveal show={revealed} index={0}>
         <header className="flex flex-col gap-1.5">
           <BackToSite />
-          <div className="mt-6 flex items-baseline justify-between gap-4">
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
             <h1 className="font-headline text-3xl">Inventory</h1>
-            <p className="flex gap-3 text-xs">
-              <span className="font-semibold text-status-low">{total.low} low</span>
-              <span className="font-semibold text-status-out">{total.out} out</span>
-            </p>
+            <div className="flex items-center gap-4">
+              <p className="flex items-baseline gap-3 text-xs">
+                <span className="font-semibold text-status-low">{total.low} low</span>
+                <span className="font-semibold text-status-out">{total.out} out</span>
+              </p>
+              {/*
+                The same weight as "Log an order" on the page it leads to: the
+                two are one task seen from either end, and a text link here
+                read as a footnote next to a board of 90 tappable controls.
+              */}
+              <Link
+                href="/staff/ordering"
+                className="inline-flex min-h-11 items-center border border-emphasis border-midnight bg-midnight px-5 text-caption font-semibold text-cream"
+              >
+                Orders
+              </Link>
+            </div>
           </div>
           <p className="text-note text-juniper">
             {latest
@@ -394,6 +466,8 @@ export function InventoryBoard() {
           setStatus={setStatus}
           onAdd={openAdd}
           onRemove={removeItem}
+          lastOrders={lastOrders}
+          supplierNames={supplierNames}
         />
         <BoardSection
           title="Supplies"
@@ -403,6 +477,8 @@ export function InventoryBoard() {
           setStatus={setStatus}
           onAdd={openAdd}
           onRemove={removeItem}
+          lastOrders={lastOrders}
+          supplierNames={supplierNames}
         />
         <NotCarrying hidden={hidden} onRestore={restoreItem} />
       </Reveal>
@@ -485,6 +561,8 @@ function BoardSection({
   setStatus,
   onAdd,
   onRemove,
+  lastOrders,
+  supplierNames,
 }: {
   title: string;
   groups: BoardGroup[];
@@ -493,6 +571,8 @@ function BoardSection({
   setStatus: (id: string, status: StaffStatus) => void;
   onAdd: (section: string, trigger: HTMLElement | null) => void;
   onRemove: (id: string, isCustom: boolean) => void;
+  lastOrders: Record<string, LastOrder>;
+  supplierNames: Map<string, string>;
 }) {
   return (
     <section className={hiddenOnMobile ? "hidden md:block" : ""}>
@@ -508,6 +588,8 @@ function BoardSection({
             setStatus={setStatus}
             onAdd={onAdd}
             onRemove={onRemove}
+            lastOrders={lastOrders}
+            supplierNames={supplierNames}
           />
         ))}
       </div>
@@ -521,12 +603,16 @@ function GroupCard({
   setStatus,
   onAdd,
   onRemove,
+  lastOrders,
+  supplierNames,
 }: {
   group: BoardGroup;
   statusOf: (id: string) => StaffStatus;
   setStatus: (id: string, status: StaffStatus) => void;
   onAdd: (section: string, trigger: HTMLElement | null) => void;
   onRemove: (id: string, isCustom: boolean) => void;
+  lastOrders: Record<string, LastOrder>;
+  supplierNames: Map<string, string>;
 }) {
   // Which row's "-" is waiting on its second tap. One per card is enough:
   // confirming a second row cancels the first, which is the intent anyway.
@@ -557,7 +643,14 @@ function GroupCard({
       <ul className="pt-2">
         {group.items.map((item) => (
           <li key={item.id} className="flex items-center justify-between gap-3 py-1">
-            <span className="min-w-0 flex-1 text-sm md:text-caption">{item.name}</span>
+            <span className="min-w-0 flex-1 text-sm md:text-caption">
+              {item.name}
+              {lastOrders[item.id] ? (
+                <span className="block text-note text-juniper">
+                  {lastOrderLine(lastOrders[item.id], supplierNames)}
+                </span>
+              ) : null}
+            </span>
             <span className="flex shrink-0 items-center gap-1">
               {(["in", "low", "out"] as const).map((status) => {
                 const selected = statusOf(item.id) === status;

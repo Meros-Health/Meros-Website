@@ -12,6 +12,10 @@
 // the tapped value instead of double-flipping. Ids and statuses are both
 // allowlisted, so staff_items can only ever hold rows the board can render.
 //
+// Setting an item to Out also closes its open purchases (/staff/ordering).
+// That coupling is the whole reason the ordering log can report how long a
+// delivery lasted without anyone entering a second thing.
+//
 // What may be removed, and DELETE is where that is decided:
 //
 //   staff-added   a real DELETE FROM. Nothing customer-facing knows it exists.
@@ -50,7 +54,6 @@
 // identity, and created_by / updated_by stay null.
 
 import { NextResponse, type NextRequest } from "next/server";
-import { verifyStaffAccess } from "@/lib/staff/access";
 import { lockLabel } from "@/lib/menu/dependencies";
 import { isStaffItemId, isStaffStatus } from "@/lib/staff/catalog";
 import {
@@ -61,41 +64,14 @@ import {
   isCustomStaffItemId,
   isStaffSection,
 } from "@/lib/staff/customItems";
-import { getStaffRuntime, type StaffRuntime } from "@/lib/staff/runtime";
+import { NO_STORE, admitStaff, fail, readJson } from "@/lib/staff/admit";
+import { inTransitCutoff } from "@/lib/staff/purchases";
 
 // Live state: never prerender, never cache.
 export const dynamic = "force-dynamic";
 
-const NO_STORE = { "Cache-Control": "no-store" };
-
-type Denied = { response: NextResponse };
-type Admitted = { store: NonNullable<StaffRuntime["store"]>; email: string | null };
-
-function fail(message: string, status: number) {
-  return NextResponse.json({ error: message }, { status, headers: NO_STORE });
-}
-
-async function admit(request: NextRequest): Promise<Admitted | Denied> {
-  const { store, access } = getStaffRuntime();
-  if (!store) return { response: fail("unavailable", 404) };
-  if (!access) return { store, email: null }; // development only; production always carries config
-  const identity = await verifyStaffAccess(request.headers.get("cf-access-jwt-assertion"), access);
-  if (!identity) return { response: fail("forbidden", 403) };
-  return { store, email: identity.email };
-}
-
-async function readJson(request: NextRequest): Promise<Record<string, unknown> | null> {
-  try {
-    const body: unknown = await request.json();
-    return body && typeof body === "object" ? (body as Record<string, unknown>) : null;
-  } catch {
-    // A body that is not JSON is a client bug, not a condition to recover from.
-    return null;
-  }
-}
-
 export async function GET(request: NextRequest) {
-  const admitted = await admit(request);
+  const admitted = await admitStaff(request);
   if ("response" in admitted) return admitted.response;
 
   const [rows, customRows, hiddenRows] = await Promise.all([
@@ -126,7 +102,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const admitted = await admit(request);
+  const admitted = await admitStaff(request);
   if ("response" in admitted) return admitted.response;
 
   const body = await readJson(request);
@@ -146,11 +122,32 @@ export async function PATCH(request: NextRequest) {
   }
 
   await admitted.store.set(id, status, admitted.email);
+
+  // Running out is the other end of an order, so it closes one. This is the
+  // only place the ordering log learns how long a delivery lasted: nobody is
+  // going to open a second screen to say "that bag is finished", but they do
+  // tap Out, because that is the tap that stops the next customer being
+  // promised something the store does not have.
+  //
+  // Which rows close, and why it is not simply "all of them", is documented on
+  // exhaustOpenForItem in lib/staff/purchaseStore.ts.
+  //
+  // A failure here must not fail the tap. The status is the part the shift
+  // depends on and it is already written; a missed close costs one duration
+  // figure, and the row stays open to be closed by hand.
+  if (status === "out") {
+    try {
+      await admitted.purchases.exhaustOpenForItem(id, new Date().toISOString(), inTransitCutoff());
+    } catch {
+      // Deliberately swallowed: see above.
+    }
+  }
+
   return NextResponse.json({ ok: true }, { headers: NO_STORE });
 }
 
 export async function POST(request: NextRequest) {
-  const admitted = await admit(request);
+  const admitted = await admitStaff(request);
   if ("response" in admitted) return admitted.response;
 
   const body = await readJson(request);
@@ -207,7 +204,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const admitted = await admit(request);
+  const admitted = await admitStaff(request);
   if ("response" in admitted) return admitted.response;
 
   const body = await readJson(request);

@@ -22,6 +22,12 @@ import {
   type StaffD1Like,
   type StaffInventoryStore,
 } from "@/lib/staff/inventoryStore";
+import {
+  D1StaffPurchaseStore,
+  MemoryStaffPurchaseStore,
+  type StaffPurchaseStore,
+} from "@/lib/staff/purchaseStore";
+import { SEEDED_SUPPLIERS } from "@/lib/staff/purchases";
 
 type StaffEnv = {
   ORDERS_DB?: StaffD1Like;
@@ -33,6 +39,12 @@ type StaffEnv = {
 export type StaffRuntime = {
   /** Null means the routes answer 404: disabled in this environment. */
   store: StaffInventoryStore | null;
+  /**
+   * The ordering log's store. Gated on exactly the same conditions as `store`,
+   * and null whenever it is: one flag, one Access config and one database
+   * serve the whole portal, so a half-open portal is not a state that exists.
+   */
+  purchases: StaffPurchaseStore | null;
   /** Access verification config; null only in development, where Access does not front the dev server. */
   access: StaffAccessConfig | null;
 };
@@ -43,6 +55,26 @@ function devMemoryStore(): MemoryStaffInventoryStore {
   const holder = globalThis as { __merosStaffMemoryStore?: MemoryStaffInventoryStore };
   holder.__merosStaffMemoryStore ??= new MemoryStaffInventoryStore();
   return holder.__merosStaffMemoryStore;
+}
+
+// The same, for the ordering log. Seeded with the suppliers the migration
+// writes, so a dev server without bindings offers the same list production
+// does rather than an empty selector.
+function devMemoryPurchaseStore(): MemoryStaffPurchaseStore {
+  const holder = globalThis as { __merosStaffMemoryPurchaseStore?: MemoryStaffPurchaseStore };
+  if (!holder.__merosStaffMemoryPurchaseStore) {
+    const store = new MemoryStaffPurchaseStore();
+    store.seedSuppliers(
+      SEEDED_SUPPLIERS.map((supplier) => ({
+        ...supplier,
+        archived_at: null,
+        created_by: null,
+        created_at: "2026-09-27T00:00:00.000Z",
+      }))
+    );
+    holder.__merosStaffMemoryPurchaseStore = store;
+  }
+  return holder.__merosStaffMemoryPurchaseStore;
 }
 
 export function getStaffRuntime(): StaffRuntime {
@@ -57,6 +89,7 @@ export function getStaffRuntime(): StaffRuntime {
   if (isDev) {
     return {
       store: env.ORDERS_DB ? new D1StaffInventoryStore(env.ORDERS_DB) : devMemoryStore(),
+      purchases: env.ORDERS_DB ? new D1StaffPurchaseStore(env.ORDERS_DB) : devMemoryPurchaseStore(),
       access: null,
     };
   }
@@ -66,6 +99,10 @@ export function getStaffRuntime(): StaffRuntime {
     env.STAFF_ACCESS_TEAM_DOMAIN && env.STAFF_ACCESS_AUD
       ? { teamDomain: env.STAFF_ACCESS_TEAM_DOMAIN, aud: env.STAFF_ACCESS_AUD }
       : null;
-  if (!enabled || !access || !env.ORDERS_DB) return { store: null, access: null };
-  return { store: new D1StaffInventoryStore(env.ORDERS_DB), access };
+  if (!enabled || !access || !env.ORDERS_DB) return { store: null, purchases: null, access: null };
+  return {
+    store: new D1StaffInventoryStore(env.ORDERS_DB),
+    purchases: new D1StaffPurchaseStore(env.ORDERS_DB),
+    access,
+  };
 }
