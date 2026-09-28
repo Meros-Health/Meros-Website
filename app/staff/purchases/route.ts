@@ -77,6 +77,8 @@ function serialize(row: PurchaseRow) {
     notes: row.notes,
     createdBy: row.created_by,
     state: purchaseState(row),
+    spendClass: row.spend_class,
+    imported: row.source_file !== null,
     duration: purchaseDuration(row),
     totalCents: totalCents(row),
     costPerKgCents: costPerKgCents(row),
@@ -109,15 +111,16 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ history: rows.map(serialize) }, { headers: NO_STORE });
   }
 
-  const [open, archive, latest, suppliers] = await Promise.all([
+  const [open, archive, latest, suppliers, offBoard] = await Promise.all([
     admitted.purchases.listOpen(),
     admitted.purchases.listArchive(ARCHIVE_LIMIT),
     admitted.purchases.listLatestPerItem(),
     admitted.purchases.listSuppliers(),
+    admitted.purchases.offBoardTotals(),
   ]);
 
   const lastByItem: Record<string, ReturnType<typeof serialize>> = {};
-  for (const row of latest) lastByItem[row.item_id] = serialize(row);
+  for (const row of latest) if (row.item_id) lastByItem[row.item_id] = serialize(row);
 
   return NextResponse.json(
     {
@@ -127,6 +130,12 @@ export async function GET(request: NextRequest) {
       suppliers: suppliers
         .filter((row) => !row.archived_at)
         .map((row) => ({ id: row.id, name: row.name, kind: row.kind })),
+      // What left the till with no board item behind it, by class.
+      offBoard: offBoard.map((row) => ({
+        spendClass: row.spend_class,
+        purchases: row.purchases,
+        cents: row.cents,
+      })),
     },
     { headers: NO_STORE }
   );
@@ -201,6 +210,10 @@ export async function POST(request: NextRequest) {
     duration_basis: null,
     notes: note.value,
     actor: "user",
+    // Everything logged through the form is ordinary stock: the form only
+    // offers board items. Off-board spend arrives through the importer.
+    spend_class: "stock",
+    source_file: null,
     created_by: admitted.email,
     created_at: now,
   };

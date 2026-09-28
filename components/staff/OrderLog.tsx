@@ -8,8 +8,10 @@ import { SupplierManager, type Supplier } from "@/components/staff/SupplierManag
 import {
   MS_PER_DAY,
   PACK_MEASURES,
+  SPEND_CLASS_LABELS,
   STALE_IN_TRANSIT_DAYS,
   formatCents,
+  type SpendClass,
   type SupplierKind,
 } from "@/lib/staff/purchases";
 
@@ -52,12 +54,17 @@ type Purchase = {
   receivedAt: string | null;
   exhaustedAt: string | null;
   notes: string | null;
-  state: "on-the-way" | "in-use" | "exhausted";
+  state: "on-the-way" | "in-use" | "exhausted" | "imported";
   duration: Duration;
   totalCents: number | null;
   costPerKgCents: number | null;
   costPerCountCents: number | null;
+  spendClass: SpendClass;
+  imported: boolean;
 };
+
+/** One class of spend with no board item behind it. */
+type OffBoard = { spendClass: SpendClass; purchases: number; cents: number };
 
 type LastOrder = {
   supplierId: string | null;
@@ -114,6 +121,7 @@ export function OrderLog() {
   const [archive, setArchive] = useState<Purchase[]>([]);
   const [lastByItem, setLastByItem] = useState<Record<string, LastOrder>>({});
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [offBoard, setOffBoard] = useState<OffBoard[]>([]);
   const [phase, setPhase] = useState<"loading" | "ready" | "unavailable">("loading");
   const [revealed, setRevealed] = useState(false);
   const [logging, setLogging] = useState(false);
@@ -135,11 +143,13 @@ export function OrderLog() {
         current: Purchase[];
         archive: Purchase[];
         lastByItem: Record<string, LastOrder>;
+        offBoard: OffBoard[];
       };
       if (inflight.current > 0) return;
       setCurrent(data.current ?? []);
       setArchive(data.archive ?? []);
       setLastByItem(data.lastByItem ?? {});
+      setOffBoard(data.offBoard ?? []);
       if (suppliersRes.ok) {
         const list = (await suppliersRes.json()) as { suppliers: Supplier[] };
         setSuppliers(list.suppliers ?? []);
@@ -454,6 +464,10 @@ function OrderRow({
     );
   } else if (row.state === "in-use") {
     status = <>In use · here since {formatDay(row.receivedAt ?? row.orderedAt)}</>;
+  } else if (row.state === "imported") {
+    // No duration and no finish date, because the tracker recorded neither.
+    // Saying where it came from is the honest version of both.
+    status = <>Ordered {formatDay(row.orderedAt)} · from the tracker</>;
   } else {
     const days = row.duration;
     status = days ? (
@@ -499,7 +513,7 @@ function OrderRow({
             Used up
           </button>
         ) : null}
-        {row.state === "exhausted" ? (
+        {row.state === "exhausted" && !row.imported ? (
           <button
             type="button"
             onClick={() => onAct(row.id, "reopen")}
@@ -529,5 +543,68 @@ function OrderRow({
         )}
       </div>
     </li>
+  );
+}
+
+/**
+ * What the store spent with nothing on the board to show for it.
+ *
+ * Five classes rather than one total, because they are not the same thing and
+ * a single number misdirects: the produce the menu does not use is $91, while
+ * the biggest line is a sealing machine, which is equipment. Ordered by size,
+ * so whatever is actually largest reads first.
+ */
+function OffBoardSpend({ rows }: { rows: OffBoard[] }) {
+  const [open, setOpen] = useState(false);
+  if (rows.length === 0) return null;
+
+  const total = rows.reduce((sum, row) => sum + row.cents, 0);
+
+  return (
+    <section className="mt-10 border-t border-midnight/rule-strong pt-4">
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        aria-expanded={open}
+        className="inline-flex min-h-11 items-center gap-2 border border-midnight/rule px-4 text-caption font-semibold text-midnight transition-colors hover:bg-midnight/veil"
+      >
+        <span aria-hidden>{open ? "\u2212" : "+"}</span>
+        Spend with no board item ({formatCents(total)})
+      </button>
+
+      {open ? (
+        <div className="pb-2">
+          <p className="mt-3 max-w-prose text-note text-juniper">
+            From the imported tracker history. Split by kind, because these are not one thing: a
+            trial that becomes a menu item was worth buying, and equipment is an asset, not a loss.
+          </p>
+          <ul className="mt-3">
+            {rows.map((row) => {
+              const label = SPEND_CLASS_LABELS[row.spendClass as keyof typeof SPEND_CLASS_LABELS];
+              if (!label) return null;
+              return (
+                <li
+                  key={row.spendClass}
+                  className="flex items-baseline justify-between gap-4 border-b border-midnight/rule py-2 last:border-b-0"
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="text-sm text-midnight md:text-caption">{label.name}</span>
+                    <span className="block text-note text-juniper">{label.note}</span>
+                  </span>
+                  <span className="shrink-0 text-right">
+                    <span className="block text-sm font-semibold text-midnight md:text-caption">
+                      {formatCents(row.cents)}
+                    </span>
+                    <span className="block text-note text-juniper">
+                      {row.purchases} {row.purchases === 1 ? "purchase" : "purchases"}
+                    </span>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ) : null}
+    </section>
   );
 }

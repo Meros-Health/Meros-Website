@@ -31,7 +31,14 @@ import {
   POST as SUPPLIER_POST,
 } from "@/app/staff/suppliers/route";
 import { PATCH as ITEMS_PATCH } from "@/app/staff/items/route";
-import { IN_TRANSIT_GRACE_DAYS, MS_PER_DAY, SEEDED_SUPPLIERS } from "@/lib/staff/purchases";
+import {
+  IN_TRANSIT_GRACE_DAYS,
+  MS_PER_DAY,
+  SEEDED_SUPPLIERS,
+  type PurchaseRow,
+} from "@/lib/staff/purchases";
+import type { MemoryStaffPurchaseStore } from "@/lib/staff/purchaseStore";
+import { getStaffRuntime } from "@/lib/staff/runtime";
 
 const ENDPOINT = "http://localhost/staff/purchases";
 
@@ -384,5 +391,129 @@ describe("the gate", () => {
       vi.unstubAllEnvs();
     }
     expect((await log()).current).toHaveLength(0);
+  });
+});
+
+describe("imported tracker history", () => {
+  // 202 purchases came from a spreadsheet that recorded what was paid and
+  // never recorded when anything ran out. These pin the two consequences:
+  // an imported row is history rather than something on order, and spend
+  // with no board item is kept rather than dropped.
+  // Through the runtime, which is what creates the dev store; reaching for
+  // the globalThis handle directly finds nothing until something has asked.
+  function store(): MemoryStaffPurchaseStore {
+    return getStaffRuntime().purchases as MemoryStaffPurchaseStore;
+  }
+
+  function imported(over: Partial<PurchaseRow> = {}): PurchaseRow {
+    return {
+      id: "trk_" + Math.random().toString(36).slice(2),
+      item_id: "almonds",
+      item_name: "Yupik Sliced Almonds, 1 kg",
+      supplier_id: "costco",
+      quantity: 3,
+      unit: "Bag",
+      pack_size_g: 1000,
+      pack_size_count: null,
+      pack_price_cents: 1699,
+      ordered_at: daysAgo(60),
+      received_at: null,
+      exhausted_at: null,
+      duration_basis: null,
+      notes: null,
+      actor: "user",
+      spend_class: "stock",
+      source_file: "Meros_Inventory_Ordering_Tracker.xlsx",
+      created_by: null,
+      created_at: daysAgo(0),
+      ...over,
+    };
+  }
+
+  it("files an imported purchase as history, never as an open order", async () => {
+    // It has no received_at, which for a logged order would mean "on the way".
+    // Provenance is what separates the two, not the missing date.
+    await store().addPurchase(imported());
+    const state = await log();
+    expect(state.current).toHaveLength(0);
+    expect(state.archive).toHaveLength(1);
+    expect(state.archive[0].state).toBe("imported");
+    expect(state.archive[0].duration).toBeNull();
+  });
+
+  it("prefills the form from imported history", async () => {
+    // The whole reason for importing: the first real order of an item already
+    // knows its supplier, pack size and last price.
+    await store().addPurchase(imported());
+    const state = await log();
+    expect(state.lastByItem.almonds).toMatchObject({
+      supplierId: "costco",
+      unit: "Bag",
+      packSizeG: 1000,
+      packPriceCents: 1699,
+    });
+    expect(state.lastByItem.almonds.costPerKgCents).toBeCloseTo(1699, 6);
+  });
+
+  it("never stamps an exhaustion date on imported history", async () => {
+    // Marking the item out closes what staff logged. An imported row has no
+    // real duration available, so inventing one here would be the same lie
+    // the import refused to tell.
+    await store().addPurchase(imported());
+    await logOrder({ itemId: "almonds", receivedNow: true });
+    await ITEMS_PATCH(
+      request("http://localhost/staff/items", "PATCH", { id: "almonds", status: "out" })
+    );
+
+    const state = await log();
+    const trk = state.archive.filter((row) => row.state === "imported");
+    expect(trk).toHaveLength(1);
+    expect(trk[0].exhaustedAt).toBeNull();
+    // The logged one did close, with a real duration.
+    expect(state.archive.filter((row) => row.state === "exhausted")).toHaveLength(1);
+  });
+
+  it("keeps spend that has no board item, and totals it by class", async () => {
+    // Dropping these would answer "what did we order" while losing "what did
+    // we spend", and the second is the question nobody could answer.
+    await store().addPurchase(
+      imported({
+        item_id: null,
+        item_name: "Plums",
+        spend_class: "off-menu",
+        quantity: 1,
+        pack_price_cents: 1845,
+      })
+    );
+    await store().addPurchase(
+      imported({
+        item_id: null,
+        item_name: "Lychee Puree Frozen",
+        spend_class: "trial",
+        quantity: 1,
+        pack_price_cents: 5485,
+      })
+    );
+
+    const state = await log();
+    // They are spend, not stock: they never appear as orders.
+    expect(state.current).toHaveLength(0);
+    expect(state.archive).toHaveLength(0);
+    expect(state.lastByItem).toEqual({});
+
+    const totals = Object.fromEntries(
+      (
+        (await log()) as unknown as { offBoard: { spendClass: string; cents: number }[] }
+      ).offBoard.map((row) => [row.spendClass, row.cents])
+    );
+    expect(totals).toEqual({ trial: 5485, "off-menu": 1845 });
+  });
+
+  it("does not let off-board spend reach the board's item history", async () => {
+    await store().addPurchase(
+      imported({ item_id: null, item_name: "Cup Sealing Machine", spend_class: "capital" })
+    );
+    const res = await GET(request(ENDPOINT + "?item=almonds", "GET"));
+    expect(((await res.json()) as { history: unknown[] }).history).toHaveLength(0);
   });
 });

@@ -19,12 +19,31 @@
 // The one query with real logic in it is exhaustOpenForItem, below.
 
 import type { StaffD1Like } from "@/lib/staff/inventoryStore";
-import type { PurchaseRow, SupplierRow } from "@/lib/staff/purchases";
+import type { PurchaseRow, SpendClass, SupplierRow } from "@/lib/staff/purchases";
+
+const isStock = (row: PurchaseRow) => row.spend_class === "stock";
+
+/** One class of spend that never reached the board, totalled. */
+export type OffBoardTotal = { spend_class: SpendClass; purchases: number; cents: number };
 
 const PURCHASE_COLUMNS =
   "id, item_id, item_name, supplier_id, quantity, unit, pack_size_g, pack_size_count, " +
   "pack_price_cents, ordered_at, received_at, exhausted_at, duration_basis, notes, actor, " +
-  "created_by, created_at";
+  "spend_class, source_file, created_by, created_at";
+
+/**
+ * The ordering log is about restocking board items, so every one of its
+ * queries carries this. Off-board spend lives in the same table because it is
+ * the same receipts, and it is read by its own summary.
+ */
+const STOCK = "spend_class = 'stock'";
+
+/**
+ * An imported row is history: it has no exhaustion date because the tracker
+ * never recorded one, so it can never be "still open". Filed by provenance
+ * rather than by stamping a date the import cannot know.
+ */
+const LOGGED = "source_file IS NULL";
 
 const SUPPLIER_COLUMNS = "id, name, kind, archived_at, created_by, created_at";
 
@@ -41,7 +60,7 @@ export interface StaffPurchaseStore {
   addSupplier(row: SupplierRow): Promise<boolean>;
   archiveSupplier(id: string, at: string): Promise<void>;
 
-  /** Everything not yet exhausted: the current table, oldest order first. */
+  /** Everything still open: the current table, oldest order first. */
   listOpen(): Promise<PurchaseRow[]>;
   /** Exhausted rows, most recently finished first. */
   listArchive(limit: number): Promise<PurchaseRow[]>;
@@ -62,6 +81,11 @@ export interface StaffPurchaseStore {
    * Returns how many rows closed.
    */
   exhaustOpenForItem(itemId: string, now: string, inTransitCutoff: string): Promise<number>;
+
+  /** What the store spent with no board item to show for it, by class. */
+  offBoardTotals(): Promise<OffBoardTotal[]>;
+  /** The individual off-board rows, biggest first, for the detail view. */
+  listOffBoard(limit: number): Promise<PurchaseRow[]>;
 }
 
 export class D1StaffPurchaseStore implements StaffPurchaseStore {
@@ -99,7 +123,8 @@ export class D1StaffPurchaseStore implements StaffPurchaseStore {
   async listOpen(): Promise<PurchaseRow[]> {
     const { results } = await this.db
       .prepare(
-        `SELECT ${PURCHASE_COLUMNS} FROM staff_purchases WHERE exhausted_at IS NULL ORDER BY ordered_at ASC`
+        `SELECT ${PURCHASE_COLUMNS} FROM staff_purchases ` +
+          `WHERE ${STOCK} AND ${LOGGED} AND exhausted_at IS NULL ORDER BY ordered_at ASC`
       )
       .all<PurchaseRow>();
     return results;
@@ -108,8 +133,9 @@ export class D1StaffPurchaseStore implements StaffPurchaseStore {
   async listArchive(limit: number): Promise<PurchaseRow[]> {
     const { results } = await this.db
       .prepare(
-        `SELECT ${PURCHASE_COLUMNS} FROM staff_purchases WHERE exhausted_at IS NOT NULL ` +
-          "ORDER BY exhausted_at DESC LIMIT ?1"
+        `SELECT ${PURCHASE_COLUMNS} FROM staff_purchases WHERE ${STOCK} ` +
+          "AND (exhausted_at IS NOT NULL OR source_file IS NOT NULL) " +
+          "ORDER BY COALESCE(exhausted_at, ordered_at) DESC LIMIT ?1"
       )
       .bind(limit)
       .all<PurchaseRow>();
@@ -126,7 +152,7 @@ export class D1StaffPurchaseStore implements StaffPurchaseStore {
         `SELECT ${PURCHASE_COLUMNS} FROM (` +
           `SELECT ${PURCHASE_COLUMNS}, ROW_NUMBER() OVER (` +
           "PARTITION BY item_id ORDER BY ordered_at DESC, created_at DESC" +
-          ") AS rn FROM staff_purchases) WHERE rn = 1"
+          `) AS rn FROM staff_purchases WHERE ${STOCK}) WHERE rn = 1`
       )
       .all<PurchaseRow>();
     return results;
@@ -135,7 +161,7 @@ export class D1StaffPurchaseStore implements StaffPurchaseStore {
   async listForItem(itemId: string, limit: number): Promise<PurchaseRow[]> {
     const { results } = await this.db
       .prepare(
-        `SELECT ${PURCHASE_COLUMNS} FROM staff_purchases WHERE item_id = ?1 ` +
+        `SELECT ${PURCHASE_COLUMNS} FROM staff_purchases WHERE item_id = ?1 AND ${STOCK} ` +
           "ORDER BY ordered_at DESC, created_at DESC LIMIT ?2"
       )
       .bind(itemId, limit)
@@ -153,7 +179,8 @@ export class D1StaffPurchaseStore implements StaffPurchaseStore {
   async countOpenForItem(itemId: string): Promise<number> {
     const { results } = await this.db
       .prepare(
-        "SELECT COUNT(*) AS n FROM staff_purchases WHERE item_id = ?1 AND exhausted_at IS NULL"
+        `SELECT COUNT(*) AS n FROM staff_purchases WHERE item_id = ?1 AND ${STOCK} ` +
+          `AND ${LOGGED} AND exhausted_at IS NULL`
       )
       .bind(itemId)
       .all<{ n: number }>();
@@ -173,8 +200,8 @@ export class D1StaffPurchaseStore implements StaffPurchaseStore {
       .prepare(
         "INSERT INTO staff_purchases (id, item_id, item_name, supplier_id, quantity, unit, " +
           "pack_size_g, pack_size_count, pack_price_cents, ordered_at, received_at, exhausted_at, " +
-          "duration_basis, notes, actor, created_by, created_at) VALUES " +
-          "(?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)"
+          "duration_basis, notes, actor, spend_class, source_file, created_by, created_at) VALUES " +
+          "(?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)"
       )
       .bind(
         row.id,
@@ -192,6 +219,8 @@ export class D1StaffPurchaseStore implements StaffPurchaseStore {
         row.duration_basis,
         row.notes,
         row.actor,
+        row.spend_class,
+        row.source_file,
         row.created_by,
         row.created_at
       )
@@ -245,12 +274,34 @@ export class D1StaffPurchaseStore implements StaffPurchaseStore {
       .prepare(
         "UPDATE staff_purchases SET exhausted_at = ?2, duration_basis = " +
           "CASE WHEN received_at IS NOT NULL THEN 'received' ELSE 'ordered' END " +
-          "WHERE item_id = ?1 AND exhausted_at IS NULL " +
+          `WHERE item_id = ?1 AND ${STOCK} AND ${LOGGED} AND exhausted_at IS NULL ` +
           "AND (received_at IS NOT NULL OR ordered_at <= ?3)"
       )
       .bind(itemId, now, inTransitCutoff)
       .run();
     return result.meta?.changes ?? 0;
+  }
+
+  async offBoardTotals(): Promise<OffBoardTotal[]> {
+    const { results } = await this.db
+      .prepare(
+        "SELECT spend_class, COUNT(*) AS purchases, " +
+          "CAST(COALESCE(SUM(quantity * pack_price_cents), 0) AS INTEGER) AS cents " +
+          `FROM staff_purchases WHERE NOT ${STOCK} GROUP BY spend_class ORDER BY cents DESC`
+      )
+      .all<OffBoardTotal>();
+    return results;
+  }
+
+  async listOffBoard(limit: number): Promise<PurchaseRow[]> {
+    const { results } = await this.db
+      .prepare(
+        `SELECT ${PURCHASE_COLUMNS} FROM staff_purchases WHERE NOT ${STOCK} ` +
+          "ORDER BY quantity * COALESCE(pack_price_cents, 0) DESC LIMIT ?1"
+      )
+      .bind(limit)
+      .all<PurchaseRow>();
+    return results;
   }
 }
 
@@ -290,20 +341,22 @@ export class MemoryStaffPurchaseStore implements StaffPurchaseStore {
 
   async listOpen(): Promise<PurchaseRow[]> {
     return [...this.purchases.values()]
-      .filter((row) => !row.exhausted_at)
+      .filter((row) => isStock(row) && !row.source_file && !row.exhausted_at)
       .sort((a, b) => a.ordered_at.localeCompare(b.ordered_at));
   }
 
   async listArchive(limit: number): Promise<PurchaseRow[]> {
+    const when = (row: PurchaseRow) => row.exhausted_at ?? row.ordered_at;
     return [...this.purchases.values()]
-      .filter((row) => row.exhausted_at)
-      .sort((a, b) => (b.exhausted_at ?? "").localeCompare(a.exhausted_at ?? ""))
+      .filter((row) => isStock(row) && (row.exhausted_at || row.source_file))
+      .sort((a, b) => when(b).localeCompare(when(a)))
       .slice(0, limit);
   }
 
   async listLatestPerItem(): Promise<PurchaseRow[]> {
     const latest = new Map<string, PurchaseRow>();
     for (const row of this.purchases.values()) {
+      if (!isStock(row) || !row.item_id) continue;
       const held = latest.get(row.item_id);
       const newer =
         !held ||
@@ -316,7 +369,7 @@ export class MemoryStaffPurchaseStore implements StaffPurchaseStore {
 
   async listForItem(itemId: string, limit: number): Promise<PurchaseRow[]> {
     return [...this.purchases.values()]
-      .filter((row) => row.item_id === itemId)
+      .filter((row) => row.item_id === itemId && isStock(row))
       .sort(
         (a, b) =>
           b.ordered_at.localeCompare(a.ordered_at) || b.created_at.localeCompare(a.created_at)
@@ -355,6 +408,7 @@ export class MemoryStaffPurchaseStore implements StaffPurchaseStore {
     let closed = 0;
     for (const [id, row] of this.purchases) {
       if (row.item_id !== itemId || row.exhausted_at) continue;
+      if (!isStock(row) || row.source_file) continue;
       if (!row.received_at && row.ordered_at > inTransitCutoff) continue;
       this.purchases.set(id, {
         ...row,
@@ -364,5 +418,29 @@ export class MemoryStaffPurchaseStore implements StaffPurchaseStore {
       closed += 1;
     }
     return closed;
+  }
+
+  async offBoardTotals(): Promise<OffBoardTotal[]> {
+    const totals = new Map<SpendClass, OffBoardTotal>();
+    for (const row of this.purchases.values()) {
+      if (isStock(row)) continue;
+      const held = totals.get(row.spend_class) ?? {
+        spend_class: row.spend_class,
+        purchases: 0,
+        cents: 0,
+      };
+      held.purchases += 1;
+      held.cents += Math.round(row.quantity * (row.pack_price_cents ?? 0));
+      totals.set(row.spend_class, held);
+    }
+    return [...totals.values()].sort((a, b) => b.cents - a.cents);
+  }
+
+  async listOffBoard(limit: number): Promise<PurchaseRow[]> {
+    const cost = (row: PurchaseRow) => row.quantity * (row.pack_price_cents ?? 0);
+    return [...this.purchases.values()]
+      .filter((row) => !isStock(row))
+      .sort((a, b) => cost(b) - cost(a))
+      .slice(0, limit);
   }
 }

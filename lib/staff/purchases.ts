@@ -17,6 +17,46 @@
 //   nothing later edits it, so a supplier raising a price cannot rewrite what
 //   the store spent last month.
 
+/**
+ * What kind of spend a purchase was. Only `stock` names a board item; the
+ * rest are money that left the store with nothing on the shelf checklist to
+ * show for it, which is a question nobody could answer before.
+ *
+ * Five classes rather than one "waste" flag, because they are not one thing.
+ * Lumped together the tracker's off-board spend reads as $2,678 of waste; the
+ * produce the menu genuinely does not use is $91 of it, and the largest line
+ * is a cup sealing machine, which is an asset. A number that wrong points at
+ * the wrong problem.
+ */
+export const SPEND_CLASSES = [
+  "stock",
+  "off-menu",
+  "trial",
+  "untracked",
+  "staff",
+  "capital",
+] as const;
+export type SpendClass = (typeof SPEND_CLASSES)[number];
+
+export function isSpendClass(value: unknown): value is SpendClass {
+  return (SPEND_CLASSES as readonly unknown[]).includes(value);
+}
+
+/** How each class reads on the ordering page, and why it is not simply waste. */
+export const SPEND_CLASS_LABELS: Record<
+  Exclude<SpendClass, "stock">,
+  { name: string; note: string }
+> = {
+  "off-menu": { name: "Off the menu", note: "Bought, but nothing on the menu uses it." },
+  trial: { name: "Trials", note: "Bought deliberately to try something new." },
+  untracked: {
+    name: "Used but untracked",
+    note: "The store uses these and they have no board row yet.",
+  },
+  staff: { name: "Not stock", note: "Groceries and sundries, never part of inventory." },
+  capital: { name: "Equipment", note: "A one-off asset, not stock." },
+};
+
 export const SUPPLIER_KINDS = ["wholesale", "club", "retail", "local", "marketplace"] as const;
 export type SupplierKind = (typeof SUPPLIER_KINDS)[number];
 
@@ -113,7 +153,8 @@ export const MS_PER_DAY = 86_400_000;
 
 export type PurchaseRow = {
   id: string;
-  item_id: string;
+  /** Null only when spend_class is not "stock": money spent with no board item. */
+  item_id: string | null;
   item_name: string;
   supplier_id: string | null;
   quantity: number;
@@ -127,6 +168,9 @@ export type PurchaseRow = {
   duration_basis: "received" | "ordered" | null;
   notes: string | null;
   actor: string;
+  spend_class: SpendClass;
+  /** Set on a row imported from the tracker, null when a staff member logged it. */
+  source_file: string | null;
   created_by: string | null;
   created_at: string;
 };
@@ -164,7 +208,7 @@ export const SEEDED_SUPPLIERS: ReadonlyArray<{ id: string; name: string; kind: S
   { id: "local-produce-supplier", name: "Local / Produce Supplier", kind: "local" },
 ];
 
-export type PurchaseState = "on-the-way" | "in-use" | "exhausted";
+export type PurchaseState = "on-the-way" | "in-use" | "exhausted" | "imported";
 
 /**
  * The lifecycle, read off the timestamps. There is no status column to read
@@ -175,8 +219,13 @@ export type PurchaseState = "on-the-way" | "in-use" | "exhausted";
 export function purchaseState(row: {
   received_at: string | null;
   exhausted_at: string | null;
+  source_file?: string | null;
 }): PurchaseState {
   if (row.exhausted_at) return "exhausted";
+  // An imported row is history, not something on its way. The tracker never
+  // recorded an exhaustion date, and stamping one to force it into the
+  // archive would be inventing the one fact the import cannot know.
+  if (row.source_file) return "imported";
   return row.received_at ? "in-use" : "on-the-way";
 }
 
